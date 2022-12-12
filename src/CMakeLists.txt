@@ -21,6 +21,7 @@ set(
         utils.cpp
         utils.hpp)
 
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPILE_FLAGS}")
 
 add_library(perma STATIC ${SOURCES})
@@ -34,3 +35,9 @@ endif ()
 add_executable(perma-bench perma.cpp)
 target_link_libraries(perma-bench perma)
 set_target_properties(perma-bench PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+
+# Some third party libraries' include directories lead to compiler warnings. We add these directories add system
+# directories to supporess the warnings.
+# TODO(MW) suppress shadow warnings.
+get_target_property(yaml-cpp_include_dirs yaml-cpp INTERFACE_INCLUDE_DIRECTORIES)
+target_include_directories(yaml-cpp SYSTEM PUBLIC ${yaml-cpp_include_dirs})
