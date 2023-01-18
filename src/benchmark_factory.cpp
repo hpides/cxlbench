@@ -9,7 +9,7 @@ namespace perma {
 std::vector<SingleBenchmark> BenchmarkFactory::create_single_benchmarks(const std::filesystem::path& pmem_directory,
                                                                         std::vector<YAML::Node>& configs,
                                                                         const bool use_dram) {
-  std::vector<SingleBenchmark> benchmarks{};
+  auto benchmarks = std::vector<SingleBenchmark>{};
 
   for (YAML::Node& config : configs) {
     for (YAML::iterator it = config.begin(); it != config.end(); ++it) {
@@ -65,7 +65,7 @@ std::vector<SingleBenchmark> BenchmarkFactory::create_single_benchmarks(const st
 std::vector<ParallelBenchmark> BenchmarkFactory::create_parallel_benchmarks(const std::filesystem::path& pmem_directory,
                                                                             std::vector<YAML::Node>& configs,
                                                                             const bool use_dram) {
-  std::vector<ParallelBenchmark> benchmarks{};
+  auto benchmarks = std::vector<ParallelBenchmark>{};
 
   for (YAML::Node& config : configs) {
     for (YAML::iterator it = config.begin(); it != config.end(); ++it) {
@@ -159,11 +159,10 @@ std::vector<BenchmarkConfig> BenchmarkFactory::create_benchmark_matrix(const std
     throw std::invalid_argument("'matrix' must be a YAML map.");
   }
 
-  std::vector<BenchmarkConfig> matrix{};
-  std::set<std::string> matrix_arg_names{};
+  auto matrix = std::vector<BenchmarkConfig>{};
+  auto matrix_arg_names = std::set<std::string>{};
 
-  std::function<void(const YAML::iterator&, YAML::Node&)> create_matrix = [&](const YAML::iterator& node_iterator,
-                                                                              YAML::Node& current_config) {
+  auto create_matrix = [&](const YAML::iterator& node_iterator, YAML::Node& current_config) {
     YAML::Node current_values = node_iterator->second;
     if (node_iterator == matrix_args.end() || current_values.IsNull()) {
       // End of matrix recursion.
@@ -171,13 +170,13 @@ std::vector<BenchmarkConfig> BenchmarkFactory::create_benchmark_matrix(const std
       // Otherwise, everything is 'visited' after the first iteration and decoding fails.
       YAML::Node clean_config = YAML::Clone(current_config);
 
-      BenchmarkConfig final_config = BenchmarkConfig::decode(clean_config);
-      final_config.pmem_directory = pmem_directory;
-      final_config.is_pmem = !use_dram;
-      final_config.is_hybrid = final_config.dram_operation_ratio > 0.0;
-      final_config.matrix_args = {matrix_arg_names.begin(), matrix_arg_names.end()};
+      auto benchmark_config = BenchmarkConfig::decode(clean_config);
+      benchmark_config.pmem_directory = pmem_directory;
+      benchmark_config.is_pmem = !use_dram;
+      benchmark_config.is_hybrid = benchmark_config.dram_operation_ratio > 0.0;
+      benchmark_config.matrix_args = {matrix_arg_names.begin(), matrix_arg_names.end()};
 
-      matrix.emplace_back(final_config);
+      matrix.emplace_back(benchmark_config);
       return;
     }
 

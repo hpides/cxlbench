@@ -137,7 +137,7 @@ class Benchmark {
    * This is probably the first method to be called so that a virtual
    * address space is available to generate the IO addresses.
    */
-  virtual void create_data_files() = 0;
+  virtual void generate_data() = 0;
 
   /** Create all the IO addresses ahead of time to avoid unnecessary ops during the actual benchmark. */
   virtual void set_up() = 0;
@@ -172,8 +172,8 @@ class Benchmark {
                             BenchmarkExecution* execution, BenchmarkResult* result, std::vector<std::thread>* pool,
                             std::vector<ThreadRunConfig>* thread_config);
 
-  static char* create_pmem_data_file(const BenchmarkConfig& config, const MemoryRegion& memory_region);
-  static char* create_dram_data(const BenchmarkConfig& config, size_t memory_range);
+  static char* generate_pmem_data(const BenchmarkConfig& config, const MemoryRegion& memory_region);
+  static char* generate_dram_data(const BenchmarkConfig& config, size_t memory_range);
   static void prepare_data_file(char* file_data, const BenchmarkConfig& config, uint64_t memory_range,
                                 uint64_t page_size);
 

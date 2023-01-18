@@ -29,8 +29,12 @@ static int DRAM_MAP_FLAGS = MAP_PRIVATE | MAP_ANONYMOUS;
 
 void setPMEM_MAP_FLAGS(int flags);
 
+// File-maps the given file to a memory region. No data is mapped if `expected_length` is 0.
 char* map_pmem(const std::filesystem::path& file, size_t expected_length);
+
+// Maps an anonymous DRAM region. No data is mapped if `expected_length` is 0.
 char* map_dram(size_t expected_length, bool use_huge_pages);
+
 char* create_pmem_file(const std::filesystem::path& file, size_t length);
 
 std::filesystem::path generate_random_file_name(const std::filesystem::path& base_dir);

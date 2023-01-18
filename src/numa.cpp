@@ -150,23 +150,23 @@ std::vector<uint64_t> get_far_nodes() {
   const size_t num_numa_nodes = numa_num_configured_nodes();
   bitmask* init_node_mask = numa_get_run_node_mask();
 
-  std::vector<uint64_t> inv_numa_nodes{};
-  std::vector<uint64_t> set_numa_nodes{};
+  auto far_node_candidates = std::vector<uint64_t>{};
+  auto set_nodes_for_task = std::vector<uint64_t>{};
   for (uint64_t numa_node = 0; numa_node < num_numa_nodes; numa_node++) {
     // Set numa node if not set in initial near node mask
     if (numa_bitmask_isbitset(init_node_mask, numa_node)) {
-      set_numa_nodes.push_back(numa_node);
+      set_nodes_for_task.push_back(numa_node);
     } else {
-      inv_numa_nodes.push_back(numa_node);
+      far_node_candidates.push_back(numa_node);
     }
   }
 
   std::vector<uint64_t> far_numa_nodes{};
-  for (uint64_t possible_far_node : inv_numa_nodes) {
+  for (uint64_t far_node_candidate : far_node_candidates) {
     bool found_far_node = true;
     // Check for each possible far NUMA node if it is far to every node that is set
-    for (uint64_t set_node : set_numa_nodes) {
-      const size_t numa_dist = numa_distance(possible_far_node, set_node);
+    for (uint64_t set_node : set_nodes_for_task) {
+      const size_t numa_dist = numa_distance(far_node_candidate, set_node);
       if (numa_dist < NUMA_FAR_DISTANCE) {
         // This should cover all NUMA nodes that are close, i.e., bigger than self = 10 and close = 11.
         found_far_node = false;
@@ -176,8 +176,8 @@ std::vector<uint64_t> get_far_nodes() {
     if (found_far_node) {
       // This covers one NUMA node that is far to each user-provided NUMA node.
       // If found move to next NUMA node in list
-      spdlog::trace("Found far NUMA node {}.", possible_far_node);
-      far_numa_nodes.push_back(possible_far_node);
+      spdlog::trace("Found far NUMA node {}.", far_node_candidate);
+      far_numa_nodes.push_back(far_node_candidate);
     }
   }
 

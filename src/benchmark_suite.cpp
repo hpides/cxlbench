@@ -60,18 +60,20 @@ void BenchmarkSuite::run_benchmarks(const PermaOptions& options) {
   std::vector<YAML::Node> configs = BenchmarkFactory::get_config_files(options.config_file);
   nlohmann::json results = nlohmann::json::array();
 
-  // Start single benchmarks
+  // Create single benchmarks
   std::vector<SingleBenchmark> single_benchmarks =
       BenchmarkFactory::create_single_benchmarks(options.pmem_directory, configs, !options.is_pmem);
   spdlog::info("Found {} single benchmark{}.", single_benchmarks.size(), single_benchmarks.size() != 1 ? "s" : "");
+
+  // Create parallel benchmarks
   std::vector<ParallelBenchmark> parallel_benchmarks =
       BenchmarkFactory::create_parallel_benchmarks(options.pmem_directory, configs, !options.is_pmem);
   spdlog::info("Found {} parallel benchmark{}.", parallel_benchmarks.size(),
                parallel_benchmarks.size() != 1 ? "s" : "");
 
-  Benchmark* previous_bm = nullptr;
-  std::vector<Benchmark*> benchmarks{};
+  auto benchmarks = std::vector<Benchmark*>{};
   benchmarks.reserve(single_benchmarks.size() + parallel_benchmarks.size());
+
   for (Benchmark& benchmark : single_benchmarks) {
     benchmarks.push_back(&benchmark);
   }
@@ -86,15 +88,18 @@ void BenchmarkSuite::run_benchmarks(const PermaOptions& options) {
     return;
   }
 
-  bool had_error = false;
-  nlohmann::json matrix_bm_results = nlohmann::json::array();
-  bool printed_info = false;
-  for (size_t i = 0; i < benchmarks.size(); ++i) {
-    Benchmark& benchmark = *benchmarks[i];
+  auto had_error = false;
+  auto printed_info = false;
+  Benchmark* previous_bm = nullptr;
+  auto matrix_bm_results = nlohmann::json::array();
+
+  const auto benchmark_count = benchmarks.size();
+  for (size_t bench_idx = 0; bench_idx < benchmark_count; ++i) {
+    auto& benchmark = *benchmarks[bench_idx];
     if (previous_bm && previous_bm->benchmark_name() != benchmark.benchmark_name()) {
       // Started new benchmark, force delete old data in case it was a matrix.
       // If it is not a matrix, this does nothing.
-      nlohmann::json bm_results = benchmark_results_to_json(*previous_bm, matrix_bm_results);
+      auto bm_results = benchmark_results_to_json(*previous_bm, matrix_bm_results);
       utils::write_benchmark_results(result_file, bm_results);
       matrix_bm_results = nlohmann::json::array();
       previous_bm->tear_down(/*force=*/true);
@@ -106,15 +111,15 @@ void BenchmarkSuite::run_benchmarks(const PermaOptions& options) {
       printed_info = true;
     }
 
-    const size_t benchmark_num = i + 1;
     if (benchmark.get_benchmark_type() == BenchmarkType::Parallel) {
-      spdlog::debug("Preparing parallel benchmark #{} with two configs: {} AND {}", benchmark_num,
+      spdlog::debug("Preparing parallel benchmark #{} with two configs: {} AND {}", benchmark_count,
                     to_string(benchmark.get_json_config(0)), to_string(benchmark.get_json_config(1)));
     } else {
-      spdlog::debug("Preparing benchmark #{} with config: {}", benchmark_num, to_string(benchmark.get_json_config(0)));
+      spdlog::debug("Preparing benchmark #{} with config: {}", benchmark_count,
+                    to_string(benchmark.get_json_config(0)));
     }
 
-    benchmark.create_data_files();
+    benchmark.generate_data();
     benchmark.set_up();
     const bool success = benchmark.run();
     previous_bm = &benchmark;
@@ -127,7 +132,8 @@ void BenchmarkSuite::run_benchmarks(const PermaOptions& options) {
 
     matrix_bm_results += benchmark.get_result_as_json();
     benchmark.tear_down(false);
-    spdlog::info("Completed {0}/{1} benchmark{2}.", benchmark_num, benchmarks.size(), benchmarks.size() > 1 ? "s" : "");
+    spdlog::info("Completed {0}/{1} benchmark{2}.", benchmark_count, benchmarks.size(),
+                 benchmarks.size() > 1 ? "s" : "");
   }
 
   if (!benchmarks.empty()) {

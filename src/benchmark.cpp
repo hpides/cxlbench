@@ -132,14 +132,15 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, char* pmem_data, ch
   }
 }
 
-char* Benchmark::create_pmem_data_file(const BenchmarkConfig& config, const MemoryRegion& memory_region) {
+char* Benchmark::generate_pmem_data(const BenchmarkConfig& config, const MemoryRegion& memory_region) {
+  // Generalize: use special type (e.g., PMem, certain NUMA node, RDMA) instead of only PMem.
   if (!config.is_pmem) {
     // Replace PMem range with DRAM if user specifies a dram-only run.
-    return create_dram_data(config, config.memory_range);
+    return generate_dram_data(config, config.memory_range);
   }
 
   if (std::filesystem::exists(memory_region.pmem_file)) {
-    // Data was already generated. Only re-map it.
+    // Data was already generated and a file containing the data was created. Only re-map it.
     return utils::map_pmem(memory_region.pmem_file, config.memory_range);
   }
 
@@ -148,7 +149,7 @@ char* Benchmark::create_pmem_data_file(const BenchmarkConfig& config, const Memo
   return file_data;
 }
 
-char* Benchmark::create_dram_data(const BenchmarkConfig& config, const size_t memory_range) {
+char* Benchmark::generate_dram_data(const BenchmarkConfig& config, const size_t memory_range) {
   char* dram_data = utils::map_dram(memory_range, config.dram_huge_pages);
   prepare_data_file(dram_data, config, memory_range, utils::DRAM_PAGE_SIZE);
   return dram_data;
@@ -241,6 +242,7 @@ void Benchmark::run_custom_ops_in_thread(ThreadRunConfig* thread_config, const B
 }
 
 void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkConfig& config) {
+  // TODO(MW) check if conflict when both explicit numa memory binding and NumaPattern::Far is set.
   if (config.numa_pattern == NumaPattern::Far) {
     set_to_far_cpus();
   }
