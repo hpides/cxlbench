@@ -4,39 +4,54 @@ on: [push]
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
-      CC: gcc-${{matrix.gcc}}
-      CXX: g++-${{matrix.gcc}}
+      GCC: gcc-${{matrix.gcc}}
+      GXX: g++-${{matrix.gcc}}
+      CLANG: clang-${{matrix.clang}}
+      CLANGXX: clang++-${{matrix.clang}}
 
     strategy:
       matrix:
         build-type: [Release, Debug]
-        gcc: [8, 9, 10]
+        gcc: [12]
+        clang: [14]
 
     steps:
     - uses: actions/checkout@v2
 
-    - name: Get GCC Versions
+    - name: Get Compiler Versions
       run: |
         sudo apt update
-        sudo apt install $CC $CXX
-        $CC --version && $CXX --version
+        sudo apt install $GCC $GXX $CLANG
+        $GCC --version && $GXX --version && $CLANG --version && $CLANGXX --version
 
     - name: Create Build Environment
-      run: cmake -E make_directory ${{runner.workspace}}/build
+      run: |
+        cmake -E make_directory ${{runner.workspace}}/build-gcc
+        cmake -E make_directory ${{runner.workspace}}/build-clang
 
-    - name: Configure CMake
+    - name: Configure CMake GCC
       shell: bash
-      working-directory: ${{runner.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TEST=ON -DIS_CI_BUILD=ON
+      working-directory: ${{runner.workspace}}/build-gcc
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_C_COMPILER=$GCC -DCMAKE_CXX_COMPILER=$GXX -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DIS_CI_BUILD=ON
 
-    - name: Build
-      working-directory: ${{runner.workspace}}/build
+    - name: Configure CMake Clang
+      shell: bash
+      working-directory: ${{runner.workspace}}/build-clang
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_C_COMPILER=$CLANG -DCMAKE_CXX_COMPILER=$CLANGXX -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TEST=ON -DIS_CI_BUILD=ON
+
+    - name: Build GCC
+      working-directory: ${{runner.workspace}}/build-gcc
+      shell: bash
+      run: cmake --build . --config ${{ matrix.build-type }} -- -j
+
+    - name: Build Clang
+      working-directory: ${{runner.workspace}}/build-clang
       shell: bash
       run: cmake --build . --config ${{ matrix.build-type }} -- -j
 
     - name: Test
-      working-directory: ${{runner.workspace}}/build
+      working-directory: ${{runner.workspace}}/build-clang
       shell: bash
       run: ctest -R perma-test -V
