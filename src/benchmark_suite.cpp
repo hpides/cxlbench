@@ -94,7 +94,7 @@ void BenchmarkSuite::run_benchmarks(const PermaOptions& options) {
   auto matrix_bm_results = nlohmann::json::array();
 
   const auto benchmark_count = benchmarks.size();
-  for (size_t bench_idx = 0; bench_idx < benchmark_count; ++i) {
+  for (size_t bench_idx = 0; bench_idx < benchmark_count; ++bench_idx) {
     auto& benchmark = *benchmarks[bench_idx];
     if (previous_bm && previous_bm->benchmark_name() != benchmark.benchmark_name()) {
       // Started new benchmark, force delete old data in case it was a matrix.

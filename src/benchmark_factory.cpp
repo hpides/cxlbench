@@ -162,7 +162,8 @@ std::vector<BenchmarkConfig> BenchmarkFactory::create_benchmark_matrix(const std
   auto matrix = std::vector<BenchmarkConfig>{};
   auto matrix_arg_names = std::set<std::string>{};
 
-  auto create_matrix = [&](const YAML::iterator& node_iterator, YAML::Node& current_config) {
+  std::function<void(const YAML::iterator&, YAML::Node&)> create_matrix = [&](const YAML::iterator& node_iterator,
+                                                                              YAML::Node& current_config) {
     YAML::Node current_values = node_iterator->second;
     if (node_iterator == matrix_args.end() || current_values.IsNull()) {
       // End of matrix recursion.

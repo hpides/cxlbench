@@ -57,7 +57,7 @@ TEST_F(BenchmarkTest, CreateSingleNewDataFile) {
 
   ASSERT_FALSE(std::filesystem::exists(pmem_file));
 
-  bm.create_data_files();
+  bm.generate_data();
 
   ASSERT_TRUE(std::filesystem::exists(pmem_file));
   ASSERT_TRUE(std::filesystem::is_regular_file(pmem_file));
@@ -82,7 +82,7 @@ TEST_F(BenchmarkTest, CreateParallelNewDataFile) {
   ASSERT_FALSE(std::filesystem::exists(pmem_file_one));
   ASSERT_FALSE(std::filesystem::exists(pmem_file_two));
 
-  bm.create_data_files();
+  bm.generate_data();
 
   ASSERT_TRUE(std::filesystem::exists(pmem_file_one));
   ASSERT_TRUE(std::filesystem::exists(pmem_file_two));
@@ -115,7 +115,7 @@ TEST_F(BenchmarkTest, CreateExistingDataFile) {
   ASSERT_EQ(pmem_file, existing_pmem_file);
   ASSERT_TRUE(std::filesystem::exists(pmem_file));
 
-  bm.create_data_files();
+  bm.generate_data();
 
   ASSERT_TRUE(std::filesystem::exists(pmem_file));
   ASSERT_TRUE(std::filesystem::is_regular_file(pmem_file));
@@ -137,7 +137,7 @@ TEST_F(BenchmarkTest, CreateSingleReadDataFile) {
 
   ASSERT_FALSE(std::filesystem::exists(pmem_file));
 
-  bm.create_data_files();
+  bm.generate_data();
 
   ASSERT_TRUE(std::filesystem::exists(pmem_file));
   ASSERT_TRUE(std::filesystem::is_regular_file(pmem_file));
@@ -169,7 +169,7 @@ TEST_F(BenchmarkTest, CreateParallelReadDataFile) {
   ASSERT_FALSE(std::filesystem::exists(pmem_file_one));
   ASSERT_FALSE(std::filesystem::exists(pmem_file_two));
 
-  bm.create_data_files();
+  bm.generate_data();
 
   ASSERT_TRUE(std::filesystem::exists(pmem_file_one));
   ASSERT_TRUE(std::filesystem::exists(pmem_file_two));
@@ -210,7 +210,7 @@ TEST_F(BenchmarkTest, CreateParallelReadDataFileMixed) {
 
   ASSERT_FALSE(std::filesystem::exists(pmem_file));
 
-  bm.create_data_files();
+  bm.generate_data();
 
   ASSERT_TRUE(std::filesystem::exists(pmem_file));
   ASSERT_TRUE(std::filesystem::is_regular_file(pmem_file));
@@ -235,7 +235,7 @@ TEST_F(BenchmarkTest, SetUpSingleThread) {
   base_results_.reserve(1);
   base_results_.push_back(std::make_unique<BenchmarkResult>(base_config_));
   SingleBenchmark bm{bm_name_, base_config_, std::move(base_executions_), std::move(base_results_)};
-  bm.create_data_files();
+  bm.generate_data();
   bm.set_up();
 
   const std::vector<ThreadRunConfig>& thread_configs = bm.get_thread_configs()[0];
@@ -273,7 +273,7 @@ TEST_F(BenchmarkTest, SetUpMultiThreadCustomPartition) {
   base_results_.reserve(1);
   base_results_.push_back(std::make_unique<BenchmarkResult>(base_config_));
   SingleBenchmark bm{bm_name_, base_config_, std::move(base_executions_), std::move(base_results_)};
-  bm.create_data_files();
+  bm.generate_data();
   bm.set_up();
 
   const size_t partition_size = TEST_FILE_SIZE / 2;
@@ -329,7 +329,7 @@ TEST_F(BenchmarkTest, SetUpMultiThreadDefaultPartition) {
   base_results_.reserve(1);
   base_results_.push_back(std::make_unique<BenchmarkResult>(base_config_));
   SingleBenchmark bm{bm_name_, base_config_, std::move(base_executions_), std::move(base_results_)};
-  bm.create_data_files();
+  bm.generate_data();
   bm.set_up();
 
   const size_t partition_size = TEST_FILE_SIZE / 4;
@@ -389,7 +389,7 @@ TEST_F(BenchmarkTest, RunSingeThreadRead) {
 
   const auto start_test_ts = std::chrono::steady_clock::now();
 
-  bm.create_data_files();
+  bm.generate_data();
   bm.set_up();
   bm.run();
 
@@ -420,7 +420,7 @@ TEST_F(BenchmarkTest, RunSingeThreadReadDRAM) {
 
   const auto start_test_ts = std::chrono::steady_clock::now();
 
-  bm.create_data_files();
+  bm.generate_data();
   bm.set_up();
   bm.run();
 
@@ -450,7 +450,7 @@ TEST_F(BenchmarkTest, RunSingleThreadWrite) {
 
   const auto start_test_ts = std::chrono::steady_clock::now();
 
-  bm.create_data_files();
+  bm.generate_data();
   bm.set_up();
   bm.run();
 
@@ -484,7 +484,7 @@ TEST_F(BenchmarkTest, RunSingleThreadWriteDRAM) {
 
   const auto start_test_ts = std::chrono::steady_clock::now();
 
-  bm.create_data_files();
+  bm.generate_data();
   bm.set_up();
   bm.run();
 
@@ -520,7 +520,7 @@ TEST_F(BenchmarkTest, DISABLED_RunSingeThreadMixed) {
 
   const auto start_test_ts = std::chrono::steady_clock::now();
 
-  bm.create_data_files();
+  bm.generate_data();
   bm.set_up();
   bm.run();
 
@@ -552,7 +552,7 @@ TEST_F(BenchmarkTest, RunMultiThreadRead) {
 
   const auto start_test_ts = std::chrono::steady_clock::now();
 
-  bm.create_data_files();
+  bm.generate_data();
   bm.set_up();
   bm.run();
 
@@ -590,7 +590,7 @@ TEST_F(BenchmarkTest, RunMultiThreadWrite) {
 
   const auto start_test_ts = std::chrono::steady_clock::now();
 
-  bm.create_data_files();
+  bm.generate_data();
   bm.set_up();
   bm.run();
 
@@ -630,7 +630,7 @@ TEST_F(BenchmarkTest, RunMultiThreadReadDesc) {
 
   const auto start_test_ts = std::chrono::steady_clock::now();
 
-  bm.create_data_files();
+  bm.generate_data();
   bm.set_up();
   bm.run();
 
@@ -670,7 +670,7 @@ TEST_F(BenchmarkTest, RunMultiThreadWriteDesc) {
 
   const auto start_test_ts = std::chrono::steady_clock::now();
 
-  bm.create_data_files();
+  bm.generate_data();
   bm.set_up();
   bm.run();
 
@@ -885,7 +885,7 @@ TEST_F(BenchmarkTest, RunParallelSingleThreadRead) {
 
   ParallelBenchmark bm{
       bm_name_, "sub_bm_1", "sub_bm_2", config_one, config_two, std::move(base_executions_), std::move(base_results_)};
-  bm.create_data_files();
+  bm.generate_data();
   bm.set_up();
   bm.run();
 
@@ -937,7 +937,7 @@ TEST_F(BenchmarkTest, ResultsParallelSingleThreadMixed) {
 
   ParallelBenchmark bm{
       bm_name_, "sub_bm_1", "sub_bm_2", config_one, config_two, std::move(base_executions_), std::move(base_results_)};
-  bm.create_data_files();
+  bm.generate_data();
   bm.set_up();
   bm.run();
 
