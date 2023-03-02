@@ -176,8 +176,3 @@ hybrid_tree_index_update:
     # ...
 ```
 
-
-
-## Visualization
-PerMA-Bench offers a Python tool to visualize its results as PNGs and view them in in the browser as HTML files.
-Check out the [viz](viz/) directory for more details.
