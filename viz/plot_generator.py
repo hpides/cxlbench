@@ -28,9 +28,10 @@ class PlotGenerator:
         This class calls the methods of the plotter classes, according go the given JSON.
     """
 
-    def __init__(self, results, output_dir):
+    def __init__(self, results, output_dir, no_plots):
         self.results = results
         self.output_dir = output_dir
+        self.no_plots = no_plots
 
     # mainly used for legacy versions of json files. With newer versions, we want to be able to differentiate between
     # different setups, e.g., even if multiple json fils only contain DRAM measurements, the DRAM memory regions might
@@ -74,6 +75,8 @@ class PlotGenerator:
         df[KEY_NUMA_MEMORY_NODES] = df[KEY_NUMA_MEMORY_NODES].transform(lambda x: x[0])
         df = df.drop(columns=drop_columns)
         df.to_csv("{}/flattened_reduced_df.csv".format(self.output_dir))
+        if self.no_plots:
+            sys.exit("Exiting without generating plots. CSV were stored.")
 
         print(bm_groups)
 

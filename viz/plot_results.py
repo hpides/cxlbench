@@ -27,6 +27,7 @@ if __name__ == "__main__":
 
     parser.add_argument("results", type=valid_path, help="path to the results directory")
     parser.add_argument("-o", "--output_dir", help="path to the output directory")
+    parser.add_argument("--no_plots", action="store_true")
     args = parser.parse_args()
 
     # get the output directory paths
@@ -36,6 +37,7 @@ if __name__ == "__main__":
 
     output_dir = os.path.abspath(output_dir_string)
     results = args.results
+    no_plots = args.no_plots
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -43,5 +45,5 @@ if __name__ == "__main__":
         sys.exit("Result paths have to be directories.")
 
     # create plots 
-    plotter = PlotGenerator(results, output_dir)
+    plotter = PlotGenerator(results, output_dir, no_plots)
     plotter.process_matrix_jsons()
