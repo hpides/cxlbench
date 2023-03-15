@@ -38,11 +38,16 @@ class PlotGenerator:
     # be located on different machines, devices, and NUMA nodes.
     def process_matrix_jsons(self):
         # collect jsons containing matrix arguments
+        matrix_jsons = None
         if os.path.isfile(self.results):
-            sys.exit("Result path has to be a directory.")
+            if not self.results.endswith(".json"):
+                sys.exit("Result path is a single file but is not a .json file.")
+            matrix_jsons = [self.results]
+        else:
+            matrix_jsons = [path for path in glob.glob(self.results + "/*.json")]
+
 
         # create json file list
-        matrix_jsons = [path for path in glob.glob(self.results + "/*.json")]
 
         dfs = []
         for path in matrix_jsons: 
@@ -62,7 +67,14 @@ class PlotGenerator:
         
         bm_groups = df["bm_name"].unique()
         drop_columns = ["index", "bm_type", "matrix_args", "exec_mode", "memory_type", "number_partitions", \
-            "operation", "threads", "persist_instruction", "prefault_file", "random_distribution"]
+            "operation", "threads", "prefault_file"]
+
+        if "persist_instruction" in df.columns:
+            drop_columns.append("persist_instruction")
+
+        if "random_distribution" in df.columns:
+            drop_columns.append("random_distribution")
+
         for column in df.columns:
             if column in ["index", KEY_MATRIX_ARGS, KEY_THREADS]:
                 continue

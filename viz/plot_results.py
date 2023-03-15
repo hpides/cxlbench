@@ -41,9 +41,6 @@ if __name__ == "__main__":
 
     os.makedirs(output_dir, exist_ok=True)
 
-    if os.path.isfile(results):
-        sys.exit("Result paths have to be directories.")
-
     # create plots 
     plotter = PlotGenerator(results, output_dir, no_plots)
     plotter.process_matrix_jsons()
