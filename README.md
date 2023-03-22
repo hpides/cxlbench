@@ -10,12 +10,12 @@ installed in the default locations, e.g., via `apt install libnuma-dev`, you can
 Otherwise, you should briefly check out our [Build Options](#build-options) beforehand.
 
 ```shell script
-$ git clone https://github.com/hpides/perma-bench.git
-$ cd perma-bench
-$ mkdir build && cd build
+$ git clone git@github.com:mweisgut/mema-bench.git
+$ cd mema-bench
+$ mkdir build-rel-gcc-10 && cd build-rel-gcc-10
 $ cmake ..
 $ make -j
-$ ./perma-bench --path /path/to/pmem/filesystem
+$ ./perma-bench -t DRAM --numa_task <numa node id>
 ```
 
 This will create a `results` directory containing a JSON file with all benchmark results in it.
