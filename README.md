@@ -13,7 +13,7 @@ Otherwise, you should briefly check out our [Build Options](#build-options) befo
 $ git clone git@github.com:mweisgut/mema-bench.git
 $ cd mema-bench
 $ mkdir build-rel-gcc-10 && cd build-rel-gcc-10
-$ cmake ..
+$ cmake .. -DBUILD_TEST=ON -DCMAKE_C_COMPILER=gcc-10 -DCMAKE_CXX_COMPILER=g++-10
 $ make -j
 $ ./perma-bench -t DRAM --numa_task <numa node id>
 ```
