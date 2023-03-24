@@ -1,4 +1,6 @@
-# PerMA-Bench
+![cmake + test](https://github.com/mweisgut/mema-bench/actions/workflows/cmake.yml/badge.svg) ![clang format](https://github.com/mweisgut/mema-bench/actions/workflows/clang-format.yml/badge.svg)
+
+# MemA-Bench
 
 A benchmarking suite and toolset to evaluate the performance of persistent memory access.
 
@@ -25,7 +27,7 @@ In the following, we describe which build options you can provide for PerMA-Benc
 
 #### Using libnuma
 In order to get NUMA-awareness in the benchmarks, you should have `libnuma` installed in the default location, e.g.,
-via `apt install libnuma-dev` or `yum intall numactl-devel`.
+via `apt install libnuma-dev` or `yum install numactl-devel`.
 If you have `libnuma` installed at a different location, you can specify `-DNUMA_INCLUDE_PATH` and `-DNUMA_LIBRARY_PATH`
 to point to the respective headers and library in the `cmake` command.
 If you do not have `libnuma` installed, PerMA-Bench will still work, just without NUMA-awareness of the threads.
