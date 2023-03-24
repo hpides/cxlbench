@@ -132,8 +132,7 @@ void BenchmarkSuite::run_benchmarks(const PermaOptions& options) {
 
     matrix_bm_results += benchmark.get_result_as_json();
     benchmark.tear_down(false);
-    spdlog::info("Completed {0}/{1} benchmark{2}.", benchmark_count, benchmarks.size(),
-                 benchmarks.size() > 1 ? "s" : "");
+    spdlog::info("Completed {0}/{1} benchmark{2}.", bench_idx + 1, benchmarks.size(), benchmarks.size() > 1 ? "s" : "");
   }
 
   if (!benchmarks.empty()) {
