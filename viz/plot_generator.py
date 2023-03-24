@@ -104,32 +104,34 @@ class PlotGenerator:
         bm_group = df[KEY_BM_GROUP].unique()[0]
         bandwidth_plot_group = ["sequential_reads", "random_reads", "sequential_writes", "random_writes"]
         latency_plot_group = ["operation_latency"]
+        plot_title = bm_group.replace("_", " ").title()
+        legend_title = "Memory Node"
         if bm_group in bandwidth_plot_group:
             # Plot 1 (x: thread count, y: throughput)
             print("Creating barplot (# threads) for BM group {}".format(bm_group))
-            self.create_barplot(df, KEY_THREAD_COUNT, KEY_BANDWIDTH, "Number of Threads", "Throughput in GB/s", KEY_NUMA_MEMORY_NODES, "Memory Node", "{}{}_threads.pdf".format(PLOT_FILE_PREFIX, bm_group))
+            self.create_barplot(df, KEY_THREAD_COUNT, KEY_BANDWIDTH, "Number of Threads", "Throughput in GB/s", KEY_NUMA_MEMORY_NODES, plot_title, legend_title, "{}{}_threads.pdf".format(PLOT_FILE_PREFIX, bm_group))
             # Plot 2 (x: access size, y: throughput)
             df = df[df[KEY_THREAD_COUNT] == PLOT_BW_PER_ACCESS_SIZE_THREAD_COUNT]
             print("Creating barplot (access sizes) for BM group {}".format(bm_group))
-            self.create_barplot(df, KEY_ACCESS_SIZE, KEY_BANDWIDTH, "Access Size in Byte", "Throughput in GB/s", KEY_NUMA_MEMORY_NODES, "Memory Node", "{}{}_access_sizes.pdf".format(PLOT_FILE_PREFIX, bm_group))
+            self.create_barplot(df, KEY_ACCESS_SIZE, KEY_BANDWIDTH, "Access Size in Byte", "Throughput in GB/s", KEY_NUMA_MEMORY_NODES, plot_title, legend_title, "{}{}_access_sizes.pdf".format(PLOT_FILE_PREFIX, bm_group))
         elif bm_group in latency_plot_group:
             thread_counts = df[KEY_THREAD_COUNT].unique()
             for thread_count in thread_counts:
                print("Creating barplot (latency per operations) for BM group {} and thread count {}".format(bm_group, thread_count))
                df_thread = df[df[KEY_THREAD_COUNT] == thread_count] 
-               self.create_barplot(df_thread, KEY_CUSTOM_OPS, KEY_LAT_AVG, "Operations", "Latency in ns", KEY_NUMA_MEMORY_NODES, "Memory Node", "{}{}_latency_custom_ops_{}_threads.pdf".format(PLOT_FILE_PREFIX, bm_group, thread_count), True)
+               self.create_barplot(df_thread, KEY_CUSTOM_OPS, KEY_LAT_AVG, "Operations", "Latency in ns", KEY_NUMA_MEMORY_NODES, plot_title, legend_title, "{}{}_latency_custom_ops_{}_threads.pdf".format(PLOT_FILE_PREFIX, bm_group, thread_count), True)
             print("Generating ploits for latency plot group needs to be implemented.")
         else:
             sys.exit("Benchmark group '{}' is not known.".format(bm_group))
 
-    def create_barplot(self, data, x, y, x_label, y_label, hue, legend_title, filename, rotation_x_labels=False):
+    def create_barplot(self, data, x, y, x_label, y_label, hue, title, legend_title, filename, rotation_x_labels=False):
         hpi_palette = [(0.9609, 0.6563, 0), (0.8633, 0.3789, 0.0313), (0.6914, 0.0234, 0.2265)]
         palette = [hpi_palette[0], hpi_palette[2]]
 
         barplot = sns.barplot(data = data, x = x, y = y, hue = hue, errorbar = None, palette = palette, linewidth = 2, edgecolor = "k")
         barplot.set_xlabel(x_label)
         barplot.set_ylabel(y_label)
-        barplot.legend(title=legend_title)
+        barplot.set_title(title)
 
         # Set hatches
         x_distinct_val_count = len(data[x].unique())
@@ -139,7 +141,7 @@ class PlotGenerator:
             hatch_idx = int(patch_idx / x_distinct_val_count) 
             bar.set_hatch(hatches[hatch_idx])
         # Update legend so that hatches are also visible
-        barplot.legend()
+        barplot.legend(title=legend_title)
                 
         if rotation_x_labels:
           plt.xticks(rotation=15)
