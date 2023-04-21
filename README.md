@@ -137,7 +137,6 @@ bool dram_huge_pages = true;
 uint64_t min_io_chunk_size = 64 * BYTES_IN_MEGABYTE;
 ```
 
-
 ## Running Custom Memory Access Patterns
 Beside the standard workloads (sequential/random read/write), you can also specify more complex access pattern.
 These can be used to represent, e.g., data structure access.
@@ -177,4 +176,29 @@ hybrid_tree_index_update:
     exec_mode: custom
     # ...
 ```
+## Used AVX-512 Intrinsics
 
+Read: `_mm512_load_si512`
+```
+extern __m512i __cdecl _mm512_load_si512(void const* mem_addr);
+```
+
+>Load 512-bits of integer data from memory into destination.
+>
+>mem_addr must be aligned on a 64-byte boundary or a general-protection exception will be generated.
+
+Write Non-Temporal: `_mm512_stream_si512`
+```
+extern void __cdecl _mm512_stream_si512(void* mem_addr, __m512i a);
+```
+>Store 512-bits of integer data from a into memory using a non-temporal memory hint.
+
+Write: `_mm512_store_si512`
+```
+extern void __cdecl _mm512_store_si512(void* mem_addr, __m512i a);
+```
+>Store 512-bits of integer data from a into memory.
+>
+>mem_addr must be aligned on a 64-byte boundary or a general-protection exception will be generated.
+
+Based on Intel's documentation [Intrinsics for Integer Load and Store Operations](https://www.intel.com/content/www/us/en/docs/cpp-compiler/developer-guide-reference/2021-8/intrinsics-for-integer-load-and-store-operations.html)
