@@ -5,8 +5,10 @@
 #include <filesystem>
 #include <fstream>
 
+#include "benchmark_config.hpp"
 #include "benchmark_factory.hpp"
 #include "gtest/gtest.h"
+#include "test_utils.hpp"
 
 namespace perma {
 
@@ -16,6 +18,7 @@ constexpr auto TEST_SINGLE_CONFIG_FILE_RANDOM = "test_random.yaml";
 constexpr auto TEST_PAR_CONFIG_FILE_SEQ_RANDOM = "test_parallel_seq_random.yaml";
 constexpr auto TEST_PAR_CONFIG_FILE_MATRIX = "test_parallel_matrix.yaml";
 constexpr auto TEST_CUSTOM_OPS_MATRIX = "test_custom_ops.yaml";
+constexpr auto TEST_INVALID_NUMA_MEMORY_NODES = "test_invalid_numa_memory_nodes.yaml";
 
 class ConfigTest : public ::testing::Test {
  protected:
@@ -35,6 +38,7 @@ class ConfigTest : public ::testing::Test {
     config_par_file_seq_random = BenchmarkFactory::get_config_files(test_config_path / TEST_PAR_CONFIG_FILE_SEQ_RANDOM);
     config_par_file_matrix = BenchmarkFactory::get_config_files(test_config_path / TEST_PAR_CONFIG_FILE_MATRIX);
     config_custom_ops_matrix = BenchmarkFactory::get_config_files(test_config_path / TEST_CUSTOM_OPS_MATRIX);
+    config_invalid_numa_memory_nodes = BenchmarkFactory::get_config_files(test_config_path / TEST_INVALID_NUMA_MEMORY_NODES);
   }
 
   void TearDown() override { std::ofstream empty_log(test_logger_path, std::ostream::trunc); }
@@ -63,6 +67,7 @@ class ConfigTest : public ::testing::Test {
   std::vector<YAML::Node> config_par_file_seq_random;
   std::vector<YAML::Node> config_par_file_matrix;
   std::vector<YAML::Node> config_custom_ops_matrix;
+  std::vector<YAML::Node> config_invalid_numa_memory_nodes;
   BenchmarkConfig bm_config;
   static std::filesystem::path test_logger_path;
 };
@@ -97,9 +102,9 @@ TEST_F(ConfigTest, SingleDecodeSequential) {
   EXPECT_EQ(bm_config.persist_instruction, bm_config_default.persist_instruction);
   EXPECT_EQ(bm_config.number_partitions, bm_config_default.number_partitions);
   EXPECT_EQ(bm_config.prefault_file, bm_config_default.prefault_file);
-  EXPECT_EQ(bm_config.numa_pattern, bm_config_default.numa_pattern);
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
+  EXPECT_EQ(bm_config.numa_memory_nodes, (NumaNodeIDs{0, 1}));
 }
 
 TEST_F(ConfigTest, DecodeRandom) {
@@ -126,10 +131,10 @@ TEST_F(ConfigTest, DecodeRandom) {
   EXPECT_EQ(bm_config.number_partitions, bm_config_default.number_partitions);
   EXPECT_EQ(bm_config.number_threads, bm_config_default.number_threads);
   EXPECT_EQ(bm_config.prefault_file, bm_config_default.prefault_file);
-  EXPECT_EQ(bm_config.numa_pattern, bm_config_default.numa_pattern);
   EXPECT_EQ(bm_config.min_io_chunk_size, bm_config_default.min_io_chunk_size);
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
+  EXPECT_TRUE(bm_config.numa_memory_nodes.empty());
 }
 
 TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
@@ -162,9 +167,9 @@ TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
   EXPECT_EQ(bm_config.persist_instruction, bm_config_default.persist_instruction);
   EXPECT_EQ(bm_config.number_partitions, bm_config_default.number_partitions);
   EXPECT_EQ(bm_config.prefault_file, bm_config_default.prefault_file);
-  EXPECT_EQ(bm_config.numa_pattern, bm_config_default.numa_pattern);
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
+  EXPECT_EQ(bm_config.numa_memory_nodes, (NumaNodeIDs{0}));
 
   bm_config = par_benchmarks.at(0).get_benchmark_configs()[1];
 
@@ -184,10 +189,10 @@ TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
   EXPECT_EQ(bm_config.zipf_alpha, bm_config_default.zipf_alpha);
   EXPECT_EQ(bm_config.number_partitions, bm_config_default.number_partitions);
   EXPECT_EQ(bm_config.prefault_file, bm_config_default.prefault_file);
-  EXPECT_EQ(bm_config.numa_pattern, bm_config_default.numa_pattern);
   EXPECT_EQ(bm_config.min_io_chunk_size, bm_config_default.min_io_chunk_size);
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
+  EXPECT_EQ(bm_config.numa_memory_nodes, (NumaNodeIDs{2, 3}));
 }
 
 TEST_F(ConfigTest, DecodeMatrix) {
@@ -229,10 +234,10 @@ TEST_F(ConfigTest, DecodeMatrix) {
     EXPECT_EQ(config.persist_instruction, bm_config_default.persist_instruction);
     EXPECT_EQ(config.number_partitions, bm_config_default.number_partitions);
     EXPECT_EQ(config.prefault_file, bm_config_default.prefault_file);
-    EXPECT_EQ(config.numa_pattern, bm_config_default.numa_pattern);
     EXPECT_EQ(config.min_io_chunk_size, bm_config_default.min_io_chunk_size);
     EXPECT_EQ(config.run_time, bm_config_default.run_time);
     EXPECT_EQ(config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
+    EXPECT_EQ(config.numa_memory_nodes, (NumaNodeIDs{0, 3}));
   }
 }
 
@@ -282,10 +287,10 @@ TEST_F(ConfigTest, DecodeCustomOperationsMatrix) {
     EXPECT_EQ(config.zipf_alpha, bm_config_default.zipf_alpha);
     EXPECT_EQ(config.number_partitions, bm_config_default.number_partitions);
     EXPECT_EQ(config.prefault_file, bm_config_default.prefault_file);
-    EXPECT_EQ(config.numa_pattern, bm_config_default.numa_pattern);
     EXPECT_EQ(config.min_io_chunk_size, bm_config_default.min_io_chunk_size);
     EXPECT_EQ(config.run_time, bm_config_default.run_time);
     EXPECT_EQ(config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
+    EXPECT_TRUE(bm_config.numa_memory_nodes.empty());
   }
 }
 
@@ -330,10 +335,10 @@ TEST_F(ConfigTest, ParallelDecodeMatrix) {
     EXPECT_EQ(config_one.persist_instruction, bm_config_default.persist_instruction);
     EXPECT_EQ(config_one.number_partitions, bm_config_default.number_partitions);
     EXPECT_EQ(config_one.prefault_file, bm_config_default.prefault_file);
-    EXPECT_EQ(config_one.numa_pattern, bm_config_default.numa_pattern);
     EXPECT_EQ(config_one.min_io_chunk_size, bm_config_default.min_io_chunk_size);
     EXPECT_EQ(config_one.run_time, bm_config_default.run_time);
     EXPECT_EQ(config_one.latency_sample_frequency, bm_config_default.latency_sample_frequency);
+    EXPECT_TRUE(bm_config.numa_memory_nodes.empty());
 
     EXPECT_EQ(config_two.memory_range, 10737418240);
     EXPECT_EQ(config_two.exec_mode, Mode::Sequential);
@@ -348,11 +353,16 @@ TEST_F(ConfigTest, ParallelDecodeMatrix) {
     EXPECT_EQ(config_two.zipf_alpha, bm_config_default.zipf_alpha);
     EXPECT_EQ(config_two.number_partitions, bm_config_default.number_partitions);
     EXPECT_EQ(config_two.prefault_file, bm_config_default.prefault_file);
-    EXPECT_EQ(config_two.numa_pattern, bm_config_default.numa_pattern);
     EXPECT_EQ(config_two.min_io_chunk_size, bm_config_default.min_io_chunk_size);
     EXPECT_EQ(config_two.run_time, bm_config_default.run_time);
     EXPECT_EQ(config_two.latency_sample_frequency, bm_config_default.latency_sample_frequency);
+    EXPECT_TRUE(bm_config.numa_memory_nodes.empty());
   }
+}
+
+TEST_F(ConfigTest, SingleDecodeInvalidNumaMemoryNodes) {
+  // Throw since the `numa_memory_node` YAML field is not a sequence, i.e., [a, b, c], but a single value.
+  EXPECT_THROW(BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_invalid_numa_memory_nodes, true), std::invalid_argument);
 }
 
 TEST_F(ConfigTest, CheckDefaultConfig) { bm_config.validate(); }
@@ -455,6 +465,152 @@ TEST_F(ConfigTest, MissingDRAMMemoryRangeForCustomOp) {
   bm_config.custom_operations = {CustomOp{.type = Operation::Read, .is_pmem = false, .size = 64}};
   EXPECT_THROW(bm_config.validate(), PermaException);
   check_log_for_critical("dram_memory_range > 0 if the benchmark contains DRAM operations");
+}
+
+TEST_F(ConfigTest, AsJsonReadSequential) {
+  auto bm_config = BenchmarkConfig{};
+  bm_config.operation = Operation::Read;
+  bm_config.exec_mode = Mode::Sequential;
+
+  const auto json = bm_config.as_json();
+  ASSERT_JSON_TRUE(json, contains("memory_type"));
+  EXPECT_EQ(json["memory_type"], "pmem");
+  ASSERT_JSON_TRUE(json, contains("memory_range"));
+  EXPECT_EQ(json["memory_range"].get<uint64_t>(), bm_config.memory_range);
+  ASSERT_JSON_TRUE(json, contains("exec_mode"));
+  EXPECT_EQ(json["exec_mode"], "sequential");
+  ASSERT_JSON_TRUE(json, contains("numa_memory_nodes"));
+  EXPECT_EQ(json["numa_memory_nodes"].get<NumaNodeIDs>(), bm_config.numa_memory_nodes);
+  ASSERT_JSON_TRUE(json, contains("number_partitions"));
+  EXPECT_EQ(json["number_partitions"].get<uint16_t>(), bm_config.number_partitions);
+  ASSERT_JSON_TRUE(json, contains("number_threads"));
+  EXPECT_EQ(json["number_threads"].get<uint16_t>(), bm_config.number_threads);
+  ASSERT_JSON_TRUE(json, contains("prefault_file"));
+  EXPECT_EQ(json["prefault_file"].get<bool>(), bm_config.prefault_file);
+  ASSERT_JSON_TRUE(json, contains("min_io_chunk_size"));
+  EXPECT_EQ(json["min_io_chunk_size"].get<uint64_t>(), bm_config.min_io_chunk_size);
+  // Relevant for hybrid memory regions
+  ASSERT_JSON_FALSE(json, contains("dram_memory_range"));
+  ASSERT_JSON_FALSE(json, contains("dram_operation_ratio"));
+  ASSERT_JSON_FALSE(json, contains("dram_huge_pages"));
+  // Relevant for non-custom operations 
+  ASSERT_JSON_TRUE(json, contains("access_size"));
+  EXPECT_EQ(json["access_size"].get<uint32_t>(), bm_config.access_size);
+  ASSERT_JSON_TRUE(json, contains("operation"));
+  EXPECT_EQ(json["operation"], "read");
+  // Relevant for writes
+  ASSERT_JSON_FALSE(json, contains("persist_instruction")); 
+  // Relevant for random execution mode 
+  ASSERT_JSON_FALSE(json, contains("number_operations")); 
+  ASSERT_JSON_FALSE(json, contains("random_distribution")); 
+  ASSERT_JSON_FALSE(json, contains("zipf_alpha")); 
+  // Relevant for custom operations
+  ASSERT_JSON_FALSE(json, contains("custom_operations")); 
+  // Relevant if run_time > 0
+  ASSERT_JSON_FALSE(json, contains("run_time")); 
+}
+
+TEST_F(ConfigTest, AsJsonWriteRandomHybrid) {
+  auto bm_config = BenchmarkConfig{};
+  bm_config.operation = Operation::Write;
+  bm_config.exec_mode = Mode::Random;
+  bm_config.random_distribution = RandomDistribution::Zipf;
+  bm_config.is_hybrid = true;
+
+  const auto json = bm_config.as_json();
+  ASSERT_JSON_TRUE(json, contains("memory_type"));
+  EXPECT_EQ(json["memory_type"], "pmem");
+  ASSERT_JSON_TRUE(json, contains("memory_range"));
+  EXPECT_EQ(json["memory_range"].get<uint64_t>(), bm_config.memory_range);
+  ASSERT_JSON_TRUE(json, contains("exec_mode"));
+  EXPECT_EQ(json["exec_mode"], "random");
+  ASSERT_JSON_TRUE(json, contains("numa_memory_nodes"));
+  EXPECT_EQ(json["numa_memory_nodes"].get<NumaNodeIDs>(), bm_config.numa_memory_nodes);
+  ASSERT_JSON_TRUE(json, contains("number_partitions"));
+  EXPECT_EQ(json["number_partitions"].get<uint16_t>(), bm_config.number_partitions);
+  ASSERT_JSON_TRUE(json, contains("number_threads"));
+  EXPECT_EQ(json["number_threads"].get<uint16_t>(), bm_config.number_threads);
+  ASSERT_JSON_TRUE(json, contains("prefault_file"));
+  EXPECT_EQ(json["prefault_file"].get<bool>(), bm_config.prefault_file);
+  ASSERT_JSON_TRUE(json, contains("min_io_chunk_size"));
+  EXPECT_EQ(json["min_io_chunk_size"].get<uint64_t>(), bm_config.min_io_chunk_size);
+  // Relevant for hybrid memory regions
+  ASSERT_JSON_TRUE(json, contains("dram_memory_range"));
+  EXPECT_EQ(json["dram_memory_range"].get<uint64_t>(), bm_config.dram_memory_range);
+  ASSERT_JSON_TRUE(json, contains("dram_operation_ratio"));
+  EXPECT_EQ(json["dram_operation_ratio"].get<double>(), bm_config.dram_operation_ratio);
+  ASSERT_JSON_TRUE(json, contains("dram_huge_pages"));
+  EXPECT_EQ(json["dram_huge_pages"].get<bool>(), bm_config.dram_huge_pages);
+  // Relevant for non-custom operations 
+  ASSERT_JSON_TRUE(json, contains("access_size"));
+  EXPECT_EQ(json["access_size"].get<uint32_t>(), bm_config.access_size);
+  ASSERT_JSON_TRUE(json, contains("operation"));
+  EXPECT_EQ(json["operation"], "write");
+  // Relevant for writes
+  ASSERT_JSON_TRUE(json, contains("persist_instruction")); 
+  EXPECT_EQ(json["persist_instruction"], "nocache");
+  // Relevant for random execution mode 
+  ASSERT_JSON_TRUE(json, contains("number_operations")); 
+  EXPECT_EQ(json["number_operations"].get<uint64_t>(), bm_config.number_operations);
+  ASSERT_JSON_TRUE(json, contains("random_distribution")); 
+  EXPECT_EQ(json["random_distribution"], "zipf");
+  ASSERT_JSON_TRUE(json, contains("zipf_alpha")); 
+  EXPECT_EQ(json["zipf_alpha"].get<double>(), bm_config.zipf_alpha);
+  // Relevant for custom operations
+  ASSERT_JSON_FALSE(json, contains("custom_operations")); 
+  // Relevant if run_time > 0
+  ASSERT_JSON_FALSE(json, contains("run_time")); 
+}
+
+TEST_F(ConfigTest, AsJsonWriteCustom) {
+  auto bm_config = BenchmarkConfig{};
+  bm_config.operation = Operation::Write;
+  bm_config.exec_mode = Mode::Custom;
+
+  const auto json = bm_config.as_json();
+  ASSERT_JSON_TRUE(json, contains("memory_type"));
+  EXPECT_EQ(json["memory_type"], "pmem");
+  ASSERT_JSON_TRUE(json, contains("memory_range"));
+  EXPECT_EQ(json["memory_range"].get<uint64_t>(), bm_config.memory_range);
+  ASSERT_JSON_TRUE(json, contains("exec_mode"));
+  EXPECT_EQ(json["exec_mode"], "custom");
+  ASSERT_JSON_TRUE(json, contains("numa_memory_nodes"));
+  EXPECT_EQ(json["numa_memory_nodes"].get<NumaNodeIDs>(), bm_config.numa_memory_nodes);
+  ASSERT_JSON_TRUE(json, contains("number_partitions"));
+  EXPECT_EQ(json["number_partitions"].get<uint16_t>(), bm_config.number_partitions);
+  ASSERT_JSON_TRUE(json, contains("number_threads"));
+  EXPECT_EQ(json["number_threads"].get<uint16_t>(), bm_config.number_threads);
+  ASSERT_JSON_TRUE(json, contains("prefault_file"));
+  EXPECT_EQ(json["prefault_file"].get<bool>(), bm_config.prefault_file);
+  ASSERT_JSON_TRUE(json, contains("min_io_chunk_size"));
+  EXPECT_EQ(json["min_io_chunk_size"].get<uint64_t>(), bm_config.min_io_chunk_size);
+  // Relevant for hybrid memory regions
+  ASSERT_JSON_FALSE(json, contains("dram_memory_range"));
+  ASSERT_JSON_FALSE(json, contains("dram_operation_ratio"));
+  ASSERT_JSON_FALSE(json, contains("dram_huge_pages"));
+  // Relevant for non-custom operations 
+  ASSERT_JSON_FALSE(json, contains("access_size"));
+  ASSERT_JSON_FALSE(json, contains("operation"));
+  // Relevant for non-custom writes
+  ASSERT_JSON_FALSE(json, contains("persist_instruction")); 
+  // Relevant for random execution mode 
+  ASSERT_JSON_FALSE(json, contains("random_distribution")); 
+  ASSERT_JSON_FALSE(json, contains("zipf_alpha")); 
+  // Relevant for custom operations
+  ASSERT_JSON_TRUE(json, contains("number_operations")); 
+  EXPECT_EQ(json["number_operations"].get<uint64_t>(), bm_config.number_operations);
+  ASSERT_JSON_TRUE(json, contains("custom_operations")); 
+  EXPECT_EQ(json["custom_operations"], (CustomOp::all_to_string(bm_config.custom_operations)));
+  // Relevant if run_time > 0
+  ASSERT_JSON_FALSE(json, contains("run_time")); 
+}
+
+TEST_F(ConfigTest, AsJsonWithRuntime) {
+  auto bm_config = BenchmarkConfig{};
+  bm_config.run_time = 42;
+  const auto json = bm_config.as_json();
+  ASSERT_JSON_TRUE(json, contains("run_time")); 
+  EXPECT_EQ(json["run_time"].get<uint64_t>(), 42);
 }
 
 }  // namespace perma

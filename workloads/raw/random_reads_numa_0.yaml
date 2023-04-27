@@ -1,12 +1,13 @@
 # Represents the database workload index lookup (random reads)
 random_reads:
   matrix:
-    number_threads: [ 1, 4, 8, 16, 32 ]
-    access_size: [ 64, 256, 1024 ]
+    number_threads: [ 1, 2, 4, 8, 16, 32, 64 ]
+    access_size: [ 64, 128, 256, 512 ]
 
   args:
     operation: read
-    memory_range: 10G
-    number_operations: 200000000
+    memory_range: 50G
+    number_operations: 1000000000
     exec_mode: random
     random_distribution: uniform
+    numa_memory_nodes: [ 0 ]

@@ -1,4 +1,7 @@
 .idea/
+build/
+build_*/
+build-*/
 cmake-build-*
 results*/
 venv/

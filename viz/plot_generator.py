@@ -144,7 +144,7 @@ class PlotGenerator:
         barplot.legend(title=legend_title)
                 
         if rotation_x_labels:
-          plt.xticks(rotation=15)
+          plt.xticks(rotation=90)
 
         plt.tight_layout()
         fig = barplot.get_figure()

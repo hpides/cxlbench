@@ -11,13 +11,14 @@
 #include <thread>
 
 #include "json.hpp"
+#include "numa.hpp"
 #include "read_write_ops.hpp"
 
 namespace perma::utils {
 
 void setPMEM_MAP_FLAGS(const int flags) { PMEM_MAP_FLAGS = flags; }
 
-char* map_pmem(const std::filesystem::path& file, size_t expected_length) {
+char* map_pmem(const std::filesystem::path& file, const size_t expected_length) {
   // Do not mmap any data if length is 0
   if (expected_length == 0) {
     return nullptr;
@@ -38,7 +39,7 @@ char* map_pmem(const std::filesystem::path& file, size_t expected_length) {
   return static_cast<char*>(addr);
 }
 
-char* map_dram(const size_t expected_length, const bool use_huge_pages) {
+char* map_dram(const size_t expected_length, const bool use_huge_pages, const NumaNodeIDs& numa_memory_nodes) {
   // Do not mmap any data if length is 0
   if (expected_length == 0) {
     return nullptr;
@@ -48,6 +49,12 @@ char* map_dram(const size_t expected_length, const bool use_huge_pages) {
   if (addr == MAP_FAILED || addr == nullptr) {
     spdlog::critical("Could not map anonymous DRAM region. Error: {}", std::strerror(errno));
     crash_exit();
+  }
+
+  // If no memory nodes are specified, the system will use the 'local allocation' policy, see
+  // https://docs.kernel.org/admin-guide/mm/numa_memory_policy.html
+  if (!numa_memory_nodes.empty()) {
+    set_memory_on_numa_nodes(addr, expected_length, numa_memory_nodes);
   }
 
   if (use_huge_pages) {
@@ -90,22 +97,22 @@ std::filesystem::path generate_random_file_name(const std::filesystem::path& bas
   return base_dir / file;
 }
 
-void generate_read_data(char* addr, const uint64_t memory_range) {
-  if (memory_range == 0) {
+void generate_read_data(char* addr, const uint64_t memory_size) {
+  if (memory_size == 0) {
     return;
   }
 
-  spdlog::debug("Generating {} GB of random data to read.", memory_range / ONE_GB);
+  spdlog::debug("Generating {} GB of random data to read.", memory_size / ONE_GB);
   std::vector<std::thread> thread_pool;
   thread_pool.reserve(NUM_UTIL_THREADS - 1);
-  uint64_t thread_memory_range = memory_range / NUM_UTIL_THREADS;
+  uint64_t thread_memory_size = memory_size / NUM_UTIL_THREADS;
   for (uint8_t thread_count = 0; thread_count < NUM_UTIL_THREADS - 1; thread_count++) {
-    char* from = addr + thread_count * thread_memory_range;
-    const char* to = addr + (thread_count + 1) * thread_memory_range;
+    char* from = addr + thread_count * thread_memory_size;
+    const char* to = addr + (thread_count + 1) * thread_memory_size;
     thread_pool.emplace_back(rw_ops::write_data, from, to);
   }
 
-  rw_ops::write_data(addr + (NUM_UTIL_THREADS - 1) * thread_memory_range, addr + memory_range);
+  rw_ops::write_data(addr + (NUM_UTIL_THREADS - 1) * thread_memory_size, addr + memory_size);
 
   // wait for all threads
   for (std::thread& thread : thread_pool) {
@@ -114,13 +121,13 @@ void generate_read_data(char* addr, const uint64_t memory_range) {
   spdlog::debug("Finished generating data.");
 }
 
-void prefault_file(char* addr, const uint64_t memory_range, const uint64_t page_size) {
-  if (memory_range == 0) {
+void prefault_file(char* addr, const uint64_t memory_size, const uint64_t page_size) {
+  if (memory_size == 0) {
     return;
   }
 
   spdlog::debug("Pre-faulting data.");
-  const size_t num_prefault_pages = memory_range / page_size;
+  const size_t num_prefault_pages = memory_size / page_size;
   for (size_t prefault_offset = 0; prefault_offset < num_prefault_pages; ++prefault_offset) {
     addr[prefault_offset * page_size] = '\0';
   }

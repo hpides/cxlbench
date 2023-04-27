@@ -10,6 +10,9 @@
 
 namespace perma {
 
+using NumaNodeID = uint16_t;
+using NumaNodeIDs = std::vector<NumaNodeID>;
+
 enum class Mode : uint8_t { Sequential, Sequential_Desc, Random, Custom };
 
 enum class RandomDistribution : uint8_t { Uniform, Zipf };
@@ -17,8 +20,6 @@ enum class RandomDistribution : uint8_t { Uniform, Zipf };
 enum class PersistInstruction : uint8_t { Cache, CacheInvalidate, NoCache, None };
 
 enum class Operation : uint8_t { Read, Write };
-
-enum class NumaPattern : uint8_t { Near, Far };
 
 // We assume 2^30 for GB and not 10^9
 static constexpr size_t BYTES_IN_MEGABYTE = 1024u * 1024;
@@ -107,8 +108,8 @@ struct BenchmarkConfig {
    * threads, i.e., each thread has its own partition. Default is set to 1.  */
   uint16_t number_partitions = 1;
 
-  /** Define whether the memory access should be NUMA-local (`near`) or -remote (`far`). */
-  NumaPattern numa_pattern = NumaPattern::Near;
+  /** Specifies the set of memory NUMA nodes on which benchmark data is to be allocated. */
+  NumaNodeIDs numa_memory_nodes;
 
   /** Distribution to use for `Mode::Random`, i.e., uniform of zipfian. */
   RandomDistribution random_distribution = RandomDistribution::Uniform;
@@ -157,7 +158,6 @@ struct ConfigEnums {
   static const std::unordered_map<std::string, Mode> str_to_mode;
   static const std::unordered_map<std::string, Operation> str_to_operation;
   static const std::unordered_map<std::string, OpLocation> str_to_op_location;
-  static const std::unordered_map<std::string, NumaPattern> str_to_numa_pattern;
   static const std::unordered_map<std::string, PersistInstruction> str_to_persist_instruction;
   static const std::unordered_map<std::string, RandomDistribution> str_to_random_distribution;
 

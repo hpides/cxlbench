@@ -1,0 +1,26 @@
+operation_latency:
+  matrix:
+    number_threads: [ 1, 2, 4, 8, 16, 32, 64 ]
+    custom_operations:
+    # 64 Byte
+      - "r_64"
+      - "r_64,w_64_none"
+    # 256 Byte
+      - "r_256"
+      - "r_256,w_256_none"
+    # 512 Byte
+      - "r_512"
+      - "r_512,w_512_none"
+    # 1024 Byte
+      - "r_1024"
+      - "r_1024,w_1024_none"
+    # 2048 Byte
+      - "r_2048"
+      - "r_2048,w_2048_none"
+
+  args:
+    memory_range: 50G
+    number_operations: 1000000000
+    latency_sample_frequency: 5000
+    exec_mode: custom
+    numa_memory_nodes: [0]

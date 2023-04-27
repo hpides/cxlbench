@@ -22,6 +22,8 @@ $ ./perma-bench -t DRAM --numa_task <numa node id>
 
 This will create a `results` directory containing a JSON file with all benchmark results in it.
 
+Note that we currently require a GCC 10 build as long as issue #33 is not fixed.
+
 ### Build Options
 In the following, we describe which build options you can provide for PerMA-Bench and how to configure them.
 
@@ -76,14 +78,14 @@ This code is taken from [src/benchmark_config.hpp](src/benchmark_config.hpp).
 /** Represents the size of an individual memory access in Byte. Must be a power of two. */
 uint32_t access_size = 256;
 
-/** Represents the total PMem memory range to use for the benchmark. Must be a multiple of `access_size`. */
+/** Represents the total PMem memory range to use for the benchmark. Must be a multiple of `access_size`.  */
 uint64_t memory_range = 10 * BYTES_IN_GIGABYTE;  // 10 GiB
 
-/** Represents the total DRAM memory range to use for the benchmark. Must be a multiple of `access_size`. */
+/** Represents the total DRAM memory range to use for the benchmark. Must be a multiple of `access_size`.  */
 uint64_t dram_memory_range = 0;
 
 /** Represents the ratio of DRAM IOOperations to PMem IOOperations. Must only contain one digit after decimal point,
-* i.e., 0.1 or 0.2. */
+ * i.e., 0.1 or 0.2. */
 double dram_operation_ratio = 0.0;
 
 /** Represents the number of random access / custom operations to perform. Can *not* be set for sequential access. */
@@ -95,45 +97,45 @@ uint16_t number_threads = 1;
 /** Alternative measure to end a benchmark by letting is run for `run_time` seconds. */
 uint64_t run_time = 0;
 
-/** Type of memory access operation to perform, i.e., read or write.
- *  Specify as string in YAML: "read" or "write". */
+/** Type of memory access operation to perform, i.e., read or write. */
 Operation operation = Operation::Read;
 
-/** Mode of execution, i.e., sequential, random, or custom. See `Mode` for all options.
- *  Specify as string in YAML: "sequential", "random", or "custom". */
+/** Mode of execution, i.e., sequential, random, or custom. See `Mode` for all options. */
 Mode exec_mode = Mode::Sequential;
 
 /** Persist instruction to use after write operations. Only works with `Operation::Write`. See
- * `PersistInstruction` for more details on available options.
- * Specify as string in YAML: "cache", "cacheinv", "nocache", "none". */
+ * `PersistInstruction` for more details on available options. */
 PersistInstruction persist_instruction = PersistInstruction::NoCache;
 
 /** Number of disjoint memory regions to partition the `memory_range` into. Must be 0 or a divisor of
-* `number_threads` i.e., one or more threads map to one partition. When set to 0, it is equal to the number of
-* threads, i.e., each thread has its own partition. Default is set to 1.  */
+ * `number_threads` i.e., one or more threads map to one partition. When set to 0, it is equal to the number of
+ * threads, i.e., each thread has its own partition. Default is set to 1.  */
 uint16_t number_partitions = 1;
 
-/** Define whether the memory access should be NUMA-local ("near") or -remote ("far"). */
-NumaPattern numa_pattern = NumaPattern::Near;
+/** Specifies the set of memory NUMA nodes on which benchmark data is to be allocated. */
+NumaNodeIDs numa_memory_nodes;
 
-/** Distribution to use for `Mode::Random`, i.e., "uniform" of "zipfian". */
+/** Distribution to use for `Mode::Random`, i.e., uniform of zipfian. */
 RandomDistribution random_distribution = RandomDistribution::Uniform;
 
 /** Zipf skew factor for `Mode::Random` and `RandomDistribution::Zipf`. */
 double zipf_alpha = 0.9;
 
+/** List of custom operations to use in `Mode::Custom`. See `CustomOp` for more details on string representation.  */
+std::vector<CustomOp> custom_operations;
+
 /** Frequency in which to sample latency of custom operations. Only works in combination with `Mode::Custom`. */
 uint64_t latency_sample_frequency = 0;
 
 /** Whether or not to prefault the memory region before writing to it. If set to false, the benchmark will include the
-* time caused by page faults on first access to the allocated memory region. */
+ * time caused by page faults on first access to the allocated memory region. */
 bool prefault_file = true;
 
 /** Whether or not to use transparent huge pages in DRAM, i.e., 2 MiB instead of regular 4 KiB pages. */
 bool dram_huge_pages = true;
 
 /** Represents the minimum size of an atomic work package. A chunk contains chunk_size / access_size number of
-* operations. Assuming the lowest bandwidth of 1 GiB/s operations per thread, 64 MiB is a ~60 ms execution unit. */
+ * operations. Assuming the lowest bandwidth of 1 GiB/s operations per thread, 64 MiB is a ~60 ms execution unit. */
 uint64_t min_io_chunk_size = 64 * BYTES_IN_MEGABYTE;
 ```
 

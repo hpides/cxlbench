@@ -145,7 +145,7 @@ include_directories(${CLI11_DIR})
 
 ##################### PerMA ####################
 add_custom_target(copy_configs
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/workloads ${CMAKE_CURRENT_BINARY_DIR}/workloads)
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/workloads/raw ${CMAKE_CURRENT_BINARY_DIR}/workloads/raw)
 
 include_directories(src)
 add_subdirectory(src)

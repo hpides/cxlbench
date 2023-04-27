@@ -91,6 +91,25 @@ bool get_size_if_present(YAML::Node& data, const std::string& name, const std::u
   return true;
 }
 
+template <typename T>
+bool get_uints_if_present(YAML::Node& data, const std::string& name, std::vector<T>& values) {
+  auto entry = data[name];
+  if (!entry) {
+    return false;
+  }
+
+  if (!entry.IsSequence()) {
+    throw std::invalid_argument("Value of key " + name + " must be a YAML sequence, i.e., [0, 2, 3].");
+  }
+
+  values.reserve(entry.size());
+  for (const auto value : entry) {
+    values.push_back(value.as<uint64_t>());
+  };
+  entry.SetTag(VISITED_TAG);
+  return true;
+}
+
 }  // namespace
 
 namespace perma {
@@ -119,11 +138,11 @@ BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
 
     num_found += get_enum_if_present(node, "exec_mode", ConfigEnums::str_to_mode, &bm_config.exec_mode);
     num_found += get_enum_if_present(node, "operation", ConfigEnums::str_to_operation, &bm_config.operation);
-    num_found += get_enum_if_present(node, "numa_pattern", ConfigEnums::str_to_numa_pattern, &bm_config.numa_pattern);
     num_found += get_enum_if_present(node, "random_distribution", ConfigEnums::str_to_random_distribution,
                                      &bm_config.random_distribution);
     num_found += get_enum_if_present(node, "persist_instruction", ConfigEnums::str_to_persist_instruction,
                                      &bm_config.persist_instruction);
+    num_found += get_uints_if_present(node, "numa_memory_nodes", bm_config.numa_memory_nodes);
 
     std::string custom_ops;
     const bool has_custom_ops = get_if_present(node, "custom_operations", &custom_ops);
@@ -245,9 +264,6 @@ void BenchmarkConfig::validate() const {
   CHECK_ARGUMENT(is_total_memory_large_enough,
                  "Each thread needs at least " + std::to_string(min_io_chunk_size) + " Bytes of memory.");
 
-  const bool is_far_numa_node_available = numa_pattern == NumaPattern::Near || has_far_numa_nodes();
-  CHECK_ARGUMENT(is_far_numa_node_available, "Cannot run far NUMA node benchmark without far NUMA nodes.");
-
   const bool has_custom_ops = exec_mode != Mode::Custom || !custom_operations.empty();
   CHECK_ARGUMENT(has_custom_ops, "Must specify custom_operations for custom execution.");
 
@@ -276,9 +292,9 @@ nlohmann::json BenchmarkConfig::as_json() const {
   config["memory_type"] = utils::get_enum_as_string(ConfigEnums::str_to_mem_type, is_pmem);
   config["memory_range"] = memory_range;
   config["exec_mode"] = utils::get_enum_as_string(ConfigEnums::str_to_mode, exec_mode);
+  config["numa_memory_nodes"] = numa_memory_nodes;
   config["number_partitions"] = number_partitions;
   config["number_threads"] = number_threads;
-  config["numa_pattern"] = utils::get_enum_as_string(ConfigEnums::str_to_numa_pattern, numa_pattern);
   config["prefault_file"] = prefault_file;
   config["min_io_chunk_size"] = min_io_chunk_size;
 
@@ -444,6 +460,10 @@ std::string CustomOp::to_string() const {
 std::string CustomOp::to_string(const CustomOp& op) { return op.to_string(); }
 
 std::string CustomOp::all_to_string(const std::vector<CustomOp>& ops) {
+  if (ops.empty()) {
+    return "";
+  }
+
   std::stringstream out;
   for (size_t i = 0; i < ops.size() - 1; ++i) {
     out << to_string(ops[i]) << ',';
@@ -488,9 +508,6 @@ const std::unordered_map<std::string, Mode> ConfigEnums::str_to_mode{{"sequentia
 
 const std::unordered_map<std::string, Operation> ConfigEnums::str_to_operation{{"read", Operation::Read},
                                                                                {"write", Operation::Write}};
-
-const std::unordered_map<std::string, NumaPattern> ConfigEnums::str_to_numa_pattern{{"near", NumaPattern::Near},
-                                                                                    {"far", NumaPattern::Far}};
 
 const std::unordered_map<std::string, PersistInstruction> ConfigEnums::str_to_persist_instruction{
     {"nocache", PersistInstruction::NoCache},

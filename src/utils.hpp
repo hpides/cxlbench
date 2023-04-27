@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "benchmark_config.hpp"
 #include "json.hpp"
 
 namespace perma {
@@ -30,23 +31,23 @@ static int DRAM_MAP_FLAGS = MAP_PRIVATE | MAP_ANONYMOUS;
 void setPMEM_MAP_FLAGS(int flags);
 
 // File-maps the given file to a memory region. No data is mapped if `expected_length` is 0.
-char* map_pmem(const std::filesystem::path& file, size_t expected_length);
+char* map_pmem(const std::filesystem::path& file, const size_t expected_length);
 
 // Maps an anonymous DRAM region. No data is mapped if `expected_length` is 0.
-char* map_dram(size_t expected_length, bool use_huge_pages);
+char* map_dram(const size_t expected_length, const bool use_huge_pages, const NumaNodeIDs& numa_memory_nodes);
 
-char* create_pmem_file(const std::filesystem::path& file, size_t length);
+char* create_pmem_file(const std::filesystem::path& file, const size_t length);
 
 std::filesystem::path generate_random_file_name(const std::filesystem::path& base_dir);
 
-void generate_read_data(char* addr, uint64_t memory_range);
+void generate_read_data(char* addr, const uint64_t memory_size);
 
-void prefault_file(char* addr, uint64_t memory_range, uint64_t page_size);
+void prefault_file(char* addr, const uint64_t memory_size, const uint64_t page_size);
 
-uint64_t duration_to_nanoseconds(std::chrono::steady_clock::duration duration);
+uint64_t duration_to_nanoseconds(const std::chrono::steady_clock::duration duration);
 
 // Returns a Zipf random variable
-uint64_t zipf(double alpha, uint64_t n);
+uint64_t zipf(const double alpha, const uint64_t n);
 double rand_val();
 
 void crash_exit();

@@ -6,4 +6,5 @@ test_seq:
     number_threads: 2
     operation: read
     min_io_chunk_size: 16384
-    numa_memory_nodes: [0, 1]
+    # Invalid because `numa_memory_nodes` needs to be a sequence, i.e., [a, b, c]
+    numa_memory_nodes: 0

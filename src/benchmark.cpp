@@ -150,7 +150,7 @@ char* Benchmark::generate_pmem_data(const BenchmarkConfig& config, const MemoryR
 }
 
 char* Benchmark::generate_dram_data(const BenchmarkConfig& config, const size_t memory_range) {
-  char* dram_data = utils::map_dram(memory_range, config.dram_huge_pages);
+  char* dram_data = utils::map_dram(memory_range, config.dram_huge_pages, config.numa_memory_nodes);
   prepare_data_file(dram_data, config, memory_range, utils::DRAM_PAGE_SIZE);
   return dram_data;
 }
@@ -242,11 +242,6 @@ void Benchmark::run_custom_ops_in_thread(ThreadRunConfig* thread_config, const B
 }
 
 void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkConfig& config) {
-  // TODO(MW) check if conflict when both explicit numa memory binding and NumaPattern::Far is set.
-  if (config.numa_pattern == NumaPattern::Far) {
-    set_to_far_cpus();
-  }
-
   if (config.exec_mode == Mode::Custom) {
     return run_custom_ops_in_thread(thread_config, config);
   }

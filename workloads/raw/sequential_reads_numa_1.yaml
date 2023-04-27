@@ -1,0 +1,13 @@
+# Represents the database workload table scan (sequential read)
+sequential_reads:
+  matrix:
+    number_threads: [ 1, 2, 4, 8, 16, 32, 64 ]
+    access_size: [ 64, 128, 256, 512 ]
+
+  args:
+    exec_mode: sequential
+    memory_range: 50G
+    operation: read
+    run_time: 20
+    numa_memory_nodes: [ 1 ]
+

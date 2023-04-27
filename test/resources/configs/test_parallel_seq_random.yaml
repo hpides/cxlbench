@@ -8,6 +8,7 @@ parallel_test:
         persist_instruction: nocache
         exec_mode: sequential
         operation: write
+        numa_memory_nodes: [2,3]
 
     buffer_read:
       args:
@@ -17,3 +18,4 @@ parallel_test:
         memory_range: 10g # 10 GiB
         number_operations: 10000000
         operation: read
+        numa_memory_nodes: [0]

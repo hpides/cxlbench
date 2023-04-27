@@ -58,6 +58,7 @@ namespace perma {
 
 void BenchmarkSuite::run_benchmarks(const PermaOptions& options) {
   std::vector<YAML::Node> configs = BenchmarkFactory::get_config_files(options.config_file);
+
   nlohmann::json results = nlohmann::json::array();
 
   // Create single benchmarks

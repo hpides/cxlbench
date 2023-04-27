@@ -6,3 +6,4 @@ test_seq_matrix:
     memory_range: 512M
     exec_mode: sequential
     operation: read
+    numa_memory_nodes: [0,3]

@@ -1,7 +1,9 @@
 #include <spdlog/spdlog.h>
 
 #include <CLI11.hpp>
+#include <map>
 
+#include "benchmark_config.hpp"
 #include "benchmark_suite.hpp"
 #include "numa.hpp"
 
@@ -28,7 +30,7 @@ int main(int argc, char** argv) {
   spdlog::set_level(spdlog::level::debug);
 #endif
 
-  CLI::App app{"PerMA-Bench: Benchmark your Persistent Memory"};
+  CLI::App app{"MemA-Bench: Benchmark your Memory"};
 
   // Set verbosity
   bool be_verbose;
@@ -44,43 +46,33 @@ int main(int argc, char** argv) {
   std::filesystem::path result_path = std::filesystem::current_path() / DEFAULT_RESULT_PATH;
   app.add_option("-r,--results", result_path, "Path to the result directory (default: " + result_path.string() + ")");
 
-  // Define NUMA nodes to pin to.
-  // This takes a list of nodes, e.g., --numa=0,1
-  std::vector<uint64_t> numa_nodes;
-  auto numa_opt =
-      app.add_option<std::vector<uint64_t>>(
-             "--numa", numa_nodes,
-             "Comma separated list of NUMA nodes to pin to, e.g., --numa=0,1 (default: determined from PMem directory)")
-          ->delimiter(',')
-          ->expected(1, 10);
-
-  // Flag if numa should be initialized.
-  bool ignore_numa;
-  auto ignore_numa_opt = app.add_flag("--no-numa", ignore_numa,
-                                      "Set this flag to ignore all NUMA related behavior for using, e.g., numactl")
-                             ->default_val(false);
+  // Define NUMA nodes to pin tasks to. This takes a list of nodes, e.g., --numa=0,1
+  NumaNodeIDs numa_task_nodes;
+  auto numa_task_opt = app.add_option("--numa_task", numa_task_nodes,
+                                      "Comma separated list of NUMA nodes to pin tasks to, e.g., --numa=0,1 "
+                                      "(default: determined from PMem directory)")
+                           ->delimiter(',')
+                           ->required()
+                           ->expected(1, 10);
 
   // Path to PMem directory
   std::filesystem::path pmem_directory;
-  auto path_opt =
-      app.add_option(
-             "-p,--path", pmem_directory,
-             "Path to empty persistent memory directory in which to perform the benchmarks, e.g., /mnt/pmem1/perma")
-          ->default_str("")
-          ->check(CLI::ExistingDirectory)
-          ->check(empty_directory);
+  auto path_opt = app.add_option("-p,--path", pmem_directory,
+                                 "Path to empty memory directory (e.g., PMem directory) in which to perform the "
+                                 "benchmarks, e.g., /mnt/pmem1/perma")
+                      ->default_str("")
+                      ->check(CLI::ExistingDirectory)
+                      ->check(empty_directory);
 
   // Flag if DRAM should be used
   bool use_dram;
-  auto dram_flg = app.add_flag("--dram", use_dram, "Set this flag to run benchmarks in DRAM")->default_val(false);
+  auto dram_flg = app.add_flag("--dram", use_dram, "Set this flag to run benchmarks in DRAM")->default_val(true);
+  ;
 
   // Do not allow path to be set if dram is set
   dram_flg->excludes(path_opt);
   // Do not allow dram flag to be set if path is set
   path_opt->excludes(dram_flg);
-  // Do not allow skipping initialization of numa and setting numa nodes
-  ignore_numa_opt->excludes(numa_opt);
-  numa_opt->excludes(ignore_numa_opt);
 
   try {
     app.parse(argc, argv);
@@ -92,12 +84,19 @@ int main(int argc, char** argv) {
     return app.exit(e);
   }
 
+  // TODO(MW) remove this while getting rid of the binary memory type switch.
+  // For now, we only support DRAM mode.
+  if (!use_dram) {
+    spdlog::error("PMem was chosen. We currently only support DRAM benchmarks.");
+    exit(1);
+  }
+
   if (be_verbose) {
     spdlog::set_level(spdlog::level::debug);
   }
 
   // Make sure that the benchmarks are NUMA-aware. Setting this in the main thread will inherit to all child threads.
-  init_numa(pmem_directory, numa_nodes, use_dram, ignore_numa);
+  init_numa(numa_task_nodes);
 
   // Run the actual benchmarks after parsing and validating them.
   const std::string run_location = use_dram ? "DRAM" : pmem_directory.string();
