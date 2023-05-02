@@ -121,8 +121,11 @@ void BenchmarkSuite::run_benchmarks(const PermaOptions& options) {
     }
 
     benchmark.generate_data();
+    spdlog::debug("Finished generating data.");
     benchmark.set_up();
+    spdlog::debug("Finished setting up benchmark.");
     const bool success = benchmark.run();
+    spdlog::debug("Finished running benchmark.");
     previous_bm = &benchmark;
 
     if (!success) {

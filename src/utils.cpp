@@ -55,18 +55,35 @@ char* map_dram(const size_t expected_length, const bool use_huge_pages, const Nu
   // https://docs.kernel.org/admin-guide/mm/numa_memory_policy.html
   if (!numa_memory_nodes.empty()) {
     set_memory_on_numa_nodes(addr, expected_length, numa_memory_nodes);
+
+    auto nodes_to_string = [](const auto nodes) {
+      auto ss = std::stringstream{};
+      if (!nodes.empty()) {
+        std::copy(nodes.begin(), nodes.end() - 1, std::ostream_iterator<NumaNodeID>(ss, ", "));
+        ss << nodes.back();
+      }
+      return ss.str();
+    };
+    spdlog::debug("Finished binding memory region of size {} to NUMA nodes {}.", expected_length,
+                  nodes_to_string(numa_memory_nodes));
+  } else {
+    spdlog::debug("Did not bind memory to NUMA nodes: no NUMA nodes given.");
   }
 
   if (use_huge_pages) {
     if (madvise(addr, expected_length, MADV_HUGEPAGE) == -1) {
       spdlog::critical("madavise for DRAM huge pages failed. Error: {}", std::strerror(errno));
       crash_exit();
+    } else {
+      spdlog::debug("Enabled Transparent Huge Pages for the given memory region.");
     }
   } else {
     // Explicitly don't use huge pages.
     if (madvise(addr, expected_length, MADV_NOHUGEPAGE) == -1) {
       spdlog::critical("madavise for DRAM no huge pages failed. Error: {}", std::strerror(errno));
       crash_exit();
+    } else {
+      spdlog::debug("Prohibited Transparent Huge Pages for the given memory region.");
     }
   }
 
@@ -99,6 +116,7 @@ std::filesystem::path generate_random_file_name(const std::filesystem::path& bas
 
 void generate_read_data(char* addr, const uint64_t memory_size) {
   if (memory_size == 0) {
+    spdlog::debug("Did not generate data as the memory size was 0.");
     return;
   }
 
@@ -123,6 +141,7 @@ void generate_read_data(char* addr, const uint64_t memory_size) {
 
 void prefault_file(char* addr, const uint64_t memory_size, const uint64_t page_size) {
   if (memory_size == 0) {
+    spdlog::debug("Did not prefault the memory region as the memory size was 0.");
     return;
   }
 

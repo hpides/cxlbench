@@ -151,7 +151,9 @@ char* Benchmark::generate_pmem_data(const BenchmarkConfig& config, const MemoryR
 
 char* Benchmark::generate_dram_data(const BenchmarkConfig& config, const size_t memory_range) {
   char* dram_data = utils::map_dram(memory_range, config.dram_huge_pages, config.numa_memory_nodes);
+  spdlog::debug("Finished mapping DRAM memory range.");
   prepare_data_file(dram_data, config, memory_range, utils::DRAM_PAGE_SIZE);
+  spdlog::debug("Finished preparing DRAM memory range.");
   return dram_data;
 }
 
@@ -160,10 +162,12 @@ void Benchmark::prepare_data_file(char* file_data, const BenchmarkConfig& config
   if (config.contains_read_op()) {
     // If we read data in this benchmark, we need to generate it first.
     utils::generate_read_data(file_data, memory_range);
+    spdlog::debug("Finished generating read data.");
   }
 
   if (config.contains_write_op() && config.prefault_file) {
     utils::prefault_file(file_data, memory_range, page_size);
+    spdlog::debug("Finished memory range.");
   }
 }
 
