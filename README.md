@@ -17,7 +17,7 @@ $ cd mema-bench
 $ mkdir build-rel-gcc-10 && cd build-rel-gcc-10
 $ cmake .. -DBUILD_TEST=ON -DCMAKE_C_COMPILER=gcc-10 -DCMAKE_CXX_COMPILER=g++-10
 $ make -j
-$ ./perma-bench -t DRAM --numa_task <numa node id>
+$ ./perma-bench --dram --numa_task <numa node id>
 ```
 
 This will create a `results` directory containing a JSON file with all benchmark results in it.
