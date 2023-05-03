@@ -28,6 +28,7 @@ jobs:
 
     - name: Create Build Environment
       run: |
+        sudo apt install -y libnuma-dev
         cmake -E make_directory ${{runner.workspace}}/build-gcc
         cmake -E make_directory ${{runner.workspace}}/build-clang
 

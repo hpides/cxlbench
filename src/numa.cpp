@@ -28,7 +28,7 @@ void set_task_on_numa_nodes(const NumaNodeIDs& node_ids, const size_t num_numa_n
   utils::crash_exit();
 #else
   auto numa_nodemask = numa_bitmask_alloc(num_numa_nodes);
-  for (const uint64_t node_id : node_ids) {
+  for (const auto node_id : node_ids) {
     if (node_id >= num_numa_nodes) {
       spdlog::critical("Given numa node id too large! (given: {}, max: {})", node_id, num_numa_nodes - 1);
       utils::crash_exit();
@@ -105,7 +105,7 @@ void init_numa(const NumaNodeIDs& numa_nodes) {
     return;
   }
 #endif
-  spdlog::info("Benchmark main thread was not pinned to a NUMA node.");
+  spdlog::info("Thread was not pinned to a NUMA node.");
 }
 
 }  // namespace perma

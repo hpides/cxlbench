@@ -18,6 +18,7 @@ set(PERMA_TEST_SOURCES
         benchmark_test.cpp
         config_test.cpp
         custom_operations_test.cpp
+        numa_read_write_test.cpp
         test_utils.cpp
         test_utils.hpp
         utils_test.cpp
@@ -25,5 +26,6 @@ set(PERMA_TEST_SOURCES
 
 add_executable(perma-test perma_test.cpp ${PERMA_TEST_SOURCES})
 add_dependencies(perma-test copy_test_resources)
-target_link_libraries(perma-test gtest gmock perma)
+target_link_libraries(perma-test gtest gmock perma ${NUMS_LIBRARIES})
+
 add_test(perma-test perma-test)
