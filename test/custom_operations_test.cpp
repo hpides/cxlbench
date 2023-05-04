@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "io_operation.hpp"
 
-namespace perma {
+namespace mema {
 
 class CustomOperationTest : public ::testing::Test {};
 
@@ -187,4 +187,4 @@ TEST_F(CustomOperationTest, BadChainWithDramWriteAftrPmemRead) {
   EXPECT_FALSE(CustomOp::validate(ops));
 }
 
-}  // namespace perma
+}  // namespace mema

@@ -10,7 +10,7 @@
 #include "gtest/gtest.h"
 #include "test_utils.hpp"
 
-namespace perma {
+namespace mema {
 
 constexpr auto TEST_SINGLE_CONFIG_FILE_MATRIX = "test_matrix.yaml";
 constexpr auto TEST_SINGLE_CONFIG_FILE_SEQ = "test_seq.yaml";
@@ -613,4 +613,4 @@ TEST_F(ConfigTest, AsJsonWithRuntime) {
   EXPECT_EQ(json["run_time"].get<uint64_t>(), 42);
 }
 
-}  // namespace perma
+}  // namespace mema

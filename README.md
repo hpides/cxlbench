@@ -17,7 +17,7 @@ $ cd mema-bench
 $ mkdir build-rel-gcc-10 && cd build-rel-gcc-10
 $ cmake .. -DBUILD_TEST=ON -DCMAKE_C_COMPILER=gcc-10 -DCMAKE_CXX_COMPILER=g++-10
 $ make -j
-$ ./perma-bench --dram --numa_task <numa node id>
+$ ./mema-bench --dram --numa_task <numa node id>
 ```
 
 This will create a `results` directory containing a JSON file with all benchmark results in it.
@@ -38,7 +38,7 @@ using the `numactl` command line tool and disabling NUMA-awareness in PerMA-Benc
 You should pin the application to the nodes that are close to your mounted persistent memory filesystem for the best performance e.g., like this:
 
 ```shell script
-$ numactl -N 0,1 ./perma-bench --path /path/to/pmem/filesystem --no-numa
+$ numactl -N 0,1 ./mema-bench --path /path/to/pmem/filesystem --no-numa
 ```
 
 #### Building tests

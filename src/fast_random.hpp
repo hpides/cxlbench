@@ -16,7 +16,7 @@
  * Mathematical Society 68.225 (1999): 249-260.
  */
 
-namespace perma {
+namespace mema {
 
 extern thread_local __uint128_t g_lehmer64_state;
 
@@ -36,4 +36,4 @@ static inline uint64_t lehmer64() {
   return g_lehmer64_state >> 64;
 }
 
-}  // namespace perma
+}  // namespace mema

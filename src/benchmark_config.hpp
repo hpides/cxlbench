@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace perma {
+namespace mema {
 
 using NumaNodeID = uint16_t;
 using NumaNodeIDs = std::vector<NumaNodeID>;
@@ -152,7 +152,7 @@ struct BenchmarkConfig {
 
 struct ConfigEnums {
   // <read or write, is_pmem>
-  using OpLocation = std::pair<perma::Operation, bool>;
+  using OpLocation = std::pair<mema::Operation, bool>;
 
   static const std::unordered_map<std::string, bool> str_to_mem_type;
   static const std::unordered_map<std::string, Mode> str_to_mode;
@@ -165,4 +165,4 @@ struct ConfigEnums {
   static const std::unordered_map<char, uint64_t> scale_suffix_to_factor;
 };
 
-}  // namespace perma
+}  // namespace mema

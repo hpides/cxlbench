@@ -14,7 +14,7 @@ namespace {
 #define CHECK_ARGUMENT(exp, txt) \
   if (!(exp)) {                  \
     spdlog::critical(txt);       \
-    perma::utils::crash_exit();  \
+    mema::utils::crash_exit();   \
   }                              \
   static_assert(true, "Need ; after macro")
 
@@ -112,7 +112,7 @@ bool get_uints_if_present(YAML::Node& data, const std::string& name, std::vector
 
 }  // namespace
 
-namespace perma {
+namespace mema {
 
 BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
   BenchmarkConfig bm_config{};
@@ -519,9 +519,9 @@ const std::unordered_map<std::string, RandomDistribution> ConfigEnums::str_to_ra
     {"uniform", RandomDistribution::Uniform}, {"zipf", RandomDistribution::Zipf}};
 
 const std::unordered_map<std::string, ConfigEnums::OpLocation> ConfigEnums::str_to_op_location = {
-    {"r", {perma::Operation::Read, true}},   {"w", {perma::Operation::Write, true}},
-    {"rp", {perma::Operation::Read, true}},  {"wp", {perma::Operation::Write, true}},
-    {"rd", {perma::Operation::Read, false}}, {"wd", {perma::Operation::Write, false}},
+    {"r", {mema::Operation::Read, true}},   {"w", {mema::Operation::Write, true}},
+    {"rp", {mema::Operation::Read, true}},  {"wp", {mema::Operation::Write, true}},
+    {"rd", {mema::Operation::Read, false}}, {"wd", {mema::Operation::Write, false}},
 };
 
 const std::unordered_map<char, uint64_t> ConfigEnums::scale_suffix_to_factor{{'k', 1024},
@@ -531,4 +531,4 @@ const std::unordered_map<char, uint64_t> ConfigEnums::scale_suffix_to_factor{{'k
                                                                              {'g', 1024 * 1024 * 1024},
                                                                              {'G', 1024 * 1024 * 1024}};
 
-}  // namespace perma
+}  // namespace mema

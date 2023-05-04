@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(perma-bench)
+project(mema-bench)
 
 include(ExternalProject)
 include(FetchContent)
@@ -143,7 +143,7 @@ set(CLI11_INCLUDE_PATH ${CLI11_DIR}/CLI11.hpp)
 file(DOWNLOAD ${CLI11_DOWNLOAD_PATH} ${CLI11_INCLUDE_PATH})
 include_directories(${CLI11_DIR})
 
-##################### PerMA ####################
+##################### MemA ####################
 add_custom_target(copy_configs
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/workloads/raw ${CMAKE_CURRENT_BINARY_DIR}/workloads/raw)
 

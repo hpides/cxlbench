@@ -24,17 +24,17 @@ set(
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPILE_FLAGS}")
 
-add_library(perma STATIC ${SOURCES})
-add_dependencies(perma copy_configs)
-target_link_libraries(perma hdr_histogram_static spdlog stdc++fs yaml-cpp)
+add_library(mema STATIC ${SOURCES})
+add_dependencies(mema copy_configs)
+target_link_libraries(mema hdr_histogram_static spdlog stdc++fs yaml-cpp)
 
 if (${NUMA_FOUND})
-    target_link_libraries(perma ${NUMA_LIBRARIES})
+    target_link_libraries(mema ${NUMA_LIBRARIES})
 endif ()
 
-add_executable(perma-bench perma.cpp)
-target_link_libraries(perma-bench perma)
-set_target_properties(perma-bench PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+add_executable(mema-bench mema.cpp)
+target_link_libraries(mema-bench mema)
+set_target_properties(mema-bench PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 
 # Some third party libraries' include directories lead to compiler warnings. We add these directories add system
 # directories to supporess the warnings.

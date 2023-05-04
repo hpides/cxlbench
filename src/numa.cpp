@@ -13,7 +13,7 @@
 #include <numaif.h>
 #endif
 
-namespace perma {
+namespace mema {
 
 void log_numa_nodes(const NumaNodeIDs& nodes) {
   const std::string used_nodes_str = std::accumulate(
@@ -108,4 +108,4 @@ void init_numa(const NumaNodeIDs& numa_nodes) {
   spdlog::info("Thread was not pinned to a NUMA node.");
 }
 
-}  // namespace perma
+}  // namespace mema

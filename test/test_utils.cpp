@@ -8,7 +8,7 @@
 #include "read_write_ops.hpp"
 #include "utils.hpp"
 
-namespace perma {
+namespace mema {
 
 void check_file_written(const std::filesystem::path& pmem_file, const size_t total_size, const size_t size_written) {
   ASSERT_EQ(std::filesystem::file_size(pmem_file), total_size);
@@ -61,4 +61,4 @@ void check_json_result(const nlohmann::json& result_json, uint64_t total_bytes, 
   EXPECT_EQ(results_json.at("threads").size(), num_threads);
 }
 
-}  // namespace perma
+}  // namespace mema

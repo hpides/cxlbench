@@ -4,7 +4,7 @@
 
 #include "benchmark.hpp"
 
-namespace perma {
+namespace mema {
 
 class ParallelBenchmark : public Benchmark {
  public:
@@ -66,4 +66,4 @@ class ParallelBenchmark : public Benchmark {
   const std::string benchmark_name_two_;
 };
 
-}  // namespace perma
+}  // namespace mema

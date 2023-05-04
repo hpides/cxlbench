@@ -9,7 +9,7 @@
 #include "single_benchmark.hpp"
 #include "test_utils.hpp"
 
-namespace perma {
+namespace mema {
 
 using ::testing::ElementsAre;
 
@@ -965,4 +965,4 @@ TEST_F(BenchmarkTest, ResultsParallelSingleThreadMixed) {
 
 #endif
 
-}  // namespace perma
+}  // namespace mema

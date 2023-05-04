@@ -10,14 +10,14 @@
 
 namespace {
 
-nlohmann::json single_results_to_json(const perma::SingleBenchmark& bm, const nlohmann::json& bm_results) {
+nlohmann::json single_results_to_json(const mema::SingleBenchmark& bm, const nlohmann::json& bm_results) {
   return {{"bm_name", bm.benchmark_name()},
           {"bm_type", bm.benchmark_type_as_str()},
           {"matrix_args", bm.get_benchmark_configs()[0].matrix_args},
           {"benchmarks", bm_results}};
 }
 
-nlohmann::json parallel_results_to_json(const perma::ParallelBenchmark& bm, const nlohmann::json& bm_results) {
+nlohmann::json parallel_results_to_json(const mema::ParallelBenchmark& bm, const nlohmann::json& bm_results) {
   return {{"bm_name", bm.benchmark_name()},
           {"sub_bm_names", {bm.get_benchmark_name_one(), bm.get_benchmark_name_two()}},
           {"bm_type", bm.benchmark_type_as_str()},
@@ -27,34 +27,34 @@ nlohmann::json parallel_results_to_json(const perma::ParallelBenchmark& bm, cons
           {"benchmarks", bm_results}};
 }
 
-nlohmann::json benchmark_results_to_json(const perma::Benchmark& bm, const nlohmann::json& bm_results) {
-  if (bm.get_benchmark_type() == perma::BenchmarkType::Single) {
-    return single_results_to_json(dynamic_cast<const perma::SingleBenchmark&>(bm), bm_results);
-  } else if (bm.get_benchmark_type() == perma::BenchmarkType::Parallel) {
-    return parallel_results_to_json(dynamic_cast<const perma::ParallelBenchmark&>(bm), bm_results);
+nlohmann::json benchmark_results_to_json(const mema::Benchmark& bm, const nlohmann::json& bm_results) {
+  if (bm.get_benchmark_type() == mema::BenchmarkType::Single) {
+    return single_results_to_json(dynamic_cast<const mema::SingleBenchmark&>(bm), bm_results);
+  } else if (bm.get_benchmark_type() == mema::BenchmarkType::Parallel) {
+    return parallel_results_to_json(dynamic_cast<const mema::ParallelBenchmark&>(bm), bm_results);
   } else {
     return {{"bm_name", bm.benchmark_name()}, {"bm_type", bm.benchmark_type_as_str()}, {"benchmarks", bm_results}};
   }
 }
 
-void print_bm_information(const perma::Benchmark& bm) {
-  if (bm.get_benchmark_type() == perma::BenchmarkType::Single) {
+void print_bm_information(const mema::Benchmark& bm) {
+  if (bm.get_benchmark_type() == mema::BenchmarkType::Single) {
     spdlog::info("Running single benchmark {} with matrix args {}", bm.benchmark_name(),
                  nlohmann::json(bm.get_benchmark_configs()[0].matrix_args).dump());
-  } else if (bm.get_benchmark_type() == perma::BenchmarkType::Parallel) {
-    const auto& benchmark = dynamic_cast<const perma::ParallelBenchmark&>(bm);
+  } else if (bm.get_benchmark_type() == mema::BenchmarkType::Parallel) {
+    const auto& benchmark = dynamic_cast<const mema::ParallelBenchmark&>(bm);
     spdlog::info("Running parallel benchmark {} with sub benchmarks {} and {}.", benchmark.benchmark_name(),
                  benchmark.get_benchmark_name_one(), benchmark.get_benchmark_name_two());
   } else {
     // This should never happen
     spdlog::critical("Unknown benchmark type: {}", bm.get_benchmark_type());
-    perma::utils::crash_exit();
+    mema::utils::crash_exit();
   }
 }
 
 }  // namespace
 
-namespace perma {
+namespace mema {
 
 void BenchmarkSuite::run_benchmarks(const PermaOptions& options) {
   std::vector<YAML::Node> configs = BenchmarkFactory::get_config_files(options.config_file);
@@ -157,4 +157,4 @@ void BenchmarkSuite::run_benchmarks(const PermaOptions& options) {
   spdlog::info("Finished all benchmarks successfully.");
 }
 
-}  // namespace perma
+}  // namespace mema

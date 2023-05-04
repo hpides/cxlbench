@@ -9,7 +9,7 @@ void thread_error_handler(int) { thread_error = 1; }
 
 }  // namespace
 
-namespace perma {
+namespace mema {
 
 bool SingleBenchmark::run() {
   signal(SIGSEGV, thread_error_handler);
@@ -67,4 +67,4 @@ SingleBenchmark::SingleBenchmark(const std::string& benchmark_name, const Benchm
                 std::vector<MemoryRegion>{{std::move(pmem_file), false, config.is_hybrid}},
                 std::vector<BenchmarkConfig>{config}, std::move(executions), std::move(results)) {}
 
-}  // namespace perma
+}  // namespace mema

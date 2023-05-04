@@ -15,7 +15,7 @@
 #include "io_operation.hpp"
 #include "utils.hpp"
 
-namespace perma {
+namespace mema {
 
 struct MemoryRegion {
   const std::filesystem::path pmem_file;
@@ -199,4 +199,4 @@ class Benchmark {
   std::vector<std::vector<std::thread>> pools_;
 };
 
-}  // namespace perma
+}  // namespace mema

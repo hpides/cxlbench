@@ -55,4 +55,4 @@ jobs:
     - name: Test
       working-directory: ${{runner.workspace}}/build-clang
       shell: bash
-      run: ctest -R perma-test -V
+      run: ctest -R mema-test -V

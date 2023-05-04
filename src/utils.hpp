@@ -11,7 +11,7 @@
 #include "benchmark_config.hpp"
 #include "json.hpp"
 
-namespace perma {
+namespace mema {
 
 class PermaException : public std::exception {
  public:
@@ -69,4 +69,4 @@ std::string get_enum_as_string(const std::unordered_map<std::string, T>& enum_ma
 }
 
 }  // namespace utils
-}  // namespace perma
+}  // namespace mema

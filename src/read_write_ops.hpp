@@ -7,7 +7,7 @@
 #include <cstring>
 #include <vector>
 
-namespace perma::rw_ops {
+namespace mema::rw_ops {
 
 // This tells the compiler to keep whatever x is and not optimize it away.
 // Inspired by Google Benchmark's DoNotOptimize and this talk
@@ -533,4 +533,4 @@ inline void write_data(char* from, const char* to) {
 #endif
 }
 
-}  // namespace perma::rw_ops
+}  // namespace mema::rw_ops

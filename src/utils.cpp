@@ -14,7 +14,7 @@
 #include "numa.hpp"
 #include "read_write_ops.hpp"
 
-namespace perma::utils {
+namespace mema::utils {
 
 void setPMEM_MAP_FLAGS(const int flags) { PMEM_MAP_FLAGS = flags; }
 
@@ -296,8 +296,8 @@ void write_benchmark_results(const std::filesystem::path& result_path, const nlo
 void print_segfault_error() {
   spdlog::critical("A thread encountered an unexpected SIGSEGV!");
   spdlog::critical(
-      "Please create an issue on GitHub (https://github.com/hpides/perma-bench/issues/new) "
+      "Please create an issue on GitHub (https://github.com/mweisgut/mema-bench/issues/new) "
       "with your configuration and system information so that we can try to fix this.");
 }
 
-}  // namespace perma::utils
+}  // namespace mema::utils

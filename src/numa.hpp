@@ -6,7 +6,7 @@
 #include "benchmark.hpp"
 #include "utils.hpp"
 
-namespace perma {
+namespace mema {
 
 void log_numa_nodes(const std::vector<uint64_t>& nodes);
 
@@ -16,4 +16,4 @@ void init_numa(const NumaNodeIDs& numa_nodes);
 
 void set_memory_on_numa_nodes(void* addr, const size_t memory_size, const NumaNodeIDs& node_ids);
 
-}  // namespace perma
+}  // namespace mema

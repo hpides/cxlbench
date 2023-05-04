@@ -42,14 +42,14 @@ nlohmann::json hdr_histogram_to_json(hdr_histogram* hdr) {
 }
 
 inline double get_bandwidth(const uint64_t total_data_size, const std::chrono::steady_clock::duration total_duration) {
-  const double duration_in_s = static_cast<double>(total_duration.count()) / perma::NANOSECONDS_IN_SECONDS;
-  const double data_in_gib = static_cast<double>(total_data_size) / perma::BYTES_IN_GIGABYTE;
+  const double duration_in_s = static_cast<double>(total_duration.count()) / mema::NANOSECONDS_IN_SECONDS;
+  const double data_in_gib = static_cast<double>(total_data_size) / mema::BYTES_IN_GIGABYTE;
   return data_in_gib / duration_in_s;
 }
 
 }  // namespace
 
-namespace perma {
+namespace mema {
 
 const std::string& Benchmark::benchmark_name() const { return benchmark_name_; }
 
@@ -625,4 +625,4 @@ nlohmann::json BenchmarkResult::get_custom_results_as_json() const {
   return result;
 }
 
-}  // namespace perma
+}  // namespace mema

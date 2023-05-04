@@ -9,7 +9,7 @@ void thread_error_handler(int) { thread_error = 1; }
 
 }  // namespace
 
-namespace perma {
+namespace mema {
 
 bool ParallelBenchmark::run() {
   signal(SIGSEGV, thread_error_handler);
@@ -104,4 +104,4 @@ const std::string& ParallelBenchmark::get_benchmark_name_one() const { return be
 
 const std::string& ParallelBenchmark::get_benchmark_name_two() const { return benchmark_name_two_; }
 
-}  // namespace perma
+}  // namespace mema

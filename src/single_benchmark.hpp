@@ -4,7 +4,7 @@
 
 #include "benchmark.hpp"
 
-namespace perma {
+namespace mema {
 
 class SingleBenchmark : public Benchmark {
  public:
@@ -39,4 +39,4 @@ class SingleBenchmark : public Benchmark {
   ~SingleBenchmark() { SingleBenchmark::tear_down(false); }
 };
 
-}  // namespace perma
+}  // namespace mema

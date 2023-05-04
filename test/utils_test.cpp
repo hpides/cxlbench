@@ -9,7 +9,7 @@
 #include "gtest/gtest.h"
 #include "json.hpp"
 
-namespace perma::utils {
+namespace mema::utils {
 
 using namespace testing;
 namespace fs = std::filesystem;
@@ -149,4 +149,4 @@ TEST_F(UtilsTest, AddToResultFile) {
   fs::remove(config_path);
 }
 
-}  // namespace perma::utils
+}  // namespace mema::utils

@@ -18,7 +18,7 @@ std::string empty_directory(const std::string& path) {
 
 }  // namespace
 
-using namespace perma;
+using namespace mema;
 
 constexpr auto DEFAULT_WORKLOAD_PATH = "workloads";
 constexpr auto DEFAULT_RESULT_PATH = "results";
@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
   std::filesystem::path pmem_directory;
   auto path_opt = app.add_option("-p,--path", pmem_directory,
                                  "Path to empty memory directory (e.g., PMem directory) in which to perform the "
-                                 "benchmarks, e.g., /mnt/pmem1/perma")
+                                 "benchmarks, e.g., /mnt/pmem1/mema")
                       ->default_str("")
                       ->check(CLI::ExistingDirectory)
                       ->check(empty_directory);

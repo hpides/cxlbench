@@ -4,7 +4,7 @@
 #include "parallel_benchmark.hpp"
 #include "single_benchmark.hpp"
 
-namespace perma {
+namespace mema {
 
 static constexpr auto CONFIG_FILE_EXTENSION = ".yaml";
 
@@ -27,4 +27,4 @@ class BenchmarkFactory {
                               YAML::iterator& par_it, std::string& unique_name, bool use_dram);
 };
 
-}  // namespace perma
+}  // namespace mema

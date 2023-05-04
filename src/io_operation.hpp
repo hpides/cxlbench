@@ -9,7 +9,7 @@
 #include "spdlog/spdlog.h"
 #include "utils.hpp"
 
-namespace perma {
+namespace mema {
 
 class IoOperation {
   friend class Benchmark;
@@ -282,4 +282,4 @@ class ChainedOperation {
   const int64_t offset_;
 };
 
-}  // namespace perma
+}  // namespace mema

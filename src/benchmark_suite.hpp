@@ -3,7 +3,7 @@
 #include "benchmark.hpp"
 #include "utils.hpp"
 
-namespace perma {
+namespace mema {
 
 struct PermaOptions {
   const std::filesystem::path& pmem_directory;
@@ -17,4 +17,4 @@ class BenchmarkSuite {
   static void run_benchmarks(const PermaOptions& options);
 };
 
-}  // namespace perma
+}  // namespace mema

@@ -24,8 +24,7 @@ set(PERMA_TEST_SOURCES
         utils_test.cpp
         read_write_test.cpp)
 
-add_executable(perma-test perma_test.cpp ${PERMA_TEST_SOURCES})
-add_dependencies(perma-test copy_test_resources)
-target_link_libraries(perma-test gtest gmock perma ${NUMS_LIBRARIES})
-
-add_test(perma-test perma-test)
+add_executable(mema-test mema_test.cpp ${PERMA_TEST_SOURCES})
+add_dependencies(mema-test copy_test_resources)
+target_link_libraries(mema-test gtest gmock mema ${NUMS_LIBRARIES})
+add_test(mema-test mema-test)

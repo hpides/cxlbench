@@ -9,7 +9,7 @@
 #include "gtest/gtest.h"
 #include "test_utils.hpp"
 
-namespace perma {
+namespace mema {
 
 constexpr size_t TMP_FILE_SIZE = 131072;  // 128 KiB
 
@@ -108,4 +108,4 @@ TEST_F(ReadWriteTest, MultiSIMDNonTemporalWrite_256) { run_multi_write_test(rw_o
 TEST_F(ReadWriteTest, MultiSIMDNonTemporalWrite_512) { run_multi_write_test(rw_ops::simd_write_nt_512, 512); }
 #endif
 
-}  // namespace perma
+}  // namespace mema

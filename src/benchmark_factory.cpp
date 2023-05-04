@@ -4,7 +4,7 @@
 
 #include <string>
 
-namespace perma {
+namespace mema {
 
 std::vector<SingleBenchmark> BenchmarkFactory::create_single_benchmarks(const std::filesystem::path& pmem_directory,
                                                                         std::vector<YAML::Node>& configs,
@@ -229,4 +229,4 @@ std::vector<YAML::Node> BenchmarkFactory::get_config_files(const std::filesystem
   return yaml_configs;
 }
 
-}  // namespace perma
+}  // namespace mema
