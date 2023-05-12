@@ -5,9 +5,9 @@
 A benchmarking suite and toolset to evaluate the performance of persistent memory access.
 
 ## Quick Start
-PerMA-Bench has a predefined set of workloads to benchmark and requires very little configuration to run directly on
+MemA-Bench has a predefined set of workloads to benchmark and requires very little configuration to run directly on
 your system.
-If you have the development version of [libnuma](https://github.com/numactl/numactl) (PerMA-Bench requires the headers)
+If you have the development version of [libnuma](https://github.com/numactl/numactl) (MemA-Bench requires the headers)
 installed in the default locations, e.g., via `apt install libnuma-dev`, you can simply run the commands below.
 Otherwise, you should briefly check out our [Build Options](#build-options) beforehand.
 
@@ -23,16 +23,16 @@ $ ./mema-bench --dram --numa_task <numa node id>
 This will create a `results` directory containing a JSON file with all benchmark results in it.
 
 ### Build Options
-In the following, we describe which build options you can provide for PerMA-Bench and how to configure them.
+In the following, we describe which build options you can provide for MemA-Bench and how to configure them.
 
 #### Using libnuma
 In order to get NUMA-awareness in the benchmarks, you should have `libnuma` installed in the default location, e.g.,
 via `apt install libnuma-dev` or `yum install numactl-devel`.
 If you have `libnuma` installed at a different location, you can specify `-DNUMA_INCLUDE_PATH` and `-DNUMA_LIBRARY_PATH`
 to point to the respective headers and library in the `cmake` command.
-If you do not have `libnuma` installed, PerMA-Bench will still work, just without NUMA-awareness of the threads.
+If you do not have `libnuma` installed, MemA-Bench will still work, just without NUMA-awareness of the threads.
 In case you do not want to or can't install the development version, you can also manually enable NUMA-awareness by
-using the `numactl` command line tool and disabling NUMA-awareness in PerMA-Bench via the `--no-numa` flag.
+using the `numactl` command line tool and disabling NUMA-awareness in MemA-Bench via the `--no-numa` flag.
 You should pin the application to the nodes that are close to your mounted persistent memory filesystem for the best performance e.g., like this:
 
 ```shell script
@@ -40,7 +40,7 @@ $ numactl -N 0,1 ./mema-bench --path /path/to/pmem/filesystem --no-numa
 ```
 
 #### Building tests
-By default, PerMA-Bench will not build the tests.
+By default, MemA-Bench will not build the tests.
 If you want to run the tests to make sure that everything was built correctly, you can specify `-DBUILD_TEST=ON` to
 build the tests.
 This is mainly relevant for development though.

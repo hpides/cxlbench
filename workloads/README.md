@@ -1,6 +1,6 @@
 # Workloads
 
-The pre-defined workloads in PerMA-Bench are grouped into three types:
+The pre-defined workloads in MemA-Bench are grouped into three types:
 
 - [raw workloads](raw/): These workloads cover the four basic access patterns to PMem: sequential/random
   read/write, as well as latency measurements for random operations.
