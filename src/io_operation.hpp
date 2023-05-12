@@ -177,7 +177,7 @@ class ChainedOperation {
  private:
   inline char* run_read(char* addr) {
 #ifdef HAS_AVX
-    __m512i read_value;
+    __m512i read_value{};
     switch (access_size_) {
       case 64:
         read_value = rw_ops::simd_read_64(addr);
@@ -196,7 +196,7 @@ class ChainedOperation {
     }
 
     // Make sure the compiler does not optimize the load away.
-    KEEP(&read_value);
+    benchmark::DoNotOptimize(&read_value);
     return (char*)read_value[0];
 #else
     // This is only to stop the compiler complaining about a missing return

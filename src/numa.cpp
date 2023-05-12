@@ -5,7 +5,6 @@
 #include <sstream>
 
 #include "benchmark.hpp"
-#include "read_write_ops.hpp"
 #include "utils.hpp"
 
 #ifdef HAS_NUMA

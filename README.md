@@ -14,15 +14,13 @@ Otherwise, you should briefly check out our [Build Options](#build-options) befo
 ```shell script
 $ git clone git@github.com:mweisgut/mema-bench.git
 $ cd mema-bench
-$ mkdir build-rel-gcc-10 && cd build-rel-gcc-10
-$ cmake .. -DBUILD_TEST=ON -DCMAKE_C_COMPILER=gcc-10 -DCMAKE_CXX_COMPILER=g++-10
+$ mkdir build && cd build
+$ cmake .. -DBUILD_TEST=ON -DCMAKE_C_COMPILER=gcc-12 -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_BUILD_TYPE=Release
 $ make -j
 $ ./mema-bench --dram --numa_task <numa node id>
 ```
 
 This will create a `results` directory containing a JSON file with all benchmark results in it.
-
-Note that we currently require a GCC 10 build as long as issue #33 is not fixed.
 
 ### Build Options
 In the following, we describe which build options you can provide for PerMA-Bench and how to configure them.

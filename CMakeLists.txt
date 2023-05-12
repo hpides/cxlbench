@@ -143,6 +143,15 @@ set(CLI11_INCLUDE_PATH ${CLI11_DIR}/CLI11.hpp)
 file(DOWNLOAD ${CLI11_DOWNLOAD_PATH} ${CLI11_INCLUDE_PATH})
 include_directories(${CLI11_DIR})
 
+##################### GoogleBenchmark ####################
+set(BENCHMARK_ENABLE_TESTING OFF)
+FetchContent_Declare(
+        googlebenchmark
+        GIT_REPOSITORY https://github.com/google/benchmark.git
+        GIT_TAG        v1.7.1
+)
+FetchContent_MakeAvailable(googlebenchmark)
+
 ##################### MemA ####################
 add_custom_target(copy_configs
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/workloads/raw ${CMAKE_CURRENT_BINARY_DIR}/workloads/raw)

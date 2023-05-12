@@ -7,12 +7,9 @@
 #include <cstring>
 #include <vector>
 
-namespace mema::rw_ops {
+#include "benchmark/benchmark.h"
 
-// This tells the compiler to keep whatever x is and not optimize it away.
-// Inspired by Google Benchmark's DoNotOptimize and this talk
-// https://youtu.be/nXaxk27zwlk?t=2441.
-#define KEEP(x) asm volatile("" : : "g"(x) : "memory")
+namespace mema::rw_ops {
 
 #define READ_SIMD_512(mem_addr, offset) _mm512_load_si512((void*)((mem_addr) + ((offset)*CACHE_LINE_SIZE)))
 
@@ -386,14 +383,14 @@ inline void simd_write_nt(const std::vector<char*>& addresses, const size_t acce
 inline __m512i simd_read_64(char* addr) { return READ_SIMD_512(addr, 0); }
 
 inline __m512i simd_read_128(char* addr) {
-  __m512i res0, res1;
+  __m512i res0{}, res1{};
   res0 = READ_SIMD_512(addr, 0);
   res1 = READ_SIMD_512(addr, 1);
   return res0 + res1;
 }
 
 inline __m512i simd_read_256(char* addr) {
-  __m512i res0, res1, res2, res3;
+  __m512i res0{}, res1{}, res2{}, res3{};
   res0 = READ_SIMD_512(addr, 0);
   res1 = READ_SIMD_512(addr, 1);
   res2 = READ_SIMD_512(addr, 2);
@@ -402,7 +399,7 @@ inline __m512i simd_read_256(char* addr) {
 }
 
 inline __m512i simd_read_512(char* addr) {
-  __m512i res0, res1, res2, res3, res4, res5, res6, res7;
+  __m512i res0{}, res1{}, res2{}, res3{}, res4{}, res5{}, res6{}, res7{};
   res0 = READ_SIMD_512(addr, 0);
   res1 = READ_SIMD_512(addr, 1);
   res2 = READ_SIMD_512(addr, 2);
@@ -415,7 +412,7 @@ inline __m512i simd_read_512(char* addr) {
 }
 
 inline __m512i simd_read(char* addr, const size_t access_size) {
-  __m512i res0, res1, res2, res3, res4, res5, res6, res7;
+  __m512i res0{}, res1{}, res2{}, res3{}, res4{}, res5{}, res6{}, res7{};
   const char* access_end_addr = addr + access_size;
   for (const char* mem_addr = addr; mem_addr < access_end_addr; mem_addr += (8 * CACHE_LINE_SIZE)) {
     res0 = READ_SIMD_512(addr, 0);
@@ -431,73 +428,77 @@ inline __m512i simd_read(char* addr, const size_t access_size) {
 }
 
 inline void simd_read_64(const std::vector<char*>& addresses) {
-  __m512i res;
+  __m512i res{};
   auto simd_fn = [&]() {
     for (char* addr : addresses) {
-      res = simd_read_64(addr);
+      res += simd_read_64(addr);
     }
     return res;
   };
-  // Do a single copy of the last read value to the stack from a zmm register. Otherwise, KEEP copies on each
-  // invocation if we have KEEP in the loop because it cannot be sure how KEEP modifies the current zmm register.
+  // Do a single copy of the last read value to the stack from a zmm register. Otherwise, DoNotOptimize copies on each
+  // invocation if we have DoNotOptimize in the loop because it cannot be sure how DoNotOptimize modifies the current
+  // zmm register.
   __m512i x = simd_fn();
-  KEEP(&x);
+  benchmark::DoNotOptimize(&x);
 }
 
 inline void simd_read_128(const std::vector<char*>& addresses) {
-  __m512i res0, res1;
+  __m512i res0{}, res1{};
   auto simd_fn = [&]() {
     for (char* addr : addresses) {
       // Read 128 Byte
-      res0 = READ_SIMD_512(addr, 0);
-      res1 = READ_SIMD_512(addr, 1);
+      res0 += READ_SIMD_512(addr, 0);
+      res1 += READ_SIMD_512(addr, 1);
     }
     return res0 + res1;
   };
-  // Do a single copy of the last read value to the stack from a zmm register. Otherwise, KEEP copies on each
-  // invocation if we have KEEP in the loop because it cannot be sure how KEEP modifies the current zmm register.
+  // Do a single copy of the last read value to the stack from a zmm register. Otherwise, DoNotOptimize copies on each
+  // invocation if we have DoNotOptimize in the loop because it cannot be sure how DoNotOptimize modifies the current
+  // zmm register.
   __m512i x = simd_fn();
-  KEEP(&x);
+  benchmark::DoNotOptimize(&x);
 }
 
 inline void simd_read_256(const std::vector<char*>& addresses) {
-  __m512i res0, res1, res2, res3;
+  __m512i res0{}, res1{}, res2{}, res3{};
   auto simd_fn = [&]() {
     for (char* addr : addresses) {
       // Read 256 Byte
-      res0 = READ_SIMD_512(addr, 0);
-      res1 = READ_SIMD_512(addr, 1);
-      res2 = READ_SIMD_512(addr, 2);
-      res3 = READ_SIMD_512(addr, 3);
+      res0 += READ_SIMD_512(addr, 0);
+      res1 += READ_SIMD_512(addr, 1);
+      res2 += READ_SIMD_512(addr, 2);
+      res3 += READ_SIMD_512(addr, 3);
     }
     return res0 + res1 + res2 + res3;
   };
-  // Do a single copy of the last read value to the stack from a zmm register. Otherwise, KEEP copies on each
-  // invocation if we have KEEP in the loop because it cannot be sure how KEEP modifies the current zmm register.
+  // Do a single copy of the last read value to the stack from a zmm register. Otherwise, DoNotOptimize copies on each
+  // invocation if we have DoNotOptimize in the loop because it cannot be sure how DoNotOptimize modifies the current
+  // zmm register.
   __m512i x = simd_fn();
-  KEEP(&x);
+  benchmark::DoNotOptimize(&x);
 }
 
 inline void simd_read_512(const std::vector<char*>& addresses) {
-  __m512i res0, res1, res2, res3, res4, res5, res6, res7;
+  __m512i res0{}, res1{}, res2{}, res3{}, res4{}, res5{}, res6{}, res7{};
   auto simd_fn = [&]() {
     for (char* addr : addresses) {
       // Read 512 Byte
-      res0 = READ_SIMD_512(addr, 0);
-      res1 = READ_SIMD_512(addr, 1);
-      res2 = READ_SIMD_512(addr, 2);
-      res3 = READ_SIMD_512(addr, 3);
-      res4 = READ_SIMD_512(addr, 4);
-      res5 = READ_SIMD_512(addr, 5);
-      res6 = READ_SIMD_512(addr, 6);
-      res7 = READ_SIMD_512(addr, 7);
+      res0 += READ_SIMD_512(addr, 0);
+      res1 += READ_SIMD_512(addr, 1);
+      res2 += READ_SIMD_512(addr, 2);
+      res3 += READ_SIMD_512(addr, 3);
+      res4 += READ_SIMD_512(addr, 4);
+      res5 += READ_SIMD_512(addr, 5);
+      res6 += READ_SIMD_512(addr, 6);
+      res7 += READ_SIMD_512(addr, 7);
     }
     return res0 + res1 + res2 + res3 + res4 + res5 + res6 + res7;
   };
-  // Do a single copy of the last read value to the stack from a zmm register. Otherwise, KEEP copies on each
-  // invocation if we have KEEP in the loop because it cannot be sure how KEEP modifies the current zmm register.
+  // Do a single copy of the last read value to the stack from a zmm register. Otherwise, DoNotOptimize copies on each
+  // invocation if we have DoNotOptimize in the loop because it cannot be sure how DoNotOptimize modifies the current
+  // zmm register.
   __m512i x = simd_fn();
-  KEEP(&x);
+  benchmark::DoNotOptimize(&x);
 }
 
 inline void simd_read(const std::vector<char*>& addresses, const size_t access_size) {
@@ -507,22 +508,23 @@ inline void simd_read(const std::vector<char*>& addresses, const size_t access_s
       const char* access_end_addr = addr + access_size;
       for (const char* mem_addr = addr; mem_addr < access_end_addr; mem_addr += (8 * CACHE_LINE_SIZE)) {
         // Read in 512 Byte chunks
-        res0 = READ_SIMD_512(mem_addr, 0);
-        res1 = READ_SIMD_512(mem_addr, 1);
-        res2 = READ_SIMD_512(mem_addr, 2);
-        res3 = READ_SIMD_512(mem_addr, 3);
-        res4 = READ_SIMD_512(mem_addr, 4);
-        res5 = READ_SIMD_512(mem_addr, 5);
-        res6 = READ_SIMD_512(mem_addr, 6);
-        res7 = READ_SIMD_512(mem_addr, 7);
+        res0 += READ_SIMD_512(mem_addr, 0);
+        res1 += READ_SIMD_512(mem_addr, 1);
+        res2 += READ_SIMD_512(mem_addr, 2);
+        res3 += READ_SIMD_512(mem_addr, 3);
+        res4 += READ_SIMD_512(mem_addr, 4);
+        res5 += READ_SIMD_512(mem_addr, 5);
+        res6 += READ_SIMD_512(mem_addr, 6);
+        res7 += READ_SIMD_512(mem_addr, 7);
       }
     }
     return res0 + res1 + res2 + res3 + res4 + res5 + res6 + res7;
   };
-  // Do a single copy of the last read value to the stack from a zmm register. Otherwise, KEEP copies on each
-  // invocation if we have KEEP in the loop because it cannot be sure how KEEP modifies the current zmm register.
+  // Do a single copy of the last read value to the stack from a zmm register. Otherwise, DoNotOptimize copies on each
+  // invocation if we have DoNotOptimize in the loop because it cannot be sure how DoNotOptimize modifies the current
+  // zmm register.
   __m512i x = simd_fn();
-  KEEP(&x);
+  benchmark::DoNotOptimize(&x);
 }
 
 #endif
