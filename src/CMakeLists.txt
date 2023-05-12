@@ -18,6 +18,7 @@ set(
         single_benchmark.hpp
         parallel_benchmark.cpp
         parallel_benchmark.hpp
+        read_write_ops.hpp
         utils.cpp
         utils.hpp)
 

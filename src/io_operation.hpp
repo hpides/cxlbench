@@ -197,7 +197,7 @@ class ChainedOperation {
 
     // Make sure the compiler does not optimize the load away.
     benchmark::DoNotOptimize(&read_value);
-    return (char*)read_value[0];
+    return reinterpret_cast<char*>(read_value[0]);
 #else
     // This is only to stop the compiler complaining about a missing return
     return addr;

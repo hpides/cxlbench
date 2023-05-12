@@ -173,14 +173,14 @@ uint64_t zipf(const double alpha, const uint64_t n) {
   // Compute normalization constant on first call only
   if (first) {
     for (uint64_t i = 1; i <= n; i++) {
-      c = c + (1.0 / pow((double)i, alpha));
+      c = c + (1.0 / pow(static_cast<double>(i), alpha));
     }
     c = 1.0 / c;
 
     sum_probs = static_cast<double*>(malloc((n + 1) * sizeof(*sum_probs)));
     sum_probs[0] = 0;
     for (uint64_t i = 1; i <= n; i++) {
-      sum_probs[i] = sum_probs[i - 1] + c / pow((double)i, alpha);
+      sum_probs[i] = sum_probs[i - 1] + c / pow(static_cast<double>(i), alpha);
     }
     first = false;
   }
@@ -215,14 +215,14 @@ uint64_t zipf(const double alpha, const uint64_t n) {
 //=     John Wiley & Sons, 1991. (Page 443, Figure 26.2)                  =
 //=========================================================================
 double rand_val() {
-  const long a = 16807;       // Multiplier
-  const long m = 2147483647;  // Modulus
-  const long q = 127773;      // m div a
-  const long r = 2836;        // m mod a
-  static long x = 1687248;    // Random int value
-  long x_div_q;               // x divided by q
-  long x_mod_q;               // x modulo q
-  long x_new;                 // New x value
+  const int64_t a = 16807;       // Multiplier
+  const int64_t m = 2147483647;  // Modulus
+  const int64_t q = 127773;      // m div a
+  const int64_t r = 2836;        // m mod a
+  static int64_t x = 1687248;    // Random int value
+  int64_t x_div_q;               // x divided by q
+  int64_t x_mod_q;               // x modulo q
+  int64_t x_new;                 // New x value
 
   // RNG using integer arithmetic
   x_div_q = x / q;
@@ -235,7 +235,7 @@ double rand_val() {
   }
 
   // Return a random value between 0.0 and 1.0
-  return ((double)x / m);
+  return (static_cast<double>(x) / m);
 }
 
 void crash_exit() { throw PermaException(); }

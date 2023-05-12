@@ -14,6 +14,7 @@
 #include "utils.hpp"
 
 #include "gtest/gtest.h"
+#include "test_utils.hpp"
 
 namespace {
   constexpr uint32_t MIB_IN_BYTES = 1024 * 1024;
@@ -21,7 +22,7 @@ namespace {
 
 namespace mema {
   
-class NumaReadWriteTest : public ::testing::Test {
+class NumaReadWriteTest : public BaseTest {
  protected:
   void SetUp() override {
     init_numa({});

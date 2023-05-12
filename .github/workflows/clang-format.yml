@@ -7,9 +7,16 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
-    - uses: actions/checkout@v2
-    - uses: DoozyX/clang-format-lint-action@v0.8
-      with:
-        source: 'src'
-        extensions: 'hpp,cpp'
-        clangFormatVersion: 10
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - uses: DoozyX/clang-format-lint-action@v0.8
+        with:
+          source: 'src'
+          extensions: 'hpp,cpp'
+          clangFormatVersion: 10
+      - name: Linting
+        run: |
+          pip install flake8
+          sudo apt-get install --no-install-recommends dos2unix
+          ./scripts/lint.sh

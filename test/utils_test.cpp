@@ -8,6 +8,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "json.hpp"
+#include "test_utils.hpp"
 
 namespace mema::utils {
 
@@ -16,7 +17,7 @@ namespace fs = std::filesystem;
 
 constexpr size_t FILE_SIZE = 8 * (1024u * 1024);  // 8 MiB
 
-class UtilsTest : public ::testing::Test {
+class UtilsTest : public BaseTest {
  protected:
   void SetUp() override {
     std::string file_name_create = std::filesystem::temp_directory_path() / "tmp_create_file.XXXXXX";

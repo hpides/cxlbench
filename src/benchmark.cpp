@@ -203,7 +203,7 @@ void Benchmark::run_custom_ops_in_thread(ThreadRunConfig* thread_config, const B
 
   const size_t seed = std::chrono::steady_clock::now().time_since_epoch().count() * (thread_config->thread_num + 1);
   lehmer64_seed(seed);
-  char* start_addr = (char*)seed;
+  char* start_addr = reinterpret_cast<char*>(seed);
 
   ChainedOperation& start_op = operation_chain[0];
   auto start_ts = std::chrono::steady_clock::now();

@@ -1,9 +1,8 @@
 #include <spdlog/spdlog.h>
 
-#include <CLI11.hpp>
 #include <map>
 
-#include "benchmark_config.hpp"
+#include "CLI11.hpp"
 #include "benchmark_suite.hpp"
 #include "numa.hpp"
 
@@ -18,7 +17,7 @@ std::string empty_directory(const std::string& path) {
 
 }  // namespace
 
-using namespace mema;
+using namespace mema;  // NOLINT - [build/namespaces] Linter doesn't like using-directives
 
 constexpr auto DEFAULT_WORKLOAD_PATH = "workloads";
 constexpr auto DEFAULT_RESULT_PATH = "results";
@@ -67,7 +66,6 @@ int main(int argc, char** argv) {
   // Flag if DRAM should be used
   bool use_dram;
   auto dram_flg = app.add_flag("--dram", use_dram, "Set this flag to run benchmarks in DRAM")->default_val(true);
-  ;
 
   // Do not allow path to be set if dram is set
   dram_flg->excludes(path_opt);

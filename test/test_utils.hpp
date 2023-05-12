@@ -2,9 +2,12 @@
 
 #include <filesystem>
 
+#include "gtest/gtest.h"
 #include "json.hpp"
 
 namespace mema {
+
+using BaseTest = ::testing::Test;
 
 #define _PRINT_JSON(json) "Got JSON:\n" << std::setw(2) << json
 #define ASSERT_JSON_TRUE(json, assertion) ASSERT_TRUE(json.assertion) << _PRINT_JSON(json)

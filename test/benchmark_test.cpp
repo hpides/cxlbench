@@ -16,7 +16,7 @@ using ::testing::ElementsAre;
 constexpr size_t TEST_FILE_SIZE = 1 * BYTES_IN_MEGABYTE;  // 1 MiB
 constexpr size_t TEST_CHUNK_SIZE = TEST_FILE_SIZE / 8;    // 128 KiB
 
-class BenchmarkTest : public ::testing::Test {
+class BenchmarkTest : public BaseTest {
  protected:
   void SetUp() override {
     base_config_.pmem_directory = temp_dir_;
@@ -500,8 +500,8 @@ TEST_F(BenchmarkTest, RunSingleThreadWriteDRAM) {
   EXPECT_THAT(op_sizes, ElementsAre(total_size));
 }
 
-// TODO(#167): Change "mixed" to DRAM/PMem
-TEST_F(BenchmarkTest, DISABLED_RunSingeThreadMixed) {
+// TODO(anyone): Change "mixed" to DRAM/PMem
+TEST_F(BenchmarkTest, DISABLED_RunSingeThreadMixed /* #167 */) {
   const size_t ops_per_chunk = TEST_FILE_SIZE / 256;
   const size_t num_chunks = 8;
   const size_t num_ops = num_chunks * ops_per_chunk;
@@ -732,8 +732,8 @@ TEST_F(BenchmarkTest, ResultsSingleThreadWrite) {
   check_json_result(result_json, TEST_FILE_SIZE, 0.48828125, 1, 0.48828125, 0.0);
 }
 
-// TODO(#167): Change "mixed" to DRAM/PMem
-TEST_F(BenchmarkTest, DISABLED_ResultsSingleThreadMixed) {
+// TODO(anyone): Change "mixed" to DRAM/PMem
+TEST_F(BenchmarkTest, DISABLED_ResultsSingleThreadMixed /* #167 */) {
   const size_t ops_per_chunk = TEST_FILE_SIZE / 512;
   const size_t num_chunks = 8;
   const size_t num_ops = num_chunks * ops_per_chunk;
@@ -816,8 +816,8 @@ TEST_F(BenchmarkTest, ResultsMultiThreadWrite) {
   check_json_result(result_json, TEST_FILE_SIZE, 3.0517578, 8, 0.38146972, 0.0648887);
 }
 
-// TODO(#167): Change "mixed" to DRAM/PMem
-TEST_F(BenchmarkTest, DISABLED_ResultsMultiThreadMixed) {
+// TODO(anyone): Change "mixed" to DRAM/PMem
+TEST_F(BenchmarkTest, DISABLED_ResultsMultiThreadMixed /* #167 */) {
   const size_t ops_per_chunk = TEST_FILE_SIZE / 512;
   const size_t num_chunks = 64;
   const size_t num_ops = num_chunks * ops_per_chunk;

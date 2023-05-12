@@ -1,0 +1,3 @@
+[submodule "third_party/cpplint"]
+	path = third_party/cpplint
+	url = https://github.com/cpplint/cpplint.git

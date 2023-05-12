@@ -1,9 +1,10 @@
 #include "gtest/gtest.h"
 #include "io_operation.hpp"
+#include "test_utils.hpp"
 
 namespace mema {
 
-class CustomOperationTest : public ::testing::Test {};
+class CustomOperationTest : public BaseTest {};
 
 // Read Operations
 TEST_F(CustomOperationTest, ParseCustomRead64) {

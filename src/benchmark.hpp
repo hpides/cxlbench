@@ -5,7 +5,6 @@
 #include <chrono>
 #include <condition_variable>
 #include <filesystem>
-#include <json.hpp>
 #include <map>
 #include <random>
 #include <utility>
@@ -13,6 +12,7 @@
 
 #include "benchmark_config.hpp"
 #include "io_operation.hpp"
+#include "json.hpp"
 #include "utils.hpp"
 
 namespace mema {

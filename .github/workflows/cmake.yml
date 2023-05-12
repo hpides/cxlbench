@@ -52,7 +52,12 @@ jobs:
       shell: bash
       run: cmake --build . --config ${{ matrix.build-type }} -- -j
 
-    - name: Test
+    - name: Test GCC
+      working-directory: ${{runner.workspace}}/build-gcc
+      shell: bash
+      run: ctest -R mema-test -V
+
+    - name: Test Clang
       working-directory: ${{runner.workspace}}/build-clang
       shell: bash
       run: ctest -R mema-test -V

@@ -20,7 +20,7 @@ constexpr auto TEST_PAR_CONFIG_FILE_MATRIX = "test_parallel_matrix.yaml";
 constexpr auto TEST_CUSTOM_OPS_MATRIX = "test_custom_ops.yaml";
 constexpr auto TEST_INVALID_NUMA_MEMORY_NODES = "test_invalid_numa_memory_nodes.yaml";
 
-class ConfigTest : public ::testing::Test {
+class ConfigTest : public BaseTest {
  protected:
   static void SetUpTestSuite() {
     test_logger_path = std::filesystem::temp_directory_path() / "test-logger.log";

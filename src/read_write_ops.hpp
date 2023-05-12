@@ -11,7 +11,8 @@
 
 namespace mema::rw_ops {
 
-#define READ_SIMD_512(mem_addr, offset) _mm512_load_si512((void*)((mem_addr) + ((offset)*CACHE_LINE_SIZE)))
+#define READ_SIMD_512(mem_addr, offset) \
+  _mm512_load_si512(reinterpret_cast<const void*>((mem_addr) + ((offset)*CACHE_LINE_SIZE)))
 
 #define WRITE_SIMD_NT_512(mem_addr, offset, data) \
   _mm512_stream_si512(reinterpret_cast<__m512i*>((mem_addr) + ((offset)*CACHE_LINE_SIZE)), data)
@@ -62,7 +63,7 @@ inline void no_barrier() {}
 #ifdef HAS_AVX
 
 inline void simd_write_data_range(char* from, const char* to) {
-  __m512i* data = (__m512i*)(WRITE_DATA);
+  const auto* data = reinterpret_cast<const __m512i*>(WRITE_DATA);
   for (char* mem_addr = from; mem_addr < to; mem_addr += CACHE_LINE_SIZE) {
     // Write 512 Bit (64 Byte) and persist it.
     WRITE_SIMD_512(mem_addr, 0, *data);
@@ -77,7 +78,7 @@ inline void simd_write_data_range(char* from, const char* to) {
 
 inline void simd_write_64(char* addr, flush_fn flush, barrier_fn barrier) {
   // Write 512 Bit (64 Byte)
-  __m512i* data = (__m512i*)(WRITE_DATA);
+  const auto* data = reinterpret_cast<const __m512i*>(WRITE_DATA);
   WRITE_SIMD_512(addr, 0, *data);
   flush(addr, 64);
   barrier();
@@ -85,7 +86,7 @@ inline void simd_write_64(char* addr, flush_fn flush, barrier_fn barrier) {
 
 inline void simd_write_128(char* addr, flush_fn flush, barrier_fn barrier) {
   // Write 128 Byte
-  __m512i* data = (__m512i*)(WRITE_DATA);
+  const auto* data = reinterpret_cast<const __m512i*>(WRITE_DATA);
   WRITE_SIMD_512(addr, 0, *data);
   WRITE_SIMD_512(addr, 1, *data);
   flush(addr, 128);
@@ -94,7 +95,7 @@ inline void simd_write_128(char* addr, flush_fn flush, barrier_fn barrier) {
 
 inline void simd_write_256(char* addr, flush_fn flush, barrier_fn barrier) {
   // Write 256 Byte
-  __m512i* data = (__m512i*)(WRITE_DATA);
+  const auto* data = reinterpret_cast<const __m512i*>(WRITE_DATA);
   WRITE_SIMD_512(addr, 0, *data);
   WRITE_SIMD_512(addr, 1, *data);
   WRITE_SIMD_512(addr, 2, *data);
@@ -105,7 +106,7 @@ inline void simd_write_256(char* addr, flush_fn flush, barrier_fn barrier) {
 
 inline void simd_write_512(char* addr, flush_fn flush, barrier_fn barrier) {
   // Write 512 Byte
-  __m512i* data = (__m512i*)(WRITE_DATA);
+  const auto* data = reinterpret_cast<const __m512i*>(WRITE_DATA);
   WRITE_SIMD_512(addr, 0, *data);
   WRITE_SIMD_512(addr, 1, *data);
   WRITE_SIMD_512(addr, 2, *data);
@@ -120,7 +121,7 @@ inline void simd_write_512(char* addr, flush_fn flush, barrier_fn barrier) {
 
 inline void simd_write(char* addr, const size_t access_size, flush_fn flush, barrier_fn barrier) {
   // Write 512 Byte
-  __m512i* data = (__m512i*)(WRITE_DATA);
+  const auto* data = reinterpret_cast<const __m512i*>(WRITE_DATA);
   const char* access_end_addr = addr + access_size;
   for (char* mem_addr = addr; mem_addr < access_end_addr; mem_addr += (8 * CACHE_LINE_SIZE)) {
     WRITE_SIMD_512(mem_addr, 0, *data);
@@ -290,14 +291,14 @@ inline void simd_write_none(const std::vector<char*>& addresses, const size_t ac
 
 inline void simd_write_nt_64(char* addr) {
   // Write 512 Bit (64 Byte)
-  __m512i* data = (__m512i*)(WRITE_DATA);
+  const auto* data = reinterpret_cast<const __m512i*>(WRITE_DATA);
   WRITE_SIMD_NT_512(addr, 0, *data);
   sfence_barrier();
 }
 
 inline void simd_write_nt_128(char* addr) {
   // Write 128 Byte
-  __m512i* data = (__m512i*)(WRITE_DATA);
+  const auto* data = reinterpret_cast<const __m512i*>(WRITE_DATA);
   WRITE_SIMD_NT_512(addr, 0, *data);
   WRITE_SIMD_NT_512(addr, 1, *data);
   sfence_barrier();
@@ -305,7 +306,7 @@ inline void simd_write_nt_128(char* addr) {
 
 inline void simd_write_nt_256(char* addr) {
   // Write 256 Byte
-  __m512i* data = (__m512i*)(WRITE_DATA);
+  const auto* data = reinterpret_cast<const __m512i*>(WRITE_DATA);
   WRITE_SIMD_NT_512(addr, 0, *data);
   WRITE_SIMD_NT_512(addr, 1, *data);
   WRITE_SIMD_NT_512(addr, 2, *data);
@@ -315,7 +316,7 @@ inline void simd_write_nt_256(char* addr) {
 
 inline void simd_write_nt_512(char* addr) {
   // Write 512 Byte
-  __m512i* data = (__m512i*)(WRITE_DATA);
+  const auto* data = reinterpret_cast<const __m512i*>(WRITE_DATA);
   WRITE_SIMD_NT_512(addr, 0, *data);
   WRITE_SIMD_NT_512(addr, 1, *data);
   WRITE_SIMD_NT_512(addr, 2, *data);
@@ -328,7 +329,7 @@ inline void simd_write_nt_512(char* addr) {
 }
 
 inline void simd_write_nt(char* addr, const size_t access_size) {
-  __m512i* data = (__m512i*)(WRITE_DATA);
+  const auto* data = reinterpret_cast<const __m512i*>(WRITE_DATA);
   const char* access_end_addr = addr + access_size;
   for (char* mem_addr = addr; mem_addr < access_end_addr; mem_addr += (8 * CACHE_LINE_SIZE)) {
     // Write 512 byte.

@@ -105,7 +105,7 @@ bool get_uints_if_present(YAML::Node& data, const std::string& name, std::vector
   values.reserve(entry.size());
   for (const auto value : entry) {
     values.push_back(value.as<uint64_t>());
-  };
+  }
   entry.SetTag(VISITED_TAG);
   return true;
 }
