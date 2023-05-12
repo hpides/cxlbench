@@ -15,6 +15,7 @@ KEY_LAT_AVG = "latency.avg"
 KEY_MATRIX_ARGS = "matrix_args"
 KEY_NUMA_MEMORY_NODES = "numa_memory_nodes"
 KEY_EXPLODED_NUMA_MEMORY_NODES = "benchmarks.config.numa_memory_nodes"
+KEY_PARTITION_COUNT = "number_partitions"
 KEY_THREAD_COUNT = "number_threads"
 KEY_THREADS = "threads"
 KEY_THREADS_LEVELED = "benchmarks.results.threads"
@@ -65,8 +66,7 @@ class PlotGenerator:
         df[KEY_ACCESS_SIZE] = df[KEY_ACCESS_SIZE].astype(int)
         df.to_csv("{}/flattened_df.csv".format(self.output_dir))
         
-        bm_groups = df["bm_name"].unique()
-        drop_columns = ["index", "bm_type", "matrix_args", "exec_mode", "memory_type", "number_partitions", \
+        drop_columns = ["index", "bm_type", "matrix_args", "exec_mode", "memory_type", \
             "operation", "threads", "prefault_file"]
 
         if "persist_instruction" in df.columns:
@@ -90,11 +90,13 @@ class PlotGenerator:
         if self.no_plots:
             sys.exit("Exiting without generating plots. CSV were stored.")
 
-        print(bm_groups)
+        bm_groups = df[KEY_BM_GROUP].unique()
+        partition_counts = df[KEY_PARTITION_COUNT].unique()
 
-        for bm_group in bm_groups:
-            df_sub = df[df[KEY_BM_GROUP] == bm_group]
-            self.create_plot(df_sub)
+        for partition_count in partition_counts:
+            for bm_group in bm_groups:
+                df_sub = df[(df[KEY_BM_GROUP] == bm_group) & (df[KEY_PARTITION_COUNT] == partition_count)]
+                self.create_plot(df_sub)
 
         sys.exit("Exit")
 
@@ -102,6 +104,9 @@ class PlotGenerator:
         assert KEY_BM_GROUP in df.columns
         assert len(df[KEY_BM_GROUP].unique()) == 1
         bm_group = df[KEY_BM_GROUP].unique()[0]
+        assert KEY_PARTITION_COUNT in df.columns
+        assert len(df[KEY_PARTITION_COUNT].unique()) == 1
+        partition_count = df[KEY_PARTITION_COUNT].unique()[0]
         bandwidth_plot_group = ["sequential_reads", "random_reads", "sequential_writes", "random_writes"]
         latency_plot_group = ["operation_latency"]
         plot_title = bm_group.replace("_", " ").title()
@@ -109,17 +114,20 @@ class PlotGenerator:
         if bm_group in bandwidth_plot_group:
             # Plot 1 (x: thread count, y: throughput)
             print("Creating barplot (# threads) for BM group {}".format(bm_group))
-            self.create_barplot(df, KEY_THREAD_COUNT, KEY_BANDWIDTH, "Number of Threads", "Throughput in GB/s", KEY_NUMA_MEMORY_NODES, plot_title, legend_title, "{}{}_threads.pdf".format(PLOT_FILE_PREFIX, bm_group))
+            filename = "{}{}_threads_{}_partitions.pdf".format(PLOT_FILE_PREFIX, bm_group, partition_count)
+            self.create_barplot(df, KEY_THREAD_COUNT, KEY_BANDWIDTH, "Number of Threads", "Throughput in GB/s", KEY_NUMA_MEMORY_NODES, plot_title, legend_title, filename)
             # Plot 2 (x: access size, y: throughput)
             df = df[df[KEY_THREAD_COUNT] == PLOT_BW_PER_ACCESS_SIZE_THREAD_COUNT]
             print("Creating barplot (access sizes) for BM group {}".format(bm_group))
-            self.create_barplot(df, KEY_ACCESS_SIZE, KEY_BANDWIDTH, "Access Size in Byte", "Throughput in GB/s", KEY_NUMA_MEMORY_NODES, plot_title, legend_title, "{}{}_access_sizes.pdf".format(PLOT_FILE_PREFIX, bm_group))
+            filename = "{}{}_access_sizes_{}_partitions.pdf".format(PLOT_FILE_PREFIX, bm_group, partition_count)
+            self.create_barplot(df, KEY_ACCESS_SIZE, KEY_BANDWIDTH, "Access Size in Byte", "Throughput in GB/s", KEY_NUMA_MEMORY_NODES, plot_title, legend_title, filename)
         elif bm_group in latency_plot_group:
             thread_counts = df[KEY_THREAD_COUNT].unique()
             for thread_count in thread_counts:
                print("Creating barplot (latency per operations) for BM group {} and thread count {}".format(bm_group, thread_count))
                df_thread = df[df[KEY_THREAD_COUNT] == thread_count] 
-               self.create_barplot(df_thread, KEY_CUSTOM_OPS, KEY_LAT_AVG, "Operations", "Latency in ns", KEY_NUMA_MEMORY_NODES, plot_title, legend_title, "{}{}_latency_custom_ops_{}_threads.pdf".format(PLOT_FILE_PREFIX, bm_group, thread_count), True)
+               filename = "{}{}_latency_custom_ops_{}_threads_{}_partitions.pdf".format(PLOT_FILE_PREFIX, bm_group, thread_count, partition_count)
+               self.create_barplot(df_thread, KEY_CUSTOM_OPS, KEY_LAT_AVG, "Operations", "Latency in ns", KEY_NUMA_MEMORY_NODES, plot_title, legend_title, filename, True)
             print("Generating ploits for latency plot group needs to be implemented.")
         else:
             sys.exit("Benchmark group '{}' is not known.".format(bm_group))
