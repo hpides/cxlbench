@@ -1,0 +1,13 @@
+random_writes:
+  matrix:
+    number_threads: [ 1, 8, 16, 32 ]
+    number_partitions: [0, 1]
+    numa_memory_nodes: [[0],[1],[2]]
+    access_size: [ 64, 128, 256, 512 ]
+    persist_instruction: [ cache, cacheinv, nocache, none ]
+
+  args:
+    exec_mode: random
+    memory_range: 10G
+    number_operations: 1000000000
+    operation: write
