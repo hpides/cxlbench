@@ -15,7 +15,7 @@ jobs:
       matrix:
         build-type: [Release, Debug]
         gcc: [12]
-        clang: [14]
+        clang: [15]
 
     steps:
     - uses: actions/checkout@v2
