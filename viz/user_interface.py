@@ -27,6 +27,7 @@ def new_html_page(benchmark_pngs):
 
     return doc
 
+
 def create_benchmark_pages(output_dir, img_dir, benchmark_pngs):
     for bp in benchmark_pngs.items():
         doc = new_html_page(benchmark_pngs)

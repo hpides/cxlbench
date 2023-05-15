@@ -6,6 +6,7 @@ import sys
 
 from plot_generator import PlotGenerator
 
+
 def dir_path(path):
     """
     Checks if the given directory path is valid.
@@ -18,8 +19,10 @@ def dir_path(path):
     else:
         raise argparse.ArgumentTypeError(f"The path to the results directory is not valid.")
 
+
 def valid_path(path):
     return path if os.path.isfile(path) else dir_path(path)
+
 
 if __name__ == "__main__":
     # parse args + check for correctness and completeness of args
@@ -41,6 +44,6 @@ if __name__ == "__main__":
 
     os.makedirs(output_dir, exist_ok=True)
 
-    # create plots 
+    # create plots
     plotter = PlotGenerator(results, output_dir, no_plots)
     plotter.process_matrix_jsons()

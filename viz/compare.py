@@ -11,6 +11,7 @@ import sys
 
 from comparison_plotter import ComparisonPlotter
 
+
 def dir_path(path):
     """
     Checks if the given directory path is valid.
@@ -23,8 +24,10 @@ def dir_path(path):
     else:
         raise argparse.ArgumentTypeError(f"The path to the results directory is not valid.")
 
+
 def valid_path(path):
     return path if os.path.isfile(path) else dir_path(path)
+
 
 if __name__ == "__main__":
     # parse args + check for correctness and completeness of args
@@ -53,6 +56,6 @@ if __name__ == "__main__":
     if os.path.isfile(results_first) or os.path.isfile(results_second):
         sys.exit("Result paths have to be directories.")
 
-    # create plots 
+    # create plots
     plotter = ComparisonPlotter(results_first, results_second, label_first, label_second, output_dir)
     plotter.process_matrix_jsons_comparison()
