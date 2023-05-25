@@ -18,6 +18,6 @@ void check_file_written(const std::filesystem::path& pmem_file, size_t total_siz
 void check_file_written(const std::filesystem::path& pmem_file, size_t total_size, size_t size_written);
 
 void check_json_result(const nlohmann::json& result_json, uint64_t total_bytes, double expected_bandwidth,
-                       uint64_t num_threads, double expected_per_thread_bandwidth, double expected_per_thread_stddev);
+                       uint64_t thread_count, double expected_per_thread_bandwidth, double expected_per_thread_stddev);
 
 }  // namespace mema

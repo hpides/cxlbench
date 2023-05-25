@@ -57,12 +57,12 @@ struct BenchmarkExecution {
 struct ThreadRunConfig {
   char* partition_start_addr;
   char* dram_partition_start_addr;
-  const size_t partition_size;
-  const size_t dram_partition_size;
-  const size_t num_threads_per_partition;
-  const size_t thread_num;
-  const size_t num_ops_per_chunk;
-  const size_t num_chunks;
+  const uint64_t partition_size;
+  const uint64_t dram_partition_size;
+  const uint64_t thread_count_per_partition;
+  const uint64_t thread_idx;
+  const uint64_t ops_count_per_chunk;
+  const uint64_t chunk_count;
   const BenchmarkConfig& config;
 
   BenchmarkExecution* execution;
@@ -72,19 +72,20 @@ struct ThreadRunConfig {
   ExecutionDuration* total_operation_duration;
   std::vector<uint64_t>* custom_op_latencies;
 
-  ThreadRunConfig(char* partition_start_addr, char* dram_partition_start_addr, const size_t partition_size,
-                  const size_t dram_partition_size, const size_t num_threads_per_partition, const size_t thread_num,
-                  const size_t num_ops_per_chunk, const size_t num_chunks, const BenchmarkConfig& config,
-                  BenchmarkExecution* execution, ExecutionDuration* total_operation_duration,
-                  uint64_t* total_operation_size, std::vector<uint64_t>* custom_op_latencies)
+  ThreadRunConfig(char* partition_start_addr, char* dram_partition_start_addr, const uint64_t partition_size,
+                  const uint64_t dram_partition_size, const uint64_t thread_count_per_partition,
+                  const uint64_t thread_idx, const uint64_t ops_count_per_chunk, const uint64_t chunk_count,
+                  const BenchmarkConfig& config, BenchmarkExecution* execution,
+                  ExecutionDuration* total_operation_duration, uint64_t* total_operation_size,
+                  std::vector<uint64_t>* custom_op_latencies)
       : partition_start_addr{partition_start_addr},
         dram_partition_start_addr{dram_partition_start_addr},
         partition_size{partition_size},
         dram_partition_size{dram_partition_size},
-        num_threads_per_partition{num_threads_per_partition},
-        thread_num{thread_num},
-        num_ops_per_chunk{num_ops_per_chunk},
-        num_chunks{num_chunks},
+        thread_count_per_partition{thread_count_per_partition},
+        thread_idx{thread_idx},
+        ops_count_per_chunk{ops_count_per_chunk},
+        chunk_count{chunk_count},
         config{config},
         execution{execution},
         total_operation_duration{total_operation_duration},

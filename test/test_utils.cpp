@@ -36,7 +36,7 @@ void check_file_written(const std::filesystem::path& pmem_file, const size_t tot
 }
 
 void check_json_result(const nlohmann::json& result_json, uint64_t total_bytes, double expected_bandwidth,
-                       uint64_t num_threads, double expected_per_thread_bandwidth, double expected_per_thread_stddev) {
+                       uint64_t thread_count, double expected_per_thread_bandwidth, double expected_per_thread_stddev) {
   ASSERT_JSON_EQ(result_json, size(), 1);
   ASSERT_JSON_TRUE(result_json, contains("results"));
 
@@ -58,7 +58,7 @@ void check_json_result(const nlohmann::json& result_json, uint64_t total_bytes, 
   EXPECT_EQ(results_json.at("accessed_bytes").get<double>(), total_bytes);
 
   ASSERT_JSON_TRUE(results_json, contains("threads"));
-  EXPECT_EQ(results_json.at("threads").size(), num_threads);
+  EXPECT_EQ(results_json.at("threads").size(), thread_count);
 }
 
 }  // namespace mema

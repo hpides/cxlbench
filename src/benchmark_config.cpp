@@ -247,7 +247,7 @@ void BenchmarkConfig::validate() const {
                      " ops for this workload. Got: " + std::to_string(number_operations));
 
   const uint64_t total_accessed_memory = number_operations * access_size;
-  if (total_accessed_memory < 5 * BYTES_IN_GIGABYTE) {
+  if (total_accessed_memory < 5 * GIBIBYTES_IN_BYTES) {
     spdlog::warn(
         "Accessing less then 5 GiB of data. This short run may lead to inaccurate results due to the very short "
         "execution.");

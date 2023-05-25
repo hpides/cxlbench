@@ -21,10 +21,9 @@ enum class PersistInstruction : uint8_t { Cache, CacheInvalidate, NoCache, None 
 
 enum class Operation : uint8_t { Read, Write };
 
-// We assume 2^30 for GB and not 10^9
-static constexpr size_t BYTES_IN_MEGABYTE = 1024u * 1024;
-static constexpr size_t BYTES_IN_GIGABYTE = 1024u * BYTES_IN_MEGABYTE;
-static constexpr size_t NANOSECONDS_IN_SECONDS = 1e9;
+static constexpr size_t MEBIBYTES_IN_BYTES = 1024u * 1024;
+static constexpr size_t GIBIBYTES_IN_BYTES = 1024u * MEBIBYTES_IN_BYTES;
+static constexpr size_t SECONDS_IN_NANOSECONDS = 1e9;
 
 /**
  * This represents a custom operation to be specified by the user. Its string representation, is:
@@ -75,7 +74,7 @@ struct BenchmarkConfig {
   uint32_t access_size = 256;
 
   /** Represents the total PMem memory range to use for the benchmark. Must be a multiple of `access_size`.  */
-  uint64_t memory_range = 10 * BYTES_IN_GIGABYTE;  // 10 GiB
+  uint64_t memory_range = 10 * GIBIBYTES_IN_BYTES;  // 10 GiB
 
   /** Represents the total DRAM memory range to use for the benchmark. Must be a multiple of `access_size`.  */
   uint64_t dram_memory_range = 0;
@@ -132,7 +131,7 @@ struct BenchmarkConfig {
 
   /** Represents the minimum size of an atomic work package. A chunk contains chunk_size / access_size number of
    * operations. Assuming the lowest bandwidth of 1 GiB/s operations per thread, 64 MiB is a ~60 ms execution unit. */
-  uint64_t min_io_chunk_size = 64 * BYTES_IN_MEGABYTE;
+  uint64_t min_io_chunk_size = 64 * MEBIBYTES_IN_BYTES;
 
   /** These fields are set internally and do not represent user-facing options. */
   /** This field is required and has no default value, i.e., it must be set as a command line argument. */

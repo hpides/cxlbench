@@ -42,8 +42,8 @@ nlohmann::json hdr_histogram_to_json(hdr_histogram* hdr) {
 }
 
 inline double get_bandwidth(const uint64_t total_data_size, const std::chrono::steady_clock::duration total_duration) {
-  const double duration_in_s = static_cast<double>(total_duration.count()) / mema::NANOSECONDS_IN_SECONDS;
-  const double data_in_gib = static_cast<double>(total_data_size) / mema::BYTES_IN_GIGABYTE;
+  const double duration_in_s = static_cast<double>(total_duration.count()) / mema::SECONDS_IN_NANOSECONDS;
+  const double data_in_gib = static_cast<double>(total_data_size) / mema::GIBIBYTES_IN_BYTES;
   return data_in_gib / duration_in_s;
 }
 
@@ -61,7 +61,7 @@ BenchmarkType Benchmark::get_benchmark_type() const { return benchmark_type_; }
 
 void Benchmark::single_set_up(const BenchmarkConfig& config, char* pmem_data, char* dram_data,
                               BenchmarkExecution* execution, BenchmarkResult* result, std::vector<std::thread>* pool,
-                              std::vector<ThreadRunConfig>* thread_config) {
+                              std::vector<ThreadRunConfig>* thread_configs) {
   const size_t num_total_range_ops = config.memory_range / config.access_size;
   const bool is_custom_execution = config.exec_mode == Mode::Custom;
   const size_t num_operations =
@@ -69,7 +69,7 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, char* pmem_data, ch
   const size_t num_ops_per_thread = num_operations / config.number_threads;
 
   pool->reserve(config.number_threads);
-  thread_config->reserve(config.number_threads);
+  thread_configs->reserve(config.number_threads);
   result->total_operation_durations.resize(config.number_threads);
   result->total_operation_sizes.resize(config.number_threads, 0);
 
@@ -83,11 +83,11 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, char* pmem_data, ch
   }
 
   // If number_partitions is 0, each thread gets its own partition.
-  const uint16_t num_partitions = config.number_partitions == 0 ? config.number_threads : config.number_partitions;
+  const uint16_t partition_count = config.number_partitions == 0 ? config.number_threads : config.number_partitions;
 
-  const uint16_t num_threads_per_partition = config.number_threads / num_partitions;
-  const uint64_t partition_size = config.memory_range / num_partitions;
-  const uint64_t dram_partition_size = config.dram_memory_range / num_partitions;
+  const uint16_t thread_count_per_partition = config.number_threads / partition_count;
+  const uint64_t partition_size = config.memory_range / partition_count;
+  const uint64_t dram_partition_size = config.dram_memory_range / partition_count;
 
   // Set up thread synchronization and execution parameters
   const size_t ops_per_chunk =
@@ -97,23 +97,23 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, char* pmem_data, ch
   // not fewer. Adding a chunk in sequential access exceeds the memory range and segfaults.
   const bool is_sequential = config.exec_mode == Mode::Sequential || config.exec_mode == Mode::Sequential_Desc;
   const size_t extra_chunk = is_sequential ? 0 : (num_operations % ops_per_chunk != 0);
-  const size_t num_chunks = (num_operations / ops_per_chunk) + extra_chunk;
+  const size_t chunk_count = (num_operations / ops_per_chunk) + extra_chunk;
 
   execution->threads_remaining = config.number_threads;
   execution->io_position = 0;
-  execution->io_operations.resize(num_chunks);
-  execution->num_custom_chunks_remaining = static_cast<int64_t>(num_chunks);
+  execution->io_operations.resize(chunk_count);
+  execution->num_custom_chunks_remaining = static_cast<int64_t>(chunk_count);
 
-  for (uint16_t partition_num = 0; partition_num < num_partitions; partition_num++) {
+  for (uint16_t partition_idx = 0; partition_idx < partition_count; partition_idx++) {
     char* partition_start = (config.exec_mode == Mode::Sequential_Desc)
-                                ? pmem_data + ((num_partitions - partition_num) * partition_size) - config.access_size
-                                : pmem_data + (partition_num * partition_size);
+                                ? pmem_data + ((partition_count - partition_idx) * partition_size) - config.access_size
+                                : pmem_data + (partition_idx * partition_size);
 
     // Only possible in random or custom mode
-    char* dram_partition_start = dram_data + (partition_num * partition_size);
+    char* dram_partition_start = dram_data + (partition_idx * partition_size);
 
-    for (uint16_t partition_thread_num = 0; partition_thread_num < num_threads_per_partition; partition_thread_num++) {
-      const uint32_t thread_idx = (partition_num * num_threads_per_partition) + partition_thread_num;
+    for (uint16_t partition_thread_idx = 0; partition_thread_idx < thread_count_per_partition; partition_thread_idx++) {
+      const uint32_t thread_idx = (partition_idx * thread_count_per_partition) + partition_thread_idx;
 
       // Reserve space for custom operation latency measurements to avoid resizing during benchmark execution.
       if (is_custom_execution) {
@@ -125,9 +125,9 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, char* pmem_data, ch
       std::vector<uint64_t>* custom_op_latencies =
           is_custom_execution ? &result->custom_operation_latencies[thread_idx] : nullptr;
 
-      thread_config->emplace_back(partition_start, dram_partition_start, partition_size, dram_partition_size,
-                                  num_threads_per_partition, thread_idx, ops_per_chunk, num_chunks, config, execution,
-                                  total_op_duration, total_op_size, custom_op_latencies);
+      thread_configs->emplace_back(partition_start, dram_partition_start, partition_size, dram_partition_size,
+                                   thread_count_per_partition, thread_idx, ops_per_chunk, chunk_count, config,
+                                   execution, total_op_duration, total_op_size, custom_op_latencies);
     }
   }
 }
@@ -201,14 +201,14 @@ void Benchmark::run_custom_ops_in_thread(ThreadRunConfig* thread_config, const B
     }
   }
 
-  const size_t seed = std::chrono::steady_clock::now().time_since_epoch().count() * (thread_config->thread_num + 1);
+  const size_t seed = std::chrono::steady_clock::now().time_since_epoch().count() * (thread_config->thread_idx + 1);
   lehmer64_seed(seed);
   char* start_addr = reinterpret_cast<char*>(seed);
 
   ChainedOperation& start_op = operation_chain[0];
   auto start_ts = std::chrono::steady_clock::now();
 
-  const size_t num_ops_per_chunk = thread_config->num_ops_per_chunk;
+  const size_t ops_count_per_chunk = thread_config->ops_count_per_chunk;
   uint64_t total_num_ops = 0;
 
   while (true) {
@@ -218,14 +218,14 @@ void Benchmark::run_custom_ops_in_thread(ThreadRunConfig* thread_config, const B
 
     if (config.latency_sample_frequency == 0) {
       // We don't want the sampling code overhead if we don't want to sample the latency.
-      for (size_t iteration = 0; iteration < num_ops_per_chunk; ++iteration) {
+      for (size_t iteration = 0; iteration < ops_count_per_chunk; ++iteration) {
         start_op.run(start_addr, start_addr);
       }
     } else {
       // Latency sampling requested, measure the latency every x iterations.
       const uint64_t freq = config.latency_sample_frequency;
       // Start at 1 to avoid measuring latency of first request.
-      for (size_t iteration = 1; iteration <= num_ops_per_chunk; ++iteration) {
+      for (size_t iteration = 1; iteration <= ops_count_per_chunk; ++iteration) {
         if (iteration % freq == 0) {
           auto op_start = std::chrono::steady_clock::now();
           start_op.run(start_addr, start_addr);
@@ -237,7 +237,7 @@ void Benchmark::run_custom_ops_in_thread(ThreadRunConfig* thread_config, const B
       }
     }
 
-    total_num_ops += num_ops_per_chunk;
+    total_num_ops += ops_count_per_chunk;
   }
 
   auto end_ts = std::chrono::steady_clock::now();
@@ -250,60 +250,63 @@ void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkCon
     return run_custom_ops_in_thread(thread_config, config);
   }
 
-  const uint32_t num_accesses_in_range = thread_config->partition_size / config.access_size;
-  const uint32_t num_dram_accesses_in_range = thread_config->dram_partition_size / config.access_size;
-  const bool is_read_op = config.operation == Operation::Read;
-
-  const size_t thread_num_in_partition = thread_config->thread_num % thread_config->num_threads_per_partition;
-  const size_t per_iteration_thread_offset = thread_config->num_threads_per_partition * config.min_io_chunk_size;
-  const size_t thread_partition_offset = thread_num_in_partition * config.min_io_chunk_size;
-
-  const auto dram_target_ratio = static_cast<uint64_t>(config.dram_operation_ratio * 100);
-
-  const size_t seed = std::chrono::steady_clock::now().time_since_epoch().count() * (thread_config->thread_num + 1);
+  const size_t seed = std::chrono::steady_clock::now().time_since_epoch().count() * (thread_config->thread_idx + 1);
   lehmer64_seed(seed);
 
-  auto dram_target_distribution = [&]() { return (lehmer64() % 100) < dram_target_ratio; };
-  auto access_distribution = [&]() { return lehmer64() % num_accesses_in_range; };
-  auto dram_access_distribution = [&]() { return lehmer64() % num_dram_accesses_in_range; };
+  const uint32_t access_count_in_range = thread_config->partition_size / config.access_size;
+  const uint32_t dram_access_count_in_range = thread_config->dram_partition_size / config.access_size;
 
-  spdlog::debug("Thread #{}: Starting address generation", thread_config->thread_num);
+  auto access_distribution = [&]() { return lehmer64() % access_count_in_range; };
+  auto dram_access_distribution = [&]() { return lehmer64() % dram_access_count_in_range; };
+
+  spdlog::debug("Thread #{}: Starting address generation", thread_config->thread_idx);
   const auto generation_begin_ts = std::chrono::steady_clock::now();
 
   // Create all chunks before executing.
-  size_t num_chunks_per_thread = thread_config->num_chunks / config.number_threads;
-  const size_t remaining_chunks = thread_config->num_chunks % config.number_threads;
-  if (remaining_chunks > 0 && thread_config->thread_num < remaining_chunks) {
+  size_t chunk_count_per_thread = thread_config->chunk_count / config.number_threads;
+  const size_t remaining_chunk_count = thread_config->chunk_count % config.number_threads;
+  if (remaining_chunk_count > 0 && thread_config->thread_idx < remaining_chunk_count) {
     // This thread needs to create an extra chunk for an uneven number.
-    num_chunks_per_thread++;
+    chunk_count_per_thread++;
   }
 
-  for (size_t chunk_num = 0; chunk_num < num_chunks_per_thread; ++chunk_num) {
+  const size_t thread_idx_in_partition = thread_config->thread_idx % thread_config->thread_count_per_partition;
+  const size_t thread_offset_in_partition = thread_idx_in_partition * config.min_io_chunk_size;
+  // The size in bytes that all partition threads read. Assuming n chunks C_n and 4 partition threads PT_m, then PT_0,
+  // PT_1, PT_2, PT_3 will initally access C_0, C_1, C_2, and C_4 respectively. If PT_0 finished accessing C_0, it will
+  // continue with accessing with C_5. The offset delta between C_0's and C_5's start address is 4 * chunk size.
+  const size_t partition_threads_access_size = thread_config->thread_count_per_partition * config.min_io_chunk_size;
+  const bool is_read_op = config.operation == Operation::Read;
+
+  const auto dram_target_ratio = static_cast<uint64_t>(config.dram_operation_ratio * 100);
+  auto dram_target_distribution = [&]() { return (lehmer64() % 100) < dram_target_ratio; };
+
+  for (size_t chunk_idx = 0; chunk_idx < chunk_count_per_thread; ++chunk_idx) {
     const size_t thread_chunk_offset =
         // Overall offset after x chunks          + offset of this thread for chunk x+1
-        (chunk_num * per_iteration_thread_offset) + thread_partition_offset;
+        (chunk_idx * partition_threads_access_size) + thread_offset_in_partition;
     char* next_op_position = config.exec_mode == Mode::Sequential_Desc
                                  ? thread_config->partition_start_addr - thread_chunk_offset
                                  : thread_config->partition_start_addr + thread_chunk_offset;
 
-    std::vector<char*> op_addresses(thread_config->num_ops_per_chunk);
+    std::vector<char*> op_addresses(thread_config->ops_count_per_chunk);
 
-    for (size_t io_op = 0; io_op < thread_config->num_ops_per_chunk; ++io_op) {
+    for (size_t op_idx = 0; op_idx < thread_config->ops_count_per_chunk; ++op_idx) {
       switch (config.exec_mode) {
         case Mode::Random: {
           char* partition_start;
-          uint32_t num_target_accesses_in_range;
+          uint32_t target_access_count_in_range;
           std::function<uint64_t()> random_distribution;
           // Get memory target
           if (config.is_hybrid && dram_target_distribution()) {
             // DRAM target
             partition_start = thread_config->dram_partition_start_addr;
-            num_target_accesses_in_range = num_dram_accesses_in_range;
+            target_access_count_in_range = dram_access_count_in_range;
             random_distribution = dram_access_distribution;
           } else {
             // PMEM target
             partition_start = thread_config->partition_start_addr;
-            num_target_accesses_in_range = num_accesses_in_range;
+            target_access_count_in_range = access_count_in_range;
             random_distribution = access_distribution;
           }
 
@@ -311,18 +314,18 @@ void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkCon
           if (config.random_distribution == RandomDistribution::Uniform) {
             random_value = random_distribution();
           } else {
-            random_value = utils::zipf(config.zipf_alpha, num_target_accesses_in_range);
+            random_value = utils::zipf(config.zipf_alpha, target_access_count_in_range);
           }
-          op_addresses[io_op] = partition_start + (random_value * config.access_size);
+          op_addresses[op_idx] = partition_start + (random_value * config.access_size);
           break;
         }
         case Mode::Sequential: {
-          op_addresses[io_op] = next_op_position;
+          op_addresses[op_idx] = next_op_position;
           next_op_position += config.access_size;
           break;
         }
         case Mode::Sequential_Desc: {
-          op_addresses[io_op] = next_op_position;
+          op_addresses[op_idx] = next_op_position;
           next_op_position -= config.access_size;
           break;
         }
@@ -335,21 +338,21 @@ void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkCon
 
     // We can always pass the persist_instruction as is. It is ignored for read access.
     Operation op = is_read_op ? Operation::Read : Operation::Write;
-    const size_t insert_pos = (chunk_num * config.number_threads) + thread_config->thread_num;
+    const size_t insert_pos = (chunk_idx * config.number_threads) + thread_config->thread_idx;
 
-    IoOperation& current_io = thread_config->execution->io_operations[insert_pos];
-    current_io.op_addresses_ = std::move(op_addresses);
-    current_io.access_size_ = config.access_size;
-    current_io.op_type_ = op;
-    current_io.persist_instruction_ = config.persist_instruction;
+    IoOperation& current_op = thread_config->execution->io_operations[insert_pos];
+    current_op.op_addresses_ = std::move(op_addresses);
+    current_op.access_size_ = config.access_size;
+    current_op.op_type_ = op;
+    current_op.persist_instruction_ = config.persist_instruction;
   }
 
   const auto generation_end_ts = std::chrono::steady_clock::now();
   const uint64_t generation_duration_us =
       std::chrono::duration_cast<std::chrono::milliseconds>(generation_end_ts - generation_begin_ts).count();
-  spdlog::debug("Thread #{}: Finished address generation in {} ms", thread_config->thread_num, generation_duration_us);
+  spdlog::debug("Thread #{}: Finished address generation in {} ms", thread_config->thread_idx, generation_duration_us);
 
-  bool is_last;
+  auto is_last = bool{false};
   uint16_t& threads_remaining = thread_config->execution->threads_remaining;
   {
     std::lock_guard<std::mutex> gen_lock{thread_config->execution->generation_lock};
@@ -368,54 +371,54 @@ void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkCon
   const auto execution_begin_ts = std::chrono::steady_clock::now();
   std::atomic<uint64_t>* io_position = &thread_config->execution->io_position;
 
-  uint64_t num_executed_operations;
+  auto executed_op_count = uint64_t{0};
   if (config.run_time == 0) {
-    num_executed_operations = run_fixed_sized_benchmark(&thread_config->execution->io_operations, io_position);
+    executed_op_count = run_fixed_sized_benchmark(&thread_config->execution->io_operations, io_position);
   } else {
     const auto execution_end = execution_begin_ts + std::chrono::seconds{config.run_time};
-    num_executed_operations =
+    executed_op_count =
         run_duration_based_benchmark(&thread_config->execution->io_operations, io_position, execution_end);
   }
 
   const auto execution_end_ts = std::chrono::steady_clock::now();
   const auto execution_duration =
       std::chrono::duration_cast<std::chrono::milliseconds>(execution_end_ts - execution_begin_ts);
-  spdlog::debug("Thread #{}: Finished execution in {} ms", thread_config->thread_num, execution_duration.count());
+  spdlog::debug("Thread #{}: Finished execution in {} ms", thread_config->thread_idx, execution_duration.count());
 
-  const uint64_t chunk_size = config.access_size * thread_config->num_ops_per_chunk;
-  *(thread_config->total_operation_size) = num_executed_operations * chunk_size;
+  const uint64_t chunk_size = config.access_size * thread_config->ops_count_per_chunk;
+  *(thread_config->total_operation_size) = executed_op_count * chunk_size;
   *(thread_config->total_operation_duration) = ExecutionDuration{execution_begin_ts, execution_end_ts};
 }
 
 uint64_t Benchmark::run_fixed_sized_benchmark(std::vector<IoOperation>* io_operations,
                                               std::atomic<uint64_t>* io_position) {
-  const uint64_t total_num_operations = io_operations->size();
-  uint64_t num_executed_operations = 0;
+  const uint64_t total_op_count = io_operations->size();
+  uint64_t executed_op_count = 0;
 
   while (true) {
     const uint64_t op_pos = io_position->fetch_add(1);
-    if (op_pos >= total_num_operations) {
+    if (op_pos >= total_op_count) {
       break;
     }
 
     (*io_operations)[op_pos].run();
-    num_executed_operations++;
+    executed_op_count++;
   }
 
-  return num_executed_operations;
+  return executed_op_count;
 }
 
 uint64_t Benchmark::run_duration_based_benchmark(std::vector<IoOperation>* io_operations,
                                                  std::atomic<uint64_t>* io_position,
                                                  std::chrono::steady_clock::time_point execution_end) {
-  const uint64_t total_num_operations = io_operations->size();
-  uint64_t num_executed_operations = 0;
+  const uint64_t total_op_count = io_operations->size();
+  uint64_t executed_op_count = 0;
 
   while (true) {
-    const uint64_t work_package = io_position->fetch_add(1) % total_num_operations;
+    const uint64_t work_package = io_position->fetch_add(1) % total_op_count;
 
     (*io_operations)[work_package].run();
-    num_executed_operations++;
+    executed_op_count++;
 
     const auto current_time = std::chrono::steady_clock::now();
     if (current_time > execution_end) {
@@ -423,7 +426,7 @@ uint64_t Benchmark::run_duration_based_benchmark(std::vector<IoOperation>* io_op
     }
   }
 
-  return num_executed_operations;
+  return executed_op_count;
 }
 
 const std::vector<BenchmarkConfig>& Benchmark::get_benchmark_configs() const { return configs_; }
@@ -507,19 +510,19 @@ nlohmann::json BenchmarkResult::get_result_as_json() const {
   std::vector<double> per_thread_bandwidth(config.number_threads);
   nlohmann::json per_thread_results = nlohmann::json::array();
 
-  for (uint16_t thread_num = 0; thread_num < config.number_threads; thread_num++) {
-    const ExecutionDuration& thread_timestamps = total_operation_durations[thread_num];
+  for (uint16_t thread_idx = 0; thread_idx < config.number_threads; thread_idx++) {
+    const ExecutionDuration& thread_timestamps = total_operation_durations[thread_idx];
     const std::chrono::steady_clock::duration thread_duration = thread_timestamps.duration();
     auto thread_duration_s = std::chrono::duration<double>(std::chrono::nanoseconds{thread_duration}).count();
 
-    const uint64_t thread_op_size = total_operation_sizes[thread_num];
+    const uint64_t thread_op_size = total_operation_sizes[thread_idx];
 
     const double thread_bandwidth = get_bandwidth(thread_op_size, thread_duration);
-    per_thread_bandwidth[thread_num] = thread_bandwidth;
+    per_thread_bandwidth[thread_idx] = thread_bandwidth;
 
-    spdlog::debug("Thread #{}: Per-Thread Information", thread_num);
+    spdlog::debug("Thread #{}: Per-Thread Information", thread_idx);
     spdlog::debug(" ├─ Bandwidth (GiB/s): {:.5f}", thread_bandwidth);
-    spdlog::debug(" ├─ Total Access Size (MiB): {}", thread_op_size / BYTES_IN_MEGABYTE);
+    spdlog::debug(" ├─ Total Access Size (MiB): {}", thread_op_size / MEBIBYTES_IN_BYTES);
     spdlog::debug(" └─ Duration (s): {:.5f}", thread_duration_s);
 
     total_size += thread_op_size;
@@ -577,15 +580,15 @@ nlohmann::json BenchmarkResult::get_custom_results_as_json() const {
   std::chrono::steady_clock::time_point earliest_begin = total_operation_durations[0].begin;
   std::chrono::steady_clock::time_point latest_end = total_operation_durations[0].end;
 
-  for (uint64_t thread_num = 0; thread_num < config.number_threads; ++thread_num) {
-    const ExecutionDuration& thread_timestamps = total_operation_durations[thread_num];
+  for (uint64_t thread_idx = 0; thread_idx < config.number_threads; ++thread_idx) {
+    const ExecutionDuration& thread_timestamps = total_operation_durations[thread_idx];
     const std::chrono::steady_clock::duration thread_duration = thread_timestamps.duration();
     const auto thread_duration_s = std::chrono::duration<double>(std::chrono::nanoseconds{thread_duration}).count();
 
-    const uint64_t num_ops = total_operation_sizes[thread_num];
+    const uint64_t num_ops = total_operation_sizes[thread_idx];
     total_num_ops += num_ops;
     const double thread_ops_per_s = static_cast<double>(num_ops) / thread_duration_s;
-    per_thread_ops_per_s[thread_num] = thread_ops_per_s;
+    per_thread_ops_per_s[thread_idx] = thread_ops_per_s;
 
     earliest_begin = std::min(earliest_begin, thread_timestamps.begin);
     latest_end = std::max(latest_end, thread_timestamps.end);
