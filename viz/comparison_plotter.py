@@ -21,8 +21,6 @@ KEY_THREAD_COUNT = "number_threads"
 KEY_THREADS = "threads"
 KEY_THREADS_LEVELED = "benchmarks.results.threads"
 
-# For plots showing the access size in Bytes on the X axis and the bandwidth on the y axis, this constat specifies the number of threads used.
-PLOT_BW_PER_ACCESS_SIZE_THREAD_COUNT = 1
 PLOT_FILE_PREFIX = "plot_"
 
 
@@ -148,7 +146,7 @@ class ComparisonPlotter:
                 "{}{}_threads.pdf".format(PLOT_FILE_PREFIX, bm_group),
             )
             # Plot 2 (x: access size, y: throughput)
-            df = df[df[KEY_THREAD_COUNT] == PLOT_BW_PER_ACCESS_SIZE_THREAD_COUNT]
+            df = df[df[KEY_THREAD_COUNT] == df[KEY_THREAD_COUNT].iloc[0]]
             print("Creating barplot (access sizes) for BM group {}".format(bm_group))
             self.create_barplot(
                 df,

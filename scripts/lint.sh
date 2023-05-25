@@ -88,7 +88,7 @@ if [[ ${output} ]]; then
 fi
 
 # Python linting
-output=$(flake8 --max-line-length 120 --extend-ignore=E203 scripts)
+output=$(flake8 --max-line-length 120 --extend-ignore=E203 scripts viz/*.py)
 if [ ! -z "$output" ]; then
 	echo "$output"
 	exitcode=1

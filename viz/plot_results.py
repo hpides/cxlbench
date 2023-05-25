@@ -2,7 +2,6 @@
 
 import argparse
 import os
-import sys
 
 from plot_generator import PlotGenerator
 
@@ -17,7 +16,7 @@ def dir_path(path):
     if os.path.isdir(path):
         return path
     else:
-        raise argparse.ArgumentTypeError(f"The path to the results directory is not valid.")
+        raise argparse.ArgumentTypeError("The path to the results directory is not valid.")
 
 
 def valid_path(path):
