@@ -1,24 +1,36 @@
 operation_latency:
   matrix:
-    number_threads: [ 1, 8, 16, 32 ]
-    number_partitions: [0, 1]
+    number_threads: [ 1, 2, 4, 8, 16, 32 ]
+    number_partitions: [1]
     numa_memory_nodes: [[0],[1],[2]]
     custom_operations:
     # 64 Byte
       - "r_64"
       - "r_64,w_64_none"
+      - "r_64,w_64_cache"
+      - "r_64,w_64_cacheinv"
+      - "r_64,w_64_nocache"
     # 128 Byte
       - "r_128"
       - "r_128,w_128_none"
+      - "r_128,w_128_cache"
+      - "r_128,w_128_cacheinv"
+      - "r_128,w_128_nocache"
     # 256 Byte
       - "r_256"
       - "r_256,w_256_none"
+      - "r_256,w_256_cache"
+      - "r_256,w_256_cacheinv"
+      - "r_256,w_256_nocache"
     # 512 Byte
       - "r_512"
       - "r_512,w_512_none"
+      - "r_512,w_512_cache"
+      - "r_512,w_512_cacheinv"
+      - "r_512,w_512_nocache"
 
   args:
-    memory_range: 10G
+    memory_range: 8G
     number_operations: 100000000
-    latency_sample_frequency: 500
+    latency_sample_frequency: 50000
     exec_mode: custom
