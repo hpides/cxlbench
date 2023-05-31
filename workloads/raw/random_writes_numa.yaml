@@ -1,6 +1,6 @@
 random_writes:
   matrix:
-    number_threads: [ 1, 2, 4, 8, 16, 32 ]
+    number_threads: [ 1, 2, 4, 8 ]
     number_partitions: [1]
     numa_memory_nodes: [[0],[1],[2]]
     access_size: [ 64, 128, 256, 512 ]
@@ -9,5 +9,5 @@ random_writes:
   args:
     exec_mode: random
     memory_range: 8G
-    number_operations: 1000000000
+    number_operations: 10000000
     operation: write

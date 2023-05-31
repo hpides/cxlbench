@@ -1,6 +1,6 @@
 operation_latency:
   matrix:
-    number_threads: [ 1, 2, 4, 8, 16, 32 ]
+    number_threads: [ 1, 2, 4, 8 ]
     number_partitions: [1]
     numa_memory_nodes: [[0],[1],[2]]
     custom_operations:
@@ -31,6 +31,6 @@ operation_latency:
 
   args:
     memory_range: 8G
-    number_operations: 100000000
-    latency_sample_frequency: 50000
+    number_operations: 10000000
+    latency_sample_frequency: 10000
     exec_mode: custom
