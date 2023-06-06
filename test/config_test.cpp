@@ -613,4 +613,29 @@ TEST_F(ConfigTest, AsJsonWithRuntime) {
   EXPECT_EQ(json["run_time"].get<uint64_t>(), 42);
 }
 
+TEST_F(ConfigTest, ToString) {
+  auto bm_config = BenchmarkConfig{};
+
+  // bm_config.
+  bm_config.is_pmem = false;
+  bm_config.memory_range = 40 * GIBIBYTES_IN_BYTES;
+  bm_config.exec_mode = Mode::Random;
+  bm_config.numa_memory_nodes = {1, 2};
+  bm_config.number_partitions = 8;
+  bm_config.number_threads = 4;
+  bm_config.min_io_chunk_size = 32 * MEBIBYTES_IN_BYTES;
+  bm_config.access_size = 512;
+  bm_config.operation = Operation::Write;
+  bm_config.persist_instruction = PersistInstruction::Cache;
+  bm_config.number_operations = 50'000'000;
+  bm_config.random_distribution = RandomDistribution::Zipf;
+  bm_config.zipf_alpha = 0.8;
+
+  std::string expected_output = "memory type: dram, memory range: 42949672960, exec mode: random, "
+    "memory numa nodes: [1, 2], partition count: 8, thread count: 4, min io chunk size: 33554432, access size: 512, "
+    "operation: write, persist instruction: cache, number operations: 50000000, random distribution: zipf, "
+    "zipf alpha: 0.8";
+  EXPECT_EQ(bm_config.to_string(), expected_output);
+}
+
 }  // namespace mema

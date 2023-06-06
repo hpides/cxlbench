@@ -146,6 +146,7 @@ struct BenchmarkConfig {
   bool contains_write_op() const;
   bool contains_dram_op() const;
 
+  std::string to_string(const std::string sep = ", ") const;
   nlohmann::json as_json() const;
 };
 

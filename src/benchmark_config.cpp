@@ -3,6 +3,7 @@
 #include <spdlog/spdlog.h>
 
 #include <charconv>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 
@@ -11,11 +12,11 @@
 
 namespace {
 
-#define CHECK_ARGUMENT(exp, txt) \
-  if (!(exp)) {                  \
-    spdlog::critical(txt);       \
-    mema::utils::crash_exit();   \
-  }                              \
+#define CHECK_ARGUMENT(exp, txt)                                          \
+  if (!(exp)) {                                                           \
+    spdlog::critical(txt + std::string("\nUsed config: ") + to_string()); \
+    mema::utils::crash_exit();                                            \
+  }                                                                       \
   static_assert(true, "Need ; after macro")
 
 constexpr auto VISITED_TAG = "visited";
@@ -172,11 +173,11 @@ void BenchmarkConfig::validate() const {
 
   // Check if access size is at least 512-bit, i.e., 64byte (cache line)
   const bool is_access_size_greater_64_byte = access_size >= 64;
-  CHECK_ARGUMENT(is_access_size_greater_64_byte, "Access size must be at least 64-byte, i.e., a cache line");
+  CHECK_ARGUMENT(is_access_size_greater_64_byte, "Access size must be at least 64-byte, i.e., a cache line.");
 
   // Check if access size is a power of two
   const bool is_access_size_power_of_two = (access_size & (access_size - 1)) == 0;
-  CHECK_ARGUMENT(is_access_size_power_of_two, "Access size must be a power of 2");
+  CHECK_ARGUMENT(is_access_size_power_of_two, "Access size must be a power of 2.");
 
   // Check if PMem memory range is multiple of access size
   const bool is_memory_range_multiple_of_access_size = (memory_range % access_size) == 0;
@@ -243,8 +244,7 @@ void BenchmarkConfig::validate() const {
   CHECK_ARGUMENT(has_enough_number_operations,
                  "Need enough number_operations to have at least one to chunk per thread. Consider at least 100 "
                  "operations in total to actual perform a significant amount of work. Need minimum of " +
-                     std::to_string(min_required_number_ops) +
-                     " ops for this workload. Got: " + std::to_string(number_operations));
+                     std::to_string(min_required_number_ops) + " ops for this workload.");
 
   const uint64_t total_accessed_memory = number_operations * access_size;
   if (total_accessed_memory < 5 * GIBIBYTES_IN_BYTES) {
@@ -285,6 +285,52 @@ bool BenchmarkConfig::contains_dram_op() const {
   auto find_custom_dram_op = [](const CustomOp& op) { return !op.is_pmem; };
   return dram_operation_ratio > 0.0 ||
          std::any_of(custom_operations.begin(), custom_operations.end(), find_custom_dram_op);
+}
+
+std::string BenchmarkConfig::to_string(const std::string sep) const {
+  auto stream = std::stringstream{};
+  stream << "memory type: " << utils::get_enum_as_string(ConfigEnums::str_to_mem_type, is_pmem);
+  stream << sep << "memory range: " << memory_range;
+  stream << sep << "exec mode: " << utils::get_enum_as_string(ConfigEnums::str_to_mode, exec_mode);
+  stream << sep << "memory numa nodes: [";
+  auto delim = "";
+  for (const auto& node : numa_memory_nodes) {
+    stream << delim << node;
+    delim = ", ";
+  }
+  stream << "]" << sep << "partition count: " << number_partitions;
+  stream << sep << "thread count: " << number_threads;
+  stream << sep << "min io chunk size: " << min_io_chunk_size;
+
+  if (exec_mode != Mode::Custom) {
+    stream << sep << "access size: " << access_size;
+    stream << sep << "operation: " << utils::get_enum_as_string(ConfigEnums::str_to_operation, operation);
+
+    if (operation == Operation::Write) {
+      stream << sep << "persist instruction: "
+             << utils::get_enum_as_string(ConfigEnums::str_to_persist_instruction, persist_instruction);
+    }
+  }
+
+  if (exec_mode == Mode::Random) {
+    stream << sep << "number operations: " << number_operations;
+    stream << sep << "random distribution: "
+           << utils::get_enum_as_string(ConfigEnums::str_to_random_distribution, random_distribution);
+    if (random_distribution == RandomDistribution::Zipf) {
+      stream << sep << "zipf alpha: " << zipf_alpha;
+    }
+  }
+
+  if (exec_mode == Mode::Custom) {
+    stream << sep << "number operations: " << number_operations;
+    stream << sep << "custom operations: " << CustomOp::all_to_string(custom_operations);
+  }
+
+  if (run_time > 0) {
+    stream << sep << "run time: " << run_time;
+  }
+
+  return stream.str();
 }
 
 nlohmann::json BenchmarkConfig::as_json() const {
