@@ -116,6 +116,8 @@ bool get_uints_if_present(YAML::Node& data, const std::string& name, std::vector
 namespace mema {
 
 BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
+  spdlog::info("Decoding benchmark config from file: {}", node["config_file"].as<std::string>());
+  node.remove("config_file");
   BenchmarkConfig bm_config{};
   size_t num_found = 0;
   try {
@@ -242,8 +244,8 @@ void BenchmarkConfig::validate() const {
   const uint64_t min_required_number_ops = (min_io_chunk_size / access_size) * number_threads;
   const bool has_enough_number_operations = !is_custom_or_random || number_operations > min_required_number_ops;
   CHECK_ARGUMENT(has_enough_number_operations,
-                 "Need enough number_operations to have at least one to chunk per thread. Consider at least 100 "
-                 "operations in total to actual perform a significant amount of work. Need minimum of " +
+                 "Need enough number_operations to have at least one chunk per thread. Consider at least 100 "
+                 "operations in total to actually perform a significant amount of work. Need minimum of " +
                      std::to_string(min_required_number_ops) + " ops for this workload.");
 
   const uint64_t total_accessed_memory = number_operations * access_size;

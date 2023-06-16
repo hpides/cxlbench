@@ -218,8 +218,30 @@ std::vector<YAML::Node> BenchmarkFactory::get_config_files(const std::filesystem
   }
   std::vector<YAML::Node> yaml_configs{};
   try {
-    for (const std::filesystem::path& config_file : config_files) {
-      yaml_configs.emplace_back(YAML::LoadFile(config_file));
+    for (const auto& config_file : config_files) {
+      auto config = YAML::LoadFile(config_file);
+
+      // Add the config file name to the config.
+      for (auto it = config.begin(); it != config.end(); ++it) {
+        const auto bm_group_name = it->first;
+        // The config file must be added to different positions in single and parallel benchmarks.
+
+        // Single Benchmark
+        if (!config[bm_group_name]["parallel_benchmark"].IsDefined()) {
+          config[bm_group_name]["args"]["config_file"] = config_file.string();
+          continue;
+        }
+
+        // Parallel Benchmark
+        auto workload_it = config[bm_group_name]["parallel_benchmark"].begin();
+        const auto workload_end = config[bm_group_name]["parallel_benchmark"].end();
+        for (; workload_it != workload_end; ++workload_it) {
+          const auto& workload_name = workload_it->first;
+          config[bm_group_name]["parallel_benchmark"][workload_name]["args"]["config_file"] = config_file.string();
+        }
+      }
+
+      yaml_configs.emplace_back(config);
     }
   } catch (const YAML::ParserException& e1) {
     throw std::runtime_error{"Exception during config parsing: " + e1.msg};
