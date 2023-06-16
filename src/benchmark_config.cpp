@@ -15,7 +15,7 @@ namespace {
 #define CHECK_ARGUMENT(exp, txt)                                          \
   if (!(exp)) {                                                           \
     spdlog::critical(txt + std::string("\nUsed config: ") + to_string()); \
-    mema::utils::crash_exit();                                            \
+    utils::crash_exit();                                                  \
   }                                                                       \
   static_assert(true, "Need ; after macro")
 
@@ -567,9 +567,8 @@ const std::unordered_map<std::string, RandomDistribution> ConfigEnums::str_to_ra
     {"uniform", RandomDistribution::Uniform}, {"zipf", RandomDistribution::Zipf}};
 
 const std::unordered_map<std::string, ConfigEnums::OpLocation> ConfigEnums::str_to_op_location = {
-    {"r", {mema::Operation::Read, true}},   {"w", {mema::Operation::Write, true}},
-    {"rp", {mema::Operation::Read, true}},  {"wp", {mema::Operation::Write, true}},
-    {"rd", {mema::Operation::Read, false}}, {"wd", {mema::Operation::Write, false}},
+    {"r", {Operation::Read, true}},   {"w", {Operation::Write, true}},  {"rp", {Operation::Read, true}},
+    {"wp", {Operation::Write, true}}, {"rd", {Operation::Read, false}}, {"wd", {Operation::Write, false}},
 };
 
 const std::unordered_map<char, uint64_t> ConfigEnums::scale_suffix_to_factor{{'k', 1024},

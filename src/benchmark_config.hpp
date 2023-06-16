@@ -152,7 +152,7 @@ struct BenchmarkConfig {
 
 struct ConfigEnums {
   // <read or write, is_pmem>
-  using OpLocation = std::pair<mema::Operation, bool>;
+  using OpLocation = std::pair<Operation, bool>;
 
   static const std::unordered_map<std::string, bool> str_to_mem_type;
   static const std::unordered_map<std::string, Mode> str_to_mode;

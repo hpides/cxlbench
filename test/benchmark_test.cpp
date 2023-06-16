@@ -1,6 +1,7 @@
+#include "benchmark.hpp"
+
 #include <fcntl.h>
 
-#include <benchmark.hpp>
 #include <fstream>
 
 #include "gmock/gmock-matchers.h"
@@ -14,7 +15,7 @@ namespace mema {
 using ::testing::ElementsAre;
 
 constexpr size_t TEST_FILE_SIZE = 1 * MEBIBYTES_IN_BYTES;  // 1 MiB
-constexpr size_t TEST_CHUNK_SIZE = TEST_FILE_SIZE / 8;    // 128 KiB
+constexpr size_t TEST_CHUNK_SIZE = TEST_FILE_SIZE / 8;     // 128 KiB
 
 class BenchmarkTest : public BaseTest {
  protected:
@@ -507,7 +508,7 @@ TEST_F(BenchmarkTest, DISABLED_RunSingeThreadMixed /* #167 */) {
   const size_t num_ops = chunk_count * ops_per_chunk;
   base_config_.number_threads = 1;
   base_config_.access_size = 256;
-  // TODO: change
+  // TODO(anyone): change
   //  base_config_.write_ratio = 0.5;
   base_config_.number_operations = num_ops;
   base_config_.exec_mode = Mode::Random;
@@ -741,7 +742,7 @@ TEST_F(BenchmarkTest, DISABLED_ResultsSingleThreadMixed /* #167 */) {
   base_config_.number_operations = num_ops;
   base_config_.number_threads = 1;
   base_config_.access_size = 512;
-  // TODO: change
+  // TODO(anyone): change
   //   base_config_.write_ratio = 0.5;
   base_config_.memory_range = total_size;
   base_config_.exec_mode = Mode::Random;
@@ -827,7 +828,7 @@ TEST_F(BenchmarkTest, DISABLED_ResultsMultiThreadMixed /* #167 */) {
   base_config_.number_threads = thread_count;
   base_config_.number_operations = num_ops;
   base_config_.access_size = 512;
-  // TODO: change
+  // TODO(anyone): change
   //   base_config_.write_ratio = 0.5;
   base_config_.memory_range = total_size;
   base_config_.exec_mode = Mode::Random;

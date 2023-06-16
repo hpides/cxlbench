@@ -38,7 +38,8 @@ class ConfigTest : public BaseTest {
     config_par_file_seq_random = BenchmarkFactory::get_config_files(test_config_path / TEST_PAR_CONFIG_FILE_SEQ_RANDOM);
     config_par_file_matrix = BenchmarkFactory::get_config_files(test_config_path / TEST_PAR_CONFIG_FILE_MATRIX);
     config_custom_ops_matrix = BenchmarkFactory::get_config_files(test_config_path / TEST_CUSTOM_OPS_MATRIX);
-    config_invalid_numa_memory_nodes = BenchmarkFactory::get_config_files(test_config_path / TEST_INVALID_NUMA_MEMORY_NODES);
+    config_invalid_numa_memory_nodes =
+        BenchmarkFactory::get_config_files(test_config_path / TEST_INVALID_NUMA_MEMORY_NODES);
   }
 
   void TearDown() override { std::ofstream empty_log(test_logger_path, std::ostream::trunc); }
@@ -362,7 +363,8 @@ TEST_F(ConfigTest, ParallelDecodeMatrix) {
 
 TEST_F(ConfigTest, SingleDecodeInvalidNumaMemoryNodes) {
   // Throw since the `numa_memory_node` YAML field is not a sequence, i.e., [a, b, c], but a single value.
-  EXPECT_THROW(BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_invalid_numa_memory_nodes, true), std::invalid_argument);
+  EXPECT_THROW(BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_invalid_numa_memory_nodes, true),
+               std::invalid_argument);
 }
 
 TEST_F(ConfigTest, CheckDefaultConfig) { bm_config.validate(); }
@@ -493,21 +495,21 @@ TEST_F(ConfigTest, AsJsonReadSequential) {
   ASSERT_JSON_FALSE(json, contains("dram_memory_range"));
   ASSERT_JSON_FALSE(json, contains("dram_operation_ratio"));
   ASSERT_JSON_FALSE(json, contains("dram_huge_pages"));
-  // Relevant for non-custom operations 
+  // Relevant for non-custom operations
   ASSERT_JSON_TRUE(json, contains("access_size"));
   EXPECT_EQ(json["access_size"].get<uint32_t>(), bm_config.access_size);
   ASSERT_JSON_TRUE(json, contains("operation"));
   EXPECT_EQ(json["operation"], "read");
   // Relevant for writes
-  ASSERT_JSON_FALSE(json, contains("persist_instruction")); 
-  // Relevant for random execution mode 
-  ASSERT_JSON_FALSE(json, contains("number_operations")); 
-  ASSERT_JSON_FALSE(json, contains("random_distribution")); 
-  ASSERT_JSON_FALSE(json, contains("zipf_alpha")); 
+  ASSERT_JSON_FALSE(json, contains("persist_instruction"));
+  // Relevant for random execution mode
+  ASSERT_JSON_FALSE(json, contains("number_operations"));
+  ASSERT_JSON_FALSE(json, contains("random_distribution"));
+  ASSERT_JSON_FALSE(json, contains("zipf_alpha"));
   // Relevant for custom operations
-  ASSERT_JSON_FALSE(json, contains("custom_operations")); 
+  ASSERT_JSON_FALSE(json, contains("custom_operations"));
   // Relevant if run_time > 0
-  ASSERT_JSON_FALSE(json, contains("run_time")); 
+  ASSERT_JSON_FALSE(json, contains("run_time"));
 }
 
 TEST_F(ConfigTest, AsJsonWriteRandomHybrid) {
@@ -541,25 +543,25 @@ TEST_F(ConfigTest, AsJsonWriteRandomHybrid) {
   EXPECT_EQ(json["dram_operation_ratio"].get<double>(), bm_config.dram_operation_ratio);
   ASSERT_JSON_TRUE(json, contains("dram_huge_pages"));
   EXPECT_EQ(json["dram_huge_pages"].get<bool>(), bm_config.dram_huge_pages);
-  // Relevant for non-custom operations 
+  // Relevant for non-custom operations
   ASSERT_JSON_TRUE(json, contains("access_size"));
   EXPECT_EQ(json["access_size"].get<uint32_t>(), bm_config.access_size);
   ASSERT_JSON_TRUE(json, contains("operation"));
   EXPECT_EQ(json["operation"], "write");
   // Relevant for writes
-  ASSERT_JSON_TRUE(json, contains("persist_instruction")); 
+  ASSERT_JSON_TRUE(json, contains("persist_instruction"));
   EXPECT_EQ(json["persist_instruction"], "nocache");
-  // Relevant for random execution mode 
-  ASSERT_JSON_TRUE(json, contains("number_operations")); 
+  // Relevant for random execution mode
+  ASSERT_JSON_TRUE(json, contains("number_operations"));
   EXPECT_EQ(json["number_operations"].get<uint64_t>(), bm_config.number_operations);
-  ASSERT_JSON_TRUE(json, contains("random_distribution")); 
+  ASSERT_JSON_TRUE(json, contains("random_distribution"));
   EXPECT_EQ(json["random_distribution"], "zipf");
-  ASSERT_JSON_TRUE(json, contains("zipf_alpha")); 
+  ASSERT_JSON_TRUE(json, contains("zipf_alpha"));
   EXPECT_EQ(json["zipf_alpha"].get<double>(), bm_config.zipf_alpha);
   // Relevant for custom operations
-  ASSERT_JSON_FALSE(json, contains("custom_operations")); 
+  ASSERT_JSON_FALSE(json, contains("custom_operations"));
   // Relevant if run_time > 0
-  ASSERT_JSON_FALSE(json, contains("run_time")); 
+  ASSERT_JSON_FALSE(json, contains("run_time"));
 }
 
 TEST_F(ConfigTest, AsJsonWriteCustom) {
@@ -588,28 +590,28 @@ TEST_F(ConfigTest, AsJsonWriteCustom) {
   ASSERT_JSON_FALSE(json, contains("dram_memory_range"));
   ASSERT_JSON_FALSE(json, contains("dram_operation_ratio"));
   ASSERT_JSON_FALSE(json, contains("dram_huge_pages"));
-  // Relevant for non-custom operations 
+  // Relevant for non-custom operations
   ASSERT_JSON_FALSE(json, contains("access_size"));
   ASSERT_JSON_FALSE(json, contains("operation"));
   // Relevant for non-custom writes
-  ASSERT_JSON_FALSE(json, contains("persist_instruction")); 
-  // Relevant for random execution mode 
-  ASSERT_JSON_FALSE(json, contains("random_distribution")); 
-  ASSERT_JSON_FALSE(json, contains("zipf_alpha")); 
+  ASSERT_JSON_FALSE(json, contains("persist_instruction"));
+  // Relevant for random execution mode
+  ASSERT_JSON_FALSE(json, contains("random_distribution"));
+  ASSERT_JSON_FALSE(json, contains("zipf_alpha"));
   // Relevant for custom operations
-  ASSERT_JSON_TRUE(json, contains("number_operations")); 
+  ASSERT_JSON_TRUE(json, contains("number_operations"));
   EXPECT_EQ(json["number_operations"].get<uint64_t>(), bm_config.number_operations);
-  ASSERT_JSON_TRUE(json, contains("custom_operations")); 
+  ASSERT_JSON_TRUE(json, contains("custom_operations"));
   EXPECT_EQ(json["custom_operations"], (CustomOp::all_to_string(bm_config.custom_operations)));
   // Relevant if run_time > 0
-  ASSERT_JSON_FALSE(json, contains("run_time")); 
+  ASSERT_JSON_FALSE(json, contains("run_time"));
 }
 
 TEST_F(ConfigTest, AsJsonWithRuntime) {
   auto bm_config = BenchmarkConfig{};
   bm_config.run_time = 42;
   const auto json = bm_config.as_json();
-  ASSERT_JSON_TRUE(json, contains("run_time")); 
+  ASSERT_JSON_TRUE(json, contains("run_time"));
   EXPECT_EQ(json["run_time"].get<uint64_t>(), 42);
 }
 
@@ -631,10 +633,11 @@ TEST_F(ConfigTest, ToString) {
   bm_config.random_distribution = RandomDistribution::Zipf;
   bm_config.zipf_alpha = 0.8;
 
-  std::string expected_output = "memory type: dram, memory range: 42949672960, exec mode: random, "
-    "memory numa nodes: [1, 2], partition count: 8, thread count: 4, min io chunk size: 33554432, access size: 512, "
-    "operation: write, persist instruction: cache, number operations: 50000000, random distribution: zipf, "
-    "zipf alpha: 0.8";
+  std::string expected_output =
+      "memory type: dram, memory range: 42949672960, exec mode: random, "
+      "memory numa nodes: [1, 2], partition count: 8, thread count: 4, min io chunk size: 33554432, access size: 512, "
+      "operation: write, persist instruction: cache, number operations: 50000000, random distribution: zipf, "
+      "zipf alpha: 0.8";
   EXPECT_EQ(bm_config.to_string(), expected_output);
 }
 

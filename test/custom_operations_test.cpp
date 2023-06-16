@@ -167,12 +167,10 @@ TEST_F(CustomOperationTest, CustomWrite128NegativeOffsetString) {
 }
 
 TEST_F(CustomOperationTest, ValidChainDramPmemReadWrite) {
-  std::vector<CustomOp> ops = {CustomOp{.type = Operation::Read, .is_pmem = true},
-                               CustomOp{.type = Operation::Write, .is_pmem = true},
-                               CustomOp{.type = Operation::Write, .is_pmem = true},
-                               CustomOp{.type = Operation::Read, .is_pmem = true},
-                               CustomOp{.type = Operation::Read, .is_pmem = false},
-                               CustomOp{.type = Operation::Write, .is_pmem = false},
+  std::vector<CustomOp> ops = {
+      CustomOp{.type = Operation::Read, .is_pmem = true},  CustomOp{.type = Operation::Write, .is_pmem = true},
+      CustomOp{.type = Operation::Write, .is_pmem = true}, CustomOp{.type = Operation::Read, .is_pmem = true},
+      CustomOp{.type = Operation::Read, .is_pmem = false}, CustomOp{.type = Operation::Write, .is_pmem = false},
   };
   EXPECT_TRUE(CustomOp::validate(ops));
 }

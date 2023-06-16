@@ -12,7 +12,6 @@
 
 namespace mema::utils {
 
-using namespace testing;
 namespace fs = std::filesystem;
 
 constexpr size_t FILE_SIZE = 8 * (1024u * 1024);  // 8 MiB
@@ -82,7 +81,7 @@ TEST_F(UtilsTest, CreateResultFileFromConfigFile) {
   const fs::path result_dir = fs::temp_directory_path();
   const fs::path result_file = create_result_file(result_dir, config_path);
   ASSERT_TRUE(fs::is_regular_file(result_file));
-  EXPECT_THAT(result_file.filename(), StartsWith("test-results-"));
+  EXPECT_THAT(result_file.filename(), testing::StartsWith("test-results-"));
   EXPECT_EQ(result_file.extension().string(), ".json");
 
   nlohmann::json content;
@@ -101,7 +100,7 @@ TEST_F(UtilsTest, CreateResultFileFromConfigDir) {
   const fs::path result_dir = fs::temp_directory_path();
   const fs::path result_file = create_result_file(result_dir, config_path);
   ASSERT_TRUE(fs::is_regular_file(result_file));
-  EXPECT_THAT(result_file.filename(), StartsWith("test-configs-results-"));
+  EXPECT_THAT(result_file.filename(), testing::StartsWith("test-configs-results-"));
   EXPECT_EQ(result_file.extension().string(), ".json");
 
   nlohmann::json content;
