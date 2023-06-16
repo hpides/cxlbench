@@ -238,7 +238,7 @@ double rand_val() {
   return (static_cast<double>(x) / m);
 }
 
-void crash_exit() { throw PermaException(); }
+void crash_exit() { throw MemaException(); }
 
 std::string get_time_string() {
   auto now = std::chrono::system_clock::now();

@@ -27,15 +27,15 @@ TEST_F(CustomOperationTest, ParseCustomReadDram256) {
   EXPECT_EQ(op, (CustomOp{.type = Operation::Read, .is_pmem = false, .size = 256}));
 }
 
-TEST_F(CustomOperationTest, ParseBadRead333) { EXPECT_THROW(CustomOp::from_string("r_333"), PermaException); }
+TEST_F(CustomOperationTest, ParseBadRead333) { EXPECT_THROW(CustomOp::from_string("r_333"), MemaException); }
 
-TEST_F(CustomOperationTest, ParseBadReadTooShort) { EXPECT_THROW(CustomOp::from_string("r"), PermaException); }
+TEST_F(CustomOperationTest, ParseBadReadTooShort) { EXPECT_THROW(CustomOp::from_string("r"), MemaException); }
 
-TEST_F(CustomOperationTest, ParseBadReadMissingSize) { EXPECT_THROW(CustomOp::from_string("r_"), PermaException); }
+TEST_F(CustomOperationTest, ParseBadReadMissingSize) { EXPECT_THROW(CustomOp::from_string("r_"), MemaException); }
 
-TEST_F(CustomOperationTest, ParseBadReadBadUnderscore) { EXPECT_THROW(CustomOp::from_string("r_p"), PermaException); }
+TEST_F(CustomOperationTest, ParseBadReadBadUnderscore) { EXPECT_THROW(CustomOp::from_string("r_p"), MemaException); }
 
-TEST_F(CustomOperationTest, ParseBadReadWhitespace) { EXPECT_THROW(CustomOp::from_string("r p"), PermaException); }
+TEST_F(CustomOperationTest, ParseBadReadWhitespace) { EXPECT_THROW(CustomOp::from_string("r p"), MemaException); }
 
 TEST_F(CustomOperationTest, CustomRead64String) {
   EXPECT_EQ((CustomOp{.type = Operation::Read, .is_pmem = true, .size = 64}).to_string(), "rp_64");
@@ -108,26 +108,26 @@ TEST_F(CustomOperationTest, ParseCustomWritePmem128NegativeOffset) {
 }
 
 TEST_F(CustomOperationTest, ParseBadWriteOffset) {
-  EXPECT_THROW(CustomOp::from_string("w_128_none_333"), PermaException);
+  EXPECT_THROW(CustomOp::from_string("w_128_none_333"), MemaException);
 }
 
-TEST_F(CustomOperationTest, ParseBadWrite333) { EXPECT_THROW(CustomOp::from_string("w_333_none"), PermaException); }
+TEST_F(CustomOperationTest, ParseBadWrite333) { EXPECT_THROW(CustomOp::from_string("w_333_none"), MemaException); }
 
-TEST_F(CustomOperationTest, ParseBadWriteTooShort) { EXPECT_THROW(CustomOp::from_string("w"), PermaException); }
+TEST_F(CustomOperationTest, ParseBadWriteTooShort) { EXPECT_THROW(CustomOp::from_string("w"), MemaException); }
 
-TEST_F(CustomOperationTest, ParseBadWriteMissingSize) { EXPECT_THROW(CustomOp::from_string("w_"), PermaException); }
+TEST_F(CustomOperationTest, ParseBadWriteMissingSize) { EXPECT_THROW(CustomOp::from_string("w_"), MemaException); }
 
 TEST_F(CustomOperationTest, ParseBadWriteMissingPersist) {
-  EXPECT_THROW(CustomOp::from_string("w_64"), PermaException);
+  EXPECT_THROW(CustomOp::from_string("w_64"), MemaException);
 }
 
 TEST_F(CustomOperationTest, ParseBadWriteMissingPersistWithUnderscore) {
-  EXPECT_THROW(CustomOp::from_string("w_64_"), PermaException);
+  EXPECT_THROW(CustomOp::from_string("w_64_"), MemaException);
 }
 
-TEST_F(CustomOperationTest, ParseBadWriteBadUnderscore) { EXPECT_THROW(CustomOp::from_string("w_p"), PermaException); }
+TEST_F(CustomOperationTest, ParseBadWriteBadUnderscore) { EXPECT_THROW(CustomOp::from_string("w_p"), MemaException); }
 
-TEST_F(CustomOperationTest, ParseBadWriteWhitespace) { EXPECT_THROW(CustomOp::from_string("w p"), PermaException); }
+TEST_F(CustomOperationTest, ParseBadWriteWhitespace) { EXPECT_THROW(CustomOp::from_string("w p"), MemaException); }
 
 TEST_F(CustomOperationTest, CustomWrite64NoCacheString) {
   CustomOp op{.type = Operation::Write, .is_pmem = true, .size = 64, .persist = PersistInstruction::NoCache};

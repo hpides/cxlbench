@@ -57,7 +57,7 @@ void print_bm_information(const mema::Benchmark& bm) {
 
 namespace mema {
 
-void BenchmarkSuite::run_benchmarks(const PermaOptions& options) {
+void BenchmarkSuite::run_benchmarks(const MemaOptions& options) {
   std::vector<YAML::Node> configs = BenchmarkFactory::get_config_files(options.config_file);
 
   nlohmann::json results = nlohmann::json::array();

@@ -14,7 +14,7 @@ set(BUILD_GMOCK ON CACHE BOOL "" FORCE)
 set(BUILD_GTEST ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-set(PERMA_TEST_SOURCES
+set(MEMA_TEST_SOURCES
         benchmark_test.cpp
         config_test.cpp
         custom_operations_test.cpp
@@ -24,7 +24,7 @@ set(PERMA_TEST_SOURCES
         utils_test.cpp
         read_write_test.cpp)
 
-add_executable(mema-test mema_test.cpp ${PERMA_TEST_SOURCES})
+add_executable(mema-test mema_test.cpp ${MEMA_TEST_SOURCES})
 add_dependencies(mema-test copy_test_resources)
 target_link_libraries(mema-test gtest gmock mema ${NUMS_LIBRARIES})
 add_test(mema-test mema-test)

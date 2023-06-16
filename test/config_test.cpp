@@ -371,101 +371,101 @@ TEST_F(ConfigTest, CheckDefaultConfig) { bm_config.validate(); }
 
 TEST_F(ConfigTest, InvalidSmallAccessSize) {
   bm_config.access_size = 32;
-  EXPECT_THROW(bm_config.validate(), PermaException);
+  EXPECT_THROW(bm_config.validate(), MemaException);
   check_log_for_critical("at least 64-byte");
 }
 
 TEST_F(ConfigTest, InvalidPowerAccessSize) {
   bm_config.access_size = 100;
-  EXPECT_THROW(bm_config.validate(), PermaException);
+  EXPECT_THROW(bm_config.validate(), MemaException);
   check_log_for_critical("power of 2");
 }
 
 TEST_F(ConfigTest, InvalidMemoryRangeAccessSizeMultiple) {
   bm_config.memory_range = 100000;
-  EXPECT_THROW(bm_config.validate(), PermaException);
+  EXPECT_THROW(bm_config.validate(), MemaException);
   check_log_for_critical("multiple of access size");
 }
 
 TEST_F(ConfigTest, InvalidNumberThreads) {
   bm_config.number_threads = 0;
-  EXPECT_THROW(bm_config.validate(), PermaException);
+  EXPECT_THROW(bm_config.validate(), MemaException);
   check_log_for_critical("threads must be");
 }
 
 TEST_F(ConfigTest, InvalidSmallThreadPartitionRatio) {
   bm_config.number_partitions = 5;
   bm_config.number_threads = 12;
-  EXPECT_THROW(bm_config.validate(), PermaException);
+  EXPECT_THROW(bm_config.validate(), MemaException);
   check_log_for_critical("threads must be a multiple of number partitions");
 }
 
 TEST_F(ConfigTest, InvalidLargeThreadPartitionRatio) {
   bm_config.number_partitions = 2;
   bm_config.number_threads = 1;
-  EXPECT_THROW(bm_config.validate(), PermaException);
+  EXPECT_THROW(bm_config.validate(), MemaException);
   check_log_for_critical("threads must be a multiple of number partitions");
 }
 
 TEST_F(ConfigTest, BadNumberPartitionSplit) {
   bm_config.number_threads = 36;
   bm_config.number_partitions = 36;
-  EXPECT_THROW(bm_config.validate(), PermaException);
+  EXPECT_THROW(bm_config.validate(), MemaException);
   check_log_for_critical("evenly divisible into");
 }
 
 TEST_F(ConfigTest, MissingCustomOps) {
   bm_config.exec_mode = Mode::Custom;
-  EXPECT_THROW(bm_config.validate(), PermaException);
+  EXPECT_THROW(bm_config.validate(), MemaException);
   check_log_for_critical("Must specify custom_operations");
 }
 
 TEST_F(ConfigTest, RandomCustomOps) {
   bm_config.exec_mode = Mode::Random;
   bm_config.custom_operations = {CustomOp{.type = Operation::Read, .size = 64}};
-  EXPECT_THROW(bm_config.validate(), PermaException);
+  EXPECT_THROW(bm_config.validate(), MemaException);
   check_log_for_critical("Cannot specify custom_operations");
 }
 
 TEST_F(ConfigTest, BadLatencySample) {
   bm_config.exec_mode = Mode::Random;
   bm_config.latency_sample_frequency = 100;
-  EXPECT_THROW(bm_config.validate(), PermaException);
+  EXPECT_THROW(bm_config.validate(), MemaException);
   check_log_for_critical("Latency sampling can only");
 }
 
 TEST_F(ConfigTest, InvalidDRAMMode) {
   bm_config.dram_operation_ratio = 0.2;
   bm_config.exec_mode = Mode::Sequential;
-  EXPECT_THROW(bm_config.validate(), PermaException);
+  EXPECT_THROW(bm_config.validate(), MemaException);
   check_log_for_critical("DRAM operation ratio only supported in random execution");
 }
 
 TEST_F(ConfigTest, InvalidDRAMRationNegativ) {
   bm_config.exec_mode = Mode::Random;
   bm_config.dram_operation_ratio = -0.9;
-  EXPECT_THROW(bm_config.validate(), PermaException);
+  EXPECT_THROW(bm_config.validate(), MemaException);
   check_log_for_critical("DRAM ratio must be at least 0 and not greater than 1");
 }
 
 TEST_F(ConfigTest, InvalidDRAMRationPositiv) {
   bm_config.exec_mode = Mode::Random;
   bm_config.dram_operation_ratio = 1.01;
-  EXPECT_THROW(bm_config.validate(), PermaException);
+  EXPECT_THROW(bm_config.validate(), MemaException);
   check_log_for_critical("DRAM ratio must be at least 0 and not greater than 1");
 }
 
 TEST_F(ConfigTest, InvalidDRAMMemoryRange) {
   bm_config.exec_mode = Mode::Random;
   bm_config.dram_operation_ratio = 0.5;
-  EXPECT_THROW(bm_config.validate(), PermaException);
+  EXPECT_THROW(bm_config.validate(), MemaException);
   check_log_for_critical("If greater than 0, dram memory range must be greater ");
 }
 
 TEST_F(ConfigTest, MissingDRAMMemoryRangeForCustomOp) {
   bm_config.exec_mode = Mode::Custom;
   bm_config.custom_operations = {CustomOp{.type = Operation::Read, .is_pmem = false, .size = 64}};
-  EXPECT_THROW(bm_config.validate(), PermaException);
+  EXPECT_THROW(bm_config.validate(), MemaException);
   check_log_for_critical("dram_memory_range > 0 if the benchmark contains DRAM operations");
 }
 

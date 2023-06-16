@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
 
   try {
     BenchmarkSuite::run_benchmarks({pmem_directory, config_file, result_path, !use_dram});
-  } catch (const PermaException& e) {
+  } catch (const MemaException& e) {
     // Clean up files before exiting
     if (!use_dram) {
       std::filesystem::remove_all(pmem_directory / "*");

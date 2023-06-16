@@ -13,7 +13,7 @@
 
 namespace mema {
 
-class PermaException : public std::exception {
+class MemaException : public std::exception {
  public:
   const char* what() const noexcept override { return "Execution failed. Check logs for more details."; }
 };
