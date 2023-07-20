@@ -128,7 +128,7 @@ class Benchmark {
   Benchmark& operator=(const Benchmark& other) = delete;
   Benchmark& operator=(Benchmark&& other) = delete;
 
-  /** Main run method which executes the benchmark. `setup()` should be called before this.
+  /** Main run method which executes the benchmark. `set_up()` should be called before this.
    *  Return true if benchmark ran successfully, false if an error was encountered.
    */
   virtual bool run() = 0;

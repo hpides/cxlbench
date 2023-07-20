@@ -117,9 +117,7 @@ TEST_F(CustomOperationTest, ParseBadWriteTooShort) { EXPECT_THROW(CustomOp::from
 
 TEST_F(CustomOperationTest, ParseBadWriteMissingSize) { EXPECT_THROW(CustomOp::from_string("w_"), MemaException); }
 
-TEST_F(CustomOperationTest, ParseBadWriteMissingPersist) {
-  EXPECT_THROW(CustomOp::from_string("w_64"), MemaException);
-}
+TEST_F(CustomOperationTest, ParseBadWriteMissingPersist) { EXPECT_THROW(CustomOp::from_string("w_64"), MemaException); }
 
 TEST_F(CustomOperationTest, ParseBadWriteMissingPersistWithUnderscore) {
   EXPECT_THROW(CustomOp::from_string("w_64_"), MemaException);

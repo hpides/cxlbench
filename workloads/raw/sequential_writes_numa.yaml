@@ -10,5 +10,6 @@ sequential_writes:
   args:
     exec_mode: sequential
     memory_range: 8G
+    numa_task_nodes: [ 0 ]
     operation: write
     run_time: 10

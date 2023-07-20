@@ -45,15 +45,6 @@ int main(int argc, char** argv) {
   std::filesystem::path result_path = std::filesystem::current_path() / DEFAULT_RESULT_PATH;
   app.add_option("-r,--results", result_path, "Path to the result directory (default: " + result_path.string() + ")");
 
-  // Define NUMA nodes to pin tasks to. This takes a list of nodes, e.g., --numa=0,1
-  NumaNodeIDs numa_task_nodes;
-  auto numa_task_opt = app.add_option("--numa_task", numa_task_nodes,
-                                      "Comma separated list of NUMA nodes to pin tasks to, e.g., --numa=0,1 "
-                                      "(default: determined from PMem directory)")
-                           ->delimiter(',')
-                           ->required()
-                           ->expected(1, 10);
-
   // Path to PMem directory
   std::filesystem::path pmem_directory;
   auto path_opt = app.add_option("-p,--path", pmem_directory,
@@ -63,19 +54,19 @@ int main(int argc, char** argv) {
                       ->check(CLI::ExistingDirectory)
                       ->check(empty_directory);
 
-  // Flag if DRAM should be used
-  bool use_dram;
-  auto dram_flg = app.add_flag("--dram", use_dram, "Set this flag to run benchmarks in DRAM")->default_val(true);
+  // Flag if PMem should be used
+  bool use_pmem;
+  auto pmem_flag = app.add_flag("--pmem", use_pmem, "Set this flag to run benchmarks in PMem")->default_val(false);
 
-  // Do not allow path to be set if dram is set
-  dram_flg->excludes(path_opt);
-  // Do not allow dram flag to be set if path is set
-  path_opt->excludes(dram_flg);
+  // Require path to be set if pmem is set.
+  pmem_flag->needs(path_opt);
+  // Require pmem to be set if path is set.
+  path_opt->needs(pmem_flag);
 
   try {
     app.parse(argc, argv);
-    if (path_opt->empty() && dram_flg->empty()) {
-      throw CLI::RequiredError("Must specify either --path or --dram");
+    if (path_opt->empty() && !pmem_flag->empty()) {
+      throw CLI::RequiredError("--path must be specified if --pmem is set.");
     }
   } catch (const CLI::ParseError& e) {
     app.failure_message(CLI::FailureMessage::help);
@@ -84,7 +75,7 @@ int main(int argc, char** argv) {
 
   // TODO(MW) remove this while getting rid of the binary memory type switch.
   // For now, we only support DRAM mode.
-  if (!use_dram) {
+  if (use_pmem) {
     spdlog::error("PMem was chosen. We currently only support DRAM benchmarks.");
     exit(1);
   }
@@ -93,25 +84,25 @@ int main(int argc, char** argv) {
     spdlog::set_level(spdlog::level::debug);
   }
 
-  // Make sure that the benchmarks are NUMA-aware. Setting this in the main thread will inherit to all child threads.
-  init_numa(numa_task_nodes);
-
   // Run the actual benchmarks after parsing and validating them.
-  const std::string run_location = use_dram ? "DRAM" : pmem_directory.string();
+  const std::string run_location = !use_pmem ? "DRAM" : pmem_directory.string();
   spdlog::info("Running benchmarks on '{}' with config(s) from '{}'.", run_location, config_file.string());
   spdlog::info("Writing results to '{}'.", result_path.string());
 
+  const auto numa_node_count = init_numa();
+  spdlog::info("Number of NUMA nodes in system: {}", numa_node_count);
+
   try {
-    BenchmarkSuite::run_benchmarks({pmem_directory, config_file, result_path, !use_dram});
+    BenchmarkSuite::run_benchmarks({pmem_directory, config_file, result_path, use_pmem});
   } catch (const MemaException& e) {
     // Clean up files before exiting
-    if (!use_dram) {
+    if (use_pmem) {
       std::filesystem::remove_all(pmem_directory / "*");
     }
     throw e;
   }
 
-  if (!use_dram) {
+  if (use_pmem) {
     std::filesystem::remove_all(pmem_directory / "*");
   }
   return 0;

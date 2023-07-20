@@ -1,5 +1,6 @@
 #include "utils.hpp"
 
+#include <numa.h>
 #include <sys/mman.h>
 
 #include <filesystem>
@@ -8,6 +9,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "json.hpp"
+#include "numa.hpp"
 #include "test_utils.hpp"
 
 namespace mema::utils {
@@ -147,6 +149,14 @@ TEST_F(UtilsTest, AddToResultFile) {
 
   fs::remove(result_file);
   fs::remove(config_path);
+}
+
+TEST_F(UtilsTest, RetrieveCorrectNumaTaskNode) {
+  const auto numa_node_count = numa_num_configured_nodes();
+  for (auto index = NumaNodeID{0}; index < numa_node_count; ++index) {
+    set_task_on_numa_nodes({index});
+    EXPECT_EQ(get_numa_task_node(), index);
+  }
 }
 
 }  // namespace mema::utils

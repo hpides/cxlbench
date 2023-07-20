@@ -5,6 +5,8 @@ parallel_test:
         access_size: [ 64, 256 ]
       args:
         memory_range: 10G  # 10 GiB
+        numa_memory_nodes: [ 1 ]
+        numa_task_nodes: [ 0 ]
         number_threads: 16
         persist_instruction: nocache
         exec_mode: sequential
@@ -17,5 +19,7 @@ parallel_test:
         exec_mode: random
         access_size: 4K
         memory_range: 10G
+        numa_memory_nodes: [ 1 ]
+        numa_task_nodes: [ 0 ]
         number_operations: 10000000
         operation: read

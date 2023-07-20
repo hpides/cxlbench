@@ -17,7 +17,7 @@ $ cd mema-bench
 $ mkdir build && cd build
 $ cmake .. -DBUILD_TEST=ON -DCMAKE_C_COMPILER=gcc-12 -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_BUILD_TYPE=Release
 $ make -j
-$ ./mema-bench --dram --numa_task <numa node id>
+$ ./mema-bench
 ```
 
 This will create a `results` directory containing a JSON file with all benchmark results in it.
@@ -30,14 +30,6 @@ In order to get NUMA-awareness in the benchmarks, you should have `libnuma` inst
 via `apt install libnuma-dev` or `yum install numactl-devel`.
 If you have `libnuma` installed at a different location, you can specify `-DNUMA_INCLUDE_PATH` and `-DNUMA_LIBRARY_PATH`
 to point to the respective headers and library in the `cmake` command.
-If you do not have `libnuma` installed, MemA-Bench will still work, just without NUMA-awareness of the threads.
-In case you do not want to or can't install the development version, you can also manually enable NUMA-awareness by
-using the `numactl` command line tool and disabling NUMA-awareness in MemA-Bench via the `--no-numa` flag.
-You should pin the application to the nodes that are close to your mounted persistent memory filesystem for the best performance e.g., like this:
-
-```shell script
-$ numactl -N 0,1 ./mema-bench --path /path/to/pmem/filesystem --no-numa
-```
 
 #### Building tests
 By default, MemA-Bench will not build the tests.

@@ -9,6 +9,7 @@ random_reads:
   args:
     operation: read
     memory_range: 8G
+    numa_task_nodes: [ 0 ]
     number_operations: 10000000
     exec_mode: random
     random_distribution: uniform

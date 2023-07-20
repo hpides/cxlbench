@@ -36,6 +36,8 @@ char* map_pmem(const std::filesystem::path& file, const size_t expected_length);
 // Maps an anonymous DRAM region. No data is mapped if `expected_length` is 0.
 char* map_dram(const size_t expected_length, const bool use_huge_pages, const NumaNodeIDs& numa_memory_nodes);
 
+NumaNodeID get_numa_task_node();
+
 char* create_pmem_file(const std::filesystem::path& file, const size_t length);
 
 std::filesystem::path generate_random_file_name(const std::filesystem::path& base_dir);

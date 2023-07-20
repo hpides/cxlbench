@@ -23,6 +23,8 @@ class BenchmarkTest : public BaseTest {
     base_config_.pmem_directory = temp_dir_;
     base_config_.memory_range = TEST_FILE_SIZE;
     base_config_.min_io_chunk_size = TEST_CHUNK_SIZE;
+    base_config_.numa_memory_nodes = {1};
+    base_config_.numa_task_nodes = {0};
 
     utils::setPMEM_MAP_FLAGS(MAP_SHARED);
   }
@@ -413,6 +415,11 @@ TEST_F(BenchmarkTest, RunSingeThreadReadDRAM) {
   base_config_.operation = Operation::Read;
   base_config_.memory_range = 256 * num_ops;
   base_config_.is_pmem = false;
+
+  // Because the GitHub runners do not have NUMA, we must disable it for the tests.
+  base_config_.numa_memory_nodes = {};
+  base_config_.numa_task_nodes = {};
+
   base_executions_.reserve(1);
   base_executions_.push_back(std::make_unique<BenchmarkExecution>());
   base_results_.reserve(1);
@@ -477,6 +484,11 @@ TEST_F(BenchmarkTest, RunSingleThreadWriteDRAM) {
   base_config_.operation = Operation::Write;
   base_config_.memory_range = total_size;
   base_config_.is_pmem = false;
+
+  // Because the GitHub runners do not have NUMA, we must disable it for the tests.
+  base_config_.numa_memory_nodes = {};
+  base_config_.numa_task_nodes = {};
+
   base_executions_.reserve(1);
   base_executions_.push_back(std::make_unique<BenchmarkExecution>());
   base_results_.reserve(1);

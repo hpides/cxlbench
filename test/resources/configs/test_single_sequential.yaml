@@ -3,7 +3,8 @@ test_seq:
     access_size: 256
     memory_range: 64M
     exec_mode: sequential
+    numa_memory_nodes: [0, 1]
+    numa_task_nodes: [ 0 ]
     number_threads: 2
     operation: read
     min_io_chunk_size: 16384
-    numa_memory_nodes: [0, 1]

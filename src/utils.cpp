@@ -1,6 +1,8 @@
 #include "utils.hpp"
 
 #include <fcntl.h>
+#include <numa.h>
+#include <sched.h>
 #include <spdlog/spdlog.h>
 #include <unistd.h>
 
@@ -88,6 +90,39 @@ char* map_dram(const size_t expected_length, const bool use_huge_pages, const Nu
   }
 
   return static_cast<char*>(addr);
+}
+
+NumaNodeID get_numa_task_node() {
+  // get the CPU affinity mask of the calling thread
+  cpu_set_t cpu_set;
+  if (sched_getaffinity(0, sizeof(cpu_set), &cpu_set) != 0) {
+    spdlog::critical("Error: sched_getaffinity() failed");
+    crash_exit();
+  }
+
+  // get the number of NUMA nodes
+  int node_count = numa_max_node() + 1;
+
+  // check which NUMA node the calling thread runs on
+  for (auto node_id = NumaNodeID{0}; node_id < node_count; ++node_id) {
+    auto node_cpu_mask = numa_allocate_cpumask();
+    numa_node_to_cpus(node_id, node_cpu_mask);
+    bool is_on_node = true;
+    for (auto cpu_bit = uint16_t{0}; cpu_bit < CPU_SETSIZE; ++cpu_bit) {
+      if (CPU_ISSET(cpu_bit, &cpu_set) && !numa_bitmask_isbitset(node_cpu_mask, cpu_bit)) {
+        is_on_node = false;
+        break;
+      }
+    }
+    numa_free_cpumask(node_cpu_mask);
+    if (is_on_node) {
+      return node_id;
+    }
+  }
+
+  spdlog::critical("Could not determine NUMA node of calling thread");
+  crash_exit();
+  return 0;
 }
 
 char* create_pmem_file(const std::filesystem::path& file, const size_t length) {

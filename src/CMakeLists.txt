@@ -29,9 +29,7 @@ add_library(mema STATIC ${SOURCES})
 add_dependencies(mema copy_configs)
 target_link_libraries(mema benchmark::benchmark hdr_histogram_static spdlog stdc++fs yaml-cpp)
 
-if (${NUMA_FOUND})
-    target_link_libraries(mema ${NUMA_LIBRARIES})
-endif ()
+target_link_libraries(mema ${NUMA_LIBRARIES})
 
 add_executable(mema-bench mema.cpp)
 target_link_libraries(mema-bench mema)

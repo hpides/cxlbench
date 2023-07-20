@@ -110,6 +110,9 @@ struct BenchmarkConfig {
   /** Specifies the set of memory NUMA nodes on which benchmark data is to be allocated. */
   NumaNodeIDs numa_memory_nodes;
 
+  /** Specifies the set of NUMA nodes on which the benchmark threads are to run. */
+  NumaNodeIDs numa_task_nodes;
+
   /** Distribution to use for `Mode::Random`, i.e., uniform of zipfian. */
   RandomDistribution random_distribution = RandomDistribution::Uniform;
 

@@ -9,5 +9,6 @@ random_writes:
   args:
     exec_mode: random
     memory_range: 8G
+    numa_task_nodes: [ 0 ]
     number_operations: 10000000
     operation: write

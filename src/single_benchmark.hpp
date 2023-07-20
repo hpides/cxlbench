@@ -20,21 +20,13 @@ class SingleBenchmark : public Benchmark {
   SingleBenchmark& operator=(const SingleBenchmark& other) = delete;
   SingleBenchmark& operator=(SingleBenchmark&& other) = delete;
 
-  /** Main run method which executes the benchmark. `setup()` should be called before this. */
-  bool run() override;
+  bool run() final;
 
-  /**
-   * Generates the data needed for the benchmark.
-   * This is probably the first method to be called so that a virtual
-   * address space is available to generate the IO addresses.
-   */
-  void generate_data() override;
+  void generate_data() final;
 
-  /** Create all the IO addresses ahead of time to avoid unnecessary ops during the actual benchmark. */
-  void set_up() override;
+  void set_up() final;
 
-  /** Return the results as a JSON to be exported to the user and visualization. */
-  nlohmann::json get_result_as_json() override;
+  nlohmann::json get_result_as_json() final;
 
   ~SingleBenchmark() { SingleBenchmark::tear_down(false); }
 };

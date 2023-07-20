@@ -3,8 +3,6 @@
 #include <spdlog/spdlog.h>
 
 #include <condition_variable>
-#include <cstdint>
-#include <memory>
 #include <thread>
 #include <utility>
 
@@ -246,6 +244,13 @@ void Benchmark::run_custom_ops_in_thread(ThreadRunConfig* thread_config, const B
 }
 
 void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkConfig& config) {
+  // Check if thread is pinned to a configured NUMA node.
+  if (!config.numa_task_nodes.empty() && std::find(config.numa_task_nodes.begin(), config.numa_task_nodes.end(),
+                                                   utils::get_numa_task_node()) == config.numa_task_nodes.end()) {
+    spdlog::error("Thread #{}: Thread not pinned to a configured NUMA node.", thread_config->thread_idx);
+    utils::crash_exit();
+  }
+
   if (config.exec_mode == Mode::Custom) {
     return run_custom_ops_in_thread(thread_config, config);
   }

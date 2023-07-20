@@ -5,5 +5,6 @@ test_seq_matrix:
   args:
     memory_range: 512M
     exec_mode: sequential
+    numa_memory_nodes: [ 0, 3 ]
+    numa_task_nodes: [ 0 ]
     operation: read
-    numa_memory_nodes: [0,3]

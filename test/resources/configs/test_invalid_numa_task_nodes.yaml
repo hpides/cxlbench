@@ -3,9 +3,9 @@ test_seq:
     access_size: 256
     memory_range: 64M
     exec_mode: sequential
-    # Invalid because `numa_memory_nodes` needs to be a sequence, i.e., [a, b, c]
-    numa_memory_nodes: 0
-    numa_task_nodes: [ 0 ]
+    numa_memory_nodes: [ 0 ]
+    # Invalid because `numa_task_nodes` needs to be a sequence, i.e., [ a ]
+    numa_task_nodes: 0
     number_threads: 2
     operation: read
     min_io_chunk_size: 16384

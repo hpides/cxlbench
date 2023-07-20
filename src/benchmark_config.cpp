@@ -146,12 +146,13 @@ BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
     num_found += get_enum_if_present(node, "persist_instruction", ConfigEnums::str_to_persist_instruction,
                                      &bm_config.persist_instruction);
     num_found += get_uints_if_present(node, "numa_memory_nodes", bm_config.numa_memory_nodes);
+    num_found += get_uints_if_present(node, "numa_task_nodes", bm_config.numa_task_nodes);
 
     std::string custom_ops;
     const bool has_custom_ops = get_if_present(node, "custom_operations", &custom_ops);
     if (has_custom_ops) {
       bm_config.custom_operations = CustomOp::all_from_string(custom_ops);
-      num_found++;
+      ++num_found;
     }
 
     if (num_found != node.size()) {
@@ -242,7 +243,7 @@ void BenchmarkConfig::validate() const {
 
   // Assumption: We need enough operations to give each thread at least one chunk
   const uint64_t min_required_number_ops = (min_io_chunk_size / access_size) * number_threads;
-  const bool has_enough_number_operations = !is_custom_or_random || number_operations > min_required_number_ops;
+  const bool has_enough_number_operations = !is_custom_or_random || number_operations >= min_required_number_ops;
   CHECK_ARGUMENT(has_enough_number_operations,
                  "Need enough number_operations to have at least one chunk per thread. Consider at least 100 "
                  "operations in total to actually perform a significant amount of work. Need minimum of " +
@@ -274,6 +275,12 @@ void BenchmarkConfig::validate() const {
 
   const bool latency_sample_is_custom = exec_mode == Mode::Custom || latency_sample_frequency == 0;
   CHECK_ARGUMENT(latency_sample_is_custom, "Latency sampling can only be used with custom operations.");
+
+  const bool numa_memory_nodes_present = numa_memory_nodes.size() > 0;
+  CHECK_ARGUMENT(numa_memory_nodes_present, "NUMA memory nodes must be specified.");
+
+  const bool numa_task_nodes_present = numa_task_nodes.size() > 0;
+  CHECK_ARGUMENT(numa_task_nodes_present, "NUMA task nodes must be specified.");
 }
 bool BenchmarkConfig::contains_read_op() const { return operation == Operation::Read || exec_mode == Mode::Custom; }
 
@@ -341,6 +348,7 @@ nlohmann::json BenchmarkConfig::as_json() const {
   config["memory_range"] = memory_range;
   config["exec_mode"] = utils::get_enum_as_string(ConfigEnums::str_to_mode, exec_mode);
   config["numa_memory_nodes"] = numa_memory_nodes;
+  config["numa_task_nodes"] = numa_task_nodes;
   config["number_partitions"] = number_partitions;
   config["number_threads"] = number_threads;
   config["prefault_file"] = prefault_file;

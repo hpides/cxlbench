@@ -12,13 +12,14 @@
 
 namespace mema {
 
-constexpr auto TEST_SINGLE_CONFIG_FILE_MATRIX = "test_matrix.yaml";
-constexpr auto TEST_SINGLE_CONFIG_FILE_SEQ = "test_seq.yaml";
-constexpr auto TEST_SINGLE_CONFIG_FILE_RANDOM = "test_random.yaml";
-constexpr auto TEST_PAR_CONFIG_FILE_SEQ_RANDOM = "test_parallel_seq_random.yaml";
-constexpr auto TEST_PAR_CONFIG_FILE_MATRIX = "test_parallel_matrix.yaml";
-constexpr auto TEST_CUSTOM_OPS_MATRIX = "test_custom_ops.yaml";
+constexpr auto TEST_SINGLE_MATRIX = "test_single_matrix.yaml";
+constexpr auto TEST_SINGLE_SEQUENTIAL = "test_single_sequential.yaml";
+constexpr auto TEST_SINGLE_RANDOM = "test_single_random.yaml";
+constexpr auto TEST_PARALLEL_SEQUENTIAL_RANDOM = "test_parallel_sequential_random.yaml";
+constexpr auto TEST_PARALLEL_MATRIX = "test_parallel_matrix.yaml";
+constexpr auto TEST_CUSTOM_OPERATIONS_MATRIX = "test_custom_operations_matrix.yaml";
 constexpr auto TEST_INVALID_NUMA_MEMORY_NODES = "test_invalid_numa_memory_nodes.yaml";
+constexpr auto TEST_INVALID_NUMA_TASK_NODES = "test_invalid_numa_task_nodes.yaml";
 
 class ConfigTest : public BaseTest {
  protected:
@@ -32,14 +33,18 @@ class ConfigTest : public BaseTest {
 
   void SetUp() override {
     const std::filesystem::path test_config_path = std::filesystem::current_path() / "resources" / "configs";
-    config_single_file_matrix = BenchmarkFactory::get_config_files(test_config_path / TEST_SINGLE_CONFIG_FILE_MATRIX);
-    config_single_file_seq = BenchmarkFactory::get_config_files(test_config_path / TEST_SINGLE_CONFIG_FILE_SEQ);
-    config_single_file_random = BenchmarkFactory::get_config_files(test_config_path / TEST_SINGLE_CONFIG_FILE_RANDOM);
-    config_par_file_seq_random = BenchmarkFactory::get_config_files(test_config_path / TEST_PAR_CONFIG_FILE_SEQ_RANDOM);
-    config_par_file_matrix = BenchmarkFactory::get_config_files(test_config_path / TEST_PAR_CONFIG_FILE_MATRIX);
-    config_custom_ops_matrix = BenchmarkFactory::get_config_files(test_config_path / TEST_CUSTOM_OPS_MATRIX);
+    config_single_matrix = BenchmarkFactory::get_config_files(test_config_path / TEST_SINGLE_MATRIX);
+    config_single_sequential = BenchmarkFactory::get_config_files(test_config_path / TEST_SINGLE_SEQUENTIAL);
+    config_single_random = BenchmarkFactory::get_config_files(test_config_path / TEST_SINGLE_RANDOM);
+    config_parallel_sequential_random =
+        BenchmarkFactory::get_config_files(test_config_path / TEST_PARALLEL_SEQUENTIAL_RANDOM);
+    config_parallel_matrix = BenchmarkFactory::get_config_files(test_config_path / TEST_PARALLEL_MATRIX);
+    config_custom_operations_matrix =
+        BenchmarkFactory::get_config_files(test_config_path / TEST_CUSTOM_OPERATIONS_MATRIX);
     config_invalid_numa_memory_nodes =
         BenchmarkFactory::get_config_files(test_config_path / TEST_INVALID_NUMA_MEMORY_NODES);
+    config_invalid_numa_task_nodes =
+        BenchmarkFactory::get_config_files(test_config_path / TEST_INVALID_NUMA_TASK_NODES);
   }
 
   void TearDown() override { std::ofstream empty_log(test_logger_path, std::ostream::trunc); }
@@ -62,13 +67,14 @@ class ConfigTest : public BaseTest {
     }
   }
 
-  std::vector<YAML::Node> config_single_file_matrix;
-  std::vector<YAML::Node> config_single_file_seq;
-  std::vector<YAML::Node> config_single_file_random;
-  std::vector<YAML::Node> config_par_file_seq_random;
-  std::vector<YAML::Node> config_par_file_matrix;
-  std::vector<YAML::Node> config_custom_ops_matrix;
+  std::vector<YAML::Node> config_single_matrix;
+  std::vector<YAML::Node> config_single_sequential;
+  std::vector<YAML::Node> config_single_random;
+  std::vector<YAML::Node> config_parallel_sequential_random;
+  std::vector<YAML::Node> config_parallel_matrix;
+  std::vector<YAML::Node> config_custom_operations_matrix;
   std::vector<YAML::Node> config_invalid_numa_memory_nodes;
+  std::vector<YAML::Node> config_invalid_numa_task_nodes;
   BenchmarkConfig bm_config;
   static std::filesystem::path test_logger_path;
 };
@@ -77,9 +83,9 @@ std::filesystem::path ConfigTest::test_logger_path;
 
 TEST_F(ConfigTest, SingleDecodeSequential) {
   std::vector<SingleBenchmark> benchmarks =
-      BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_single_file_seq, true);
+      BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_single_sequential, true);
   std::vector<ParallelBenchmark> par_benchmarks =
-      BenchmarkFactory::create_parallel_benchmarks("/tmp/foo", config_single_file_seq, true);
+      BenchmarkFactory::create_parallel_benchmarks("/tmp/foo", config_single_sequential, true);
   ASSERT_EQ(benchmarks.size(), 1);
   ASSERT_EQ(par_benchmarks.size(), 0);
   bm_config = benchmarks.at(0).get_benchmark_configs()[0];
@@ -106,11 +112,12 @@ TEST_F(ConfigTest, SingleDecodeSequential) {
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
   EXPECT_EQ(bm_config.numa_memory_nodes, (NumaNodeIDs{0, 1}));
+  EXPECT_EQ(bm_config.numa_task_nodes, NumaNodeIDs{0});
 }
 
 TEST_F(ConfigTest, DecodeRandom) {
   std::vector<SingleBenchmark> benchmarks =
-      BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_single_file_random, true);
+      BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_single_random, true);
   ASSERT_EQ(benchmarks.size(), 1);
   bm_config = benchmarks.at(0).get_benchmark_configs()[0];
 
@@ -135,14 +142,15 @@ TEST_F(ConfigTest, DecodeRandom) {
   EXPECT_EQ(bm_config.min_io_chunk_size, bm_config_default.min_io_chunk_size);
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
-  EXPECT_TRUE(bm_config.numa_memory_nodes.empty());
+  EXPECT_EQ(bm_config.numa_memory_nodes, NumaNodeIDs{1});
+  EXPECT_EQ(bm_config.numa_task_nodes, NumaNodeIDs{0});
 }
 
 TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
   std::vector<SingleBenchmark> benchmarks =
-      BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_par_file_seq_random, true);
+      BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_parallel_sequential_random, true);
   std::vector<ParallelBenchmark> par_benchmarks =
-      BenchmarkFactory::create_parallel_benchmarks("/tmp/foo", config_par_file_seq_random, true);
+      BenchmarkFactory::create_parallel_benchmarks("/tmp/foo", config_parallel_sequential_random, true);
   ASSERT_EQ(benchmarks.size(), 0);
   ASSERT_EQ(par_benchmarks.size(), 1);
   bm_config = par_benchmarks.at(0).get_benchmark_configs()[0];
@@ -171,6 +179,7 @@ TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
   EXPECT_EQ(bm_config.numa_memory_nodes, (NumaNodeIDs{0}));
+  EXPECT_EQ(bm_config.numa_task_nodes, (NumaNodeIDs{0, 1}));
 
   bm_config = par_benchmarks.at(0).get_benchmark_configs()[1];
 
@@ -194,14 +203,15 @@ TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
   EXPECT_EQ(bm_config.numa_memory_nodes, (NumaNodeIDs{2, 3}));
+  EXPECT_EQ(bm_config.numa_task_nodes, (NumaNodeIDs{0, 1}));
 }
 
 TEST_F(ConfigTest, DecodeMatrix) {
   const size_t num_bms = 6;
   std::vector<SingleBenchmark> benchmarks =
-      BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_single_file_matrix, true);
+      BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_single_matrix, true);
   std::vector<ParallelBenchmark> par_benchmarks =
-      BenchmarkFactory::create_parallel_benchmarks("/tmp/foo", config_single_file_matrix, true);
+      BenchmarkFactory::create_parallel_benchmarks("/tmp/foo", config_single_matrix, true);
   ASSERT_EQ(benchmarks.size(), num_bms);
   ASSERT_EQ(par_benchmarks.size(), 0);
   EXPECT_EQ(benchmarks[0].get_benchmark_configs()[0].number_threads, 1);
@@ -239,13 +249,14 @@ TEST_F(ConfigTest, DecodeMatrix) {
     EXPECT_EQ(config.run_time, bm_config_default.run_time);
     EXPECT_EQ(config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
     EXPECT_EQ(config.numa_memory_nodes, (NumaNodeIDs{0, 3}));
+    EXPECT_EQ(config.numa_task_nodes, NumaNodeIDs{0});
   }
 }
 
 TEST_F(ConfigTest, DecodeCustomOperationsMatrix) {
   const size_t num_bms = 3;
   std::vector<SingleBenchmark> benchmarks =
-      BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_custom_ops_matrix, true);
+      BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_custom_operations_matrix, true);
 
   ASSERT_EQ(benchmarks.size(), num_bms);
   EXPECT_EQ(benchmarks[0].get_benchmark_configs()[0].custom_operations.size(), 3);
@@ -292,15 +303,16 @@ TEST_F(ConfigTest, DecodeCustomOperationsMatrix) {
     EXPECT_EQ(config.run_time, bm_config_default.run_time);
     EXPECT_EQ(config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
     EXPECT_TRUE(bm_config.numa_memory_nodes.empty());
+    EXPECT_TRUE(bm_config.numa_task_nodes.empty());
   }
 }
 
 TEST_F(ConfigTest, ParallelDecodeMatrix) {
   const uint8_t num_bms = 4;
   std::vector<SingleBenchmark> benchmarks =
-      BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_par_file_matrix, true);
+      BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_parallel_matrix, true);
   std::vector<ParallelBenchmark> par_benchmarks =
-      BenchmarkFactory::create_parallel_benchmarks("/tmp/foo", config_par_file_matrix, true);
+      BenchmarkFactory::create_parallel_benchmarks("/tmp/foo", config_parallel_matrix, true);
   ASSERT_EQ(benchmarks.size(), 0);
   ASSERT_EQ(par_benchmarks.size(), num_bms);
 
@@ -340,6 +352,7 @@ TEST_F(ConfigTest, ParallelDecodeMatrix) {
     EXPECT_EQ(config_one.run_time, bm_config_default.run_time);
     EXPECT_EQ(config_one.latency_sample_frequency, bm_config_default.latency_sample_frequency);
     EXPECT_TRUE(bm_config.numa_memory_nodes.empty());
+    EXPECT_TRUE(bm_config.numa_task_nodes.empty());
 
     EXPECT_EQ(config_two.memory_range, 10737418240);
     EXPECT_EQ(config_two.exec_mode, Mode::Sequential);
@@ -358,6 +371,7 @@ TEST_F(ConfigTest, ParallelDecodeMatrix) {
     EXPECT_EQ(config_two.run_time, bm_config_default.run_time);
     EXPECT_EQ(config_two.latency_sample_frequency, bm_config_default.latency_sample_frequency);
     EXPECT_TRUE(bm_config.numa_memory_nodes.empty());
+    EXPECT_TRUE(bm_config.numa_task_nodes.empty());
   }
 }
 
@@ -367,7 +381,11 @@ TEST_F(ConfigTest, SingleDecodeInvalidNumaMemoryNodes) {
                std::invalid_argument);
 }
 
-TEST_F(ConfigTest, CheckDefaultConfig) { bm_config.validate(); }
+TEST_F(ConfigTest, SingleDecodeInvalidNumaTaskNodes) {
+  // Throw since the `numa_task_node` YAML field is not a sequence, i.e., [ a ], but a single value.
+  EXPECT_THROW(BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_invalid_numa_task_nodes, true),
+               std::invalid_argument);
+}
 
 TEST_F(ConfigTest, InvalidSmallAccessSize) {
   bm_config.access_size = 32;
@@ -483,6 +501,8 @@ TEST_F(ConfigTest, AsJsonReadSequential) {
   EXPECT_EQ(json["exec_mode"], "sequential");
   ASSERT_JSON_TRUE(json, contains("numa_memory_nodes"));
   EXPECT_EQ(json["numa_memory_nodes"].get<NumaNodeIDs>(), bm_config.numa_memory_nodes);
+  ASSERT_JSON_TRUE(json, contains("numa_task_nodes"));
+  EXPECT_EQ(json["numa_task_nodes"].get<NumaNodeIDs>(), bm_config.numa_task_nodes);
   ASSERT_JSON_TRUE(json, contains("number_partitions"));
   EXPECT_EQ(json["number_partitions"].get<uint16_t>(), bm_config.number_partitions);
   ASSERT_JSON_TRUE(json, contains("number_threads"));
@@ -528,6 +548,8 @@ TEST_F(ConfigTest, AsJsonWriteRandomHybrid) {
   EXPECT_EQ(json["exec_mode"], "random");
   ASSERT_JSON_TRUE(json, contains("numa_memory_nodes"));
   EXPECT_EQ(json["numa_memory_nodes"].get<NumaNodeIDs>(), bm_config.numa_memory_nodes);
+  ASSERT_JSON_TRUE(json, contains("numa_task_nodes"));
+  EXPECT_EQ(json["numa_task_nodes"].get<NumaNodeIDs>(), bm_config.numa_task_nodes);
   ASSERT_JSON_TRUE(json, contains("number_partitions"));
   EXPECT_EQ(json["number_partitions"].get<uint16_t>(), bm_config.number_partitions);
   ASSERT_JSON_TRUE(json, contains("number_threads"));
@@ -578,6 +600,8 @@ TEST_F(ConfigTest, AsJsonWriteCustom) {
   EXPECT_EQ(json["exec_mode"], "custom");
   ASSERT_JSON_TRUE(json, contains("numa_memory_nodes"));
   EXPECT_EQ(json["numa_memory_nodes"].get<NumaNodeIDs>(), bm_config.numa_memory_nodes);
+  ASSERT_JSON_TRUE(json, contains("numa_task_nodes"));
+  EXPECT_EQ(json["numa_task_nodes"].get<NumaNodeIDs>(), bm_config.numa_task_nodes);
   ASSERT_JSON_TRUE(json, contains("number_partitions"));
   EXPECT_EQ(json["number_partitions"].get<uint16_t>(), bm_config.number_partitions);
   ASSERT_JSON_TRUE(json, contains("number_threads"));

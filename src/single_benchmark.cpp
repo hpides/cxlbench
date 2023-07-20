@@ -2,6 +2,8 @@
 
 #include <csignal>
 
+#include "numa.hpp"
+
 namespace {
 
 volatile sig_atomic_t thread_error;
@@ -14,7 +16,10 @@ namespace mema {
 bool SingleBenchmark::run() {
   signal(SIGSEGV, thread_error_handler);
 
+  // Pin thread to the configured numa node.
   const BenchmarkConfig& config = configs_[0];
+  mema::set_task_on_numa_nodes(config.numa_task_nodes);
+
   std::vector<std::thread>& pool = pools_[0];
   for (size_t thread_index = 0; thread_index < config.number_threads; thread_index++) {
     pool.emplace_back(run_in_thread, &thread_configs_[0][thread_index], std::ref(config));

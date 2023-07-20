@@ -14,6 +14,7 @@ KEY_BM_TYPE = "bm_type"
 KEY_CHUNK_SIZE = "min_io_chunk_size"
 KEY_CUSTOM_OPS = "custom_operations"
 KEY_EXPLODED_NUMA_MEMORY_NODES = "benchmarks.config.numa_memory_nodes"
+KEY_EXPLODED_NUMA_TASK_NODES = "benchmarks.config.numa_task_nodes"
 KEY_LAT_AVG = "latency.avg"
 KEY_MATRIX_ARGS = "matrix_args"
 KEY_MEMORY_RANGE = "memory_range"
@@ -137,7 +138,8 @@ class PlotGenerator:
         print("Selected BM groups: {}".format(selected_bm_groups))
 
         df = df[(df[KEY_BM_GROUP].isin(selected_bm_groups)) & (df[KEY_BM_TYPE] == "single")]
-        df = ju.flatten_nested_json_df(df, [KEY_MATRIX_ARGS, KEY_THREADS_LEVELED, KEY_EXPLODED_NUMA_MEMORY_NODES])
+        df = ju.flatten_nested_json_df(df, [KEY_MATRIX_ARGS, KEY_THREADS_LEVELED, KEY_EXPLODED_NUMA_MEMORY_NODES,
+                                            KEY_EXPLODED_NUMA_TASK_NODES])
 
         # If only latency benchnarks have been performed, the dataframe does note have a KEY_ACCESS_SIZE column so it
         # must be added.
