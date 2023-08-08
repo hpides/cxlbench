@@ -5,7 +5,7 @@ sequential_writes:
     number_partitions: [1]
     numa_memory_nodes: [[0],[1],[2]]
     access_size: [ 64, 128, 256, 512 ]
-    persist_instruction: [ cache, cacheinv, nocache, none ]
+    persist_instruction: [ cache, nocache, none ]
 
   args:
     exec_mode: sequential
