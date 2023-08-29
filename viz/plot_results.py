@@ -32,11 +32,24 @@ if __name__ == "__main__":
     parser.add_argument("--no_plots", action="store_true")
     args = parser.parse_args()
 
+    results_path = args.results
+    output_dir_string = None
+
     # get the output directory paths
-    output_dir_string = "./plots"
     if args.output_dir is not None:
         output_dir_string = args.output_dir
+    else:
+        if os.path.isfile(results_path):
+            parts = results_path.rsplit("/", 1)
+            assert len(parts)
+            output_dir_string = parts[0]
+            id = parts[1].split(".", 1)[0]
+            output_dir_string = output_dir_string + "/plots/" + id
+        else:
+            assert os.path.isdir(results_path)
+            output_dir_string = results_path + "/plots"
 
+    print("Output directory:", output_dir_string)
     output_dir = os.path.abspath(output_dir_string)
     results = args.results
     no_plots = args.no_plots
