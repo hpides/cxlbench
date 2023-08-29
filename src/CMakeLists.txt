@@ -18,6 +18,9 @@ set(
         single_benchmark.hpp
         parallel_benchmark.cpp
         parallel_benchmark.hpp
+        read_write_ops_avx2.hpp
+        read_write_ops_avx512.hpp
+        read_write_ops_types.hpp
         read_write_ops.hpp
         utils.cpp
         utils.hpp)

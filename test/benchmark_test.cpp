@@ -52,7 +52,7 @@ TEST_F(BenchmarkTest, CreateParallelBenchmark) {
                                     "/tmp/foo/bar2"));
 }
 
-#ifdef HAS_AVX
+#ifdef HAS_AVX_512
 TEST_F(BenchmarkTest, CreateSingleNewDataFile) {
   base_config_.operation = Operation::Write;
   SingleBenchmark bm{bm_name_, base_config_, std::move(base_executions_), std::move(base_results_)};

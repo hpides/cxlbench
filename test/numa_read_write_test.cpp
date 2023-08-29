@@ -69,8 +69,8 @@ TEST_F(NumaReadWriteTest, SimpleWriteRead) {
   }
 }
 
-#ifdef HAS_AVX
-TEST_F(NumaReadWriteTest, AVX512Read) {
+#ifdef HAS_AVX_2
+TEST_F(NumaReadWriteTest, AVX2WriteRead) {
   const auto memory_region_size = 100 * MIB_IN_BYTES;
   const auto numa_node_count = numa_num_configured_nodes();
   for (auto numa_idx = NumaNodeID{0}; numa_idx < numa_node_count; ++numa_idx) {
@@ -83,13 +83,16 @@ TEST_F(NumaReadWriteTest, AVX512Read) {
     const auto cache_line_count = memory_region_size / rw_ops::CACHE_LINE_SIZE;
     for (auto cache_line_idx = size_t{0}; cache_line_idx < cache_line_count; ++cache_line_idx) {
       const auto addr = base_addr + (cache_line_idx * rw_ops::CACHE_LINE_SIZE);
-      // write data to memory region
-      std::memcpy(addr, rw_ops::WRITE_DATA, rw_ops::CACHE_LINE_SIZE);
-      // read data from memory region via AVX512 intrinsics into SIMD registers
-      const __m512i read_result = rw_ops::simd_read_64(addr);
+      // write data to memory region via AVX2 intrinsics
+      rw_ops::simd_write_none_64(addr);
+      // read data from memory region via AVX2 intrinsics into SIMD registers
+      __m256i read_result[2];
+      read_result[0] = READ_SIMD_256(addr, 0);
+      read_result[1] = READ_SIMD_256(addr, 1);
       // store data from SIMD registers into local char array
       char read_cache_line[rw_ops::CACHE_LINE_SIZE] __attribute__((aligned(64))) = {};
-      _mm512_store_si512(read_cache_line, read_result);
+      _mm256_store_si256(reinterpret_cast<__m256i*>(read_cache_line), read_result[0]);
+      _mm256_store_si256(reinterpret_cast<__m256i*>(read_cache_line + 32), read_result[1]);
       const auto compare_result = std::memcmp(read_cache_line, rw_ops::WRITE_DATA, rw_ops::CACHE_LINE_SIZE);
       // check if all compared bytes were equal.
       ASSERT_EQ(compare_result, 0);
@@ -100,7 +103,9 @@ TEST_F(NumaReadWriteTest, AVX512Read) {
     munmap(base_addr, memory_region_size);
   }
 }
+#endif
 
+#ifdef HAS_AVX_512
 TEST_F(NumaReadWriteTest, AVX512WriteRead) {
   const auto memory_region_size = 100 * MIB_IN_BYTES;
   const auto numa_node_count = numa_num_configured_nodes();
@@ -114,8 +119,7 @@ TEST_F(NumaReadWriteTest, AVX512WriteRead) {
     const auto cache_line_count = memory_region_size / rw_ops::CACHE_LINE_SIZE;
     for (auto cache_line_idx = size_t{0}; cache_line_idx < cache_line_count; ++cache_line_idx) {
       const auto addr = base_addr + (cache_line_idx * rw_ops::CACHE_LINE_SIZE);
-    // write data to memory region via AVX512 intrinsics
-    mema:
+      // write data to memory region via AVX512 intrinsics
       rw_ops::simd_write_none_64(addr);
       // read data from memory region via AVX512 intrinsics into SIMD registers
       const __m512i read_result = rw_ops::simd_read_64(addr);

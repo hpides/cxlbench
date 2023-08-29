@@ -50,7 +50,7 @@ class IoOperation {
 
  private:
   void run_read() {
-#ifdef HAS_AVX
+#ifdef HAS_ANY_AVX
     switch (access_size_) {
       case 64:
         return rw_ops::simd_read_64(op_addresses_);
@@ -67,7 +67,7 @@ class IoOperation {
   }
 
   void run_write() {
-#ifdef HAS_AVX
+#ifdef HAS_ANY_AVX
     switch (persist_instruction_) {
 #ifdef HAS_CLWB
       case PersistInstruction::Cache: {
@@ -176,8 +176,12 @@ class ChainedOperation {
 
  private:
   inline char* run_read(char* addr) {
-#ifdef HAS_AVX
+#ifdef HAS_ANY_AVX
+#ifdef HAS_AVX_2
+    __m256i read_value{};
+#elifdef HAS_AVX_512
     __m512i read_value{};
+#endif
     switch (access_size_) {
       case 64:
         read_value = rw_ops::simd_read_64(addr);
@@ -205,7 +209,7 @@ class ChainedOperation {
   }
 
   inline void run_write(char* addr) {
-#ifdef HAS_AVX
+#ifdef HAS_ANY_AVX
     switch (persist_instruction_) {
 #ifdef HAS_CLWB
       case PersistInstruction::Cache: {

@@ -62,7 +62,7 @@ class ReadWriteTest : public BaseTest {
   int64_t fd;
 };
 
-#ifdef HAS_AVX
+#ifdef HAS_ANY_AVX
 TEST_F(ReadWriteTest, SingleSIMDNoneWrite_64) { run_single_write_test(rw_ops::simd_write_none_64, 64); }
 TEST_F(ReadWriteTest, SingleSIMDNoneWrite_128) { run_single_write_test(rw_ops::simd_write_none_128, 128); }
 TEST_F(ReadWriteTest, SingleSIMDNoneWrite_256) { run_single_write_test(rw_ops::simd_write_none_256, 256); }

@@ -29,18 +29,44 @@ option(IS_CI_BUILD "Set true if this is a CI build.")
 include(CheckCSourceRuns)
 set(avx512_prog "int main() { asm volatile(\"vmovdqu64 %zmm0, %zmm1\"); return 0; }")
 set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -mavx512f")
-check_c_source_runs("${avx512_prog}" HAS_AVX)
-if (${HAS_AVX})
-    # Set HAS_AVX so we can use it to enable all explicit AVX instructions.
-    add_definitions("-DHAS_AVX")
+check_c_source_runs("${avx512_prog}" HAS_AVX_512)
+
+set(avx_prog "int main() { asm volatile(\"vpsllvq %ymm0, %ymm1, %ymm2\"); return 0; }")
+set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -mavx2")
+check_c_source_runs("${avx_prog}" HAS_AVX_2)
+
+function(fail_specify_avx)
+  message(FATAL_ERROR "Please specify the instruction set to be used (only one):
+  -DUSE_AVX_2=ON
+  -DUSE_AVX_512=ON")
+endfunction()
+
+# In case of a CI build, we do not use AVX.
+if (${IS_CI_BUILD})
+    message(STATUS "CI build specified. Not using AVX.")
+# Set HAS_AVX_512 or HAS_AVX_2 so we can use it to enable explicit AVX instructions.
+elseif ((${HAS_AVX_512}) AND (${HAS_AVX_2}))
+   if ((${USE_AVX_512}) AND (${USE_AVX_2}))
+        fail_specify_avx()
+   elseif (${USE_AVX_512})
+        add_definitions("-DHAS_AVX_512" "-DHAS_ANY_AVX")
+        message(STATUS "System supports AVX-2 and AVX-512, AVX-512 is used.")
+   elseif (${USE_AVX_2})
+        add_definitions("-DHAS_AVX_2" "-DHAS_ANY_AVX")
+        message(STATUS "System supports AVX-2 and AVX-512, AVX-2 is used.")
+   else()
+        fail_specify_avx()
+   endif()
+elseif (${HAS_AVX_512})
+    add_definitions("-DHAS_AVX_512" "-DHAS_ANY_AVX")
     message(STATUS "System supports AVX-512.")
-else ()
-    if (${IS_CI_BUILD})
-        message(STATUS "System does not supports AVX-512. This is okay only in a CI build.")
-    else ()
-        message(FATAL_ERROR "System does not support AVX-512.")
-    endif ()
-endif ()
+elseif (${HAS_AVX_2})
+    add_definitions("-DHAS_AVX_2" "-DHAS_ANY_AVX")
+    message(STATUS "System supports AVX-2.")
+else() 
+    # No AVX instruction set supported.
+    message(FATAL_ERROR "System does not support AVX-2 or AVX-512.")
+endif()
 
 # Backup of actual required flags
 set(BASE_CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")

@@ -11,30 +11,46 @@
 
 namespace {
 
-nlohmann::json single_results_to_json(const mema::SingleBenchmark& bm, const nlohmann::json& bm_results) {
+nlohmann::json single_results_to_json(const mema::SingleBenchmark& bm, const nlohmann::json& bm_results,
+                                      const std::string& simd_instruction_set) {
   return {{"bm_name", bm.benchmark_name()},
           {"bm_type", bm.benchmark_type_as_str()},
           {"matrix_args", bm.get_benchmark_configs()[0].matrix_args},
-          {"benchmarks", bm_results}};
+          {"benchmarks", bm_results},
+          {"simd_instruction_set", simd_instruction_set}};
 }
 
-nlohmann::json parallel_results_to_json(const mema::ParallelBenchmark& bm, const nlohmann::json& bm_results) {
+nlohmann::json parallel_results_to_json(const mema::ParallelBenchmark& bm, const nlohmann::json& bm_results,
+                                        const std::string& simd_instruction_set) {
   return {{"bm_name", bm.benchmark_name()},
           {"sub_bm_names", {bm.get_benchmark_name_one(), bm.get_benchmark_name_two()}},
           {"bm_type", bm.benchmark_type_as_str()},
           {"matrix_args",
            {{bm.get_benchmark_name_one(), bm.get_benchmark_configs()[0].matrix_args},
             {bm.get_benchmark_name_two(), bm.get_benchmark_configs()[1].matrix_args}}},
-          {"benchmarks", bm_results}};
+          {"benchmarks", bm_results},
+          {"simd_instruction_set", simd_instruction_set}};
 }
 
 nlohmann::json benchmark_results_to_json(const mema::Benchmark& bm, const nlohmann::json& bm_results) {
+  auto simd_instruction_set = std::string{};
+#ifdef HAS_AVX_512
+  simd_instruction_set = "avx512";
+#elif defined HAS_AVX_2
+  simd_instruction_set = "avx2";
+#elif not defined HAS_ANY_AVX
+  simd_instruction_set = "none";
+#endif
+
   if (bm.get_benchmark_type() == mema::BenchmarkType::Single) {
-    return single_results_to_json(dynamic_cast<const mema::SingleBenchmark&>(bm), bm_results);
+    return single_results_to_json(dynamic_cast<const mema::SingleBenchmark&>(bm), bm_results, simd_instruction_set);
   } else if (bm.get_benchmark_type() == mema::BenchmarkType::Parallel) {
-    return parallel_results_to_json(dynamic_cast<const mema::ParallelBenchmark&>(bm), bm_results);
+    return parallel_results_to_json(dynamic_cast<const mema::ParallelBenchmark&>(bm), bm_results, simd_instruction_set);
   } else {
-    return {{"bm_name", bm.benchmark_name()}, {"bm_type", bm.benchmark_type_as_str()}, {"benchmarks", bm_results}};
+    return {{"bm_name", bm.benchmark_name()},
+            {"bm_type", bm.benchmark_type_as_str()},
+            {"benchmarks", bm_results},
+            {"simd_instruction_set", simd_instruction_set}};
   }
 }
 
