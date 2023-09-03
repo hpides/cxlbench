@@ -1,7 +1,7 @@
 test_seq:
   args:
     access_size: 256
-    memory_range: 64M
+    memory_region_size: 64M
     exec_mode: sequential
     numa_memory_nodes: [0, 1]
     numa_task_nodes: [ 0 ]

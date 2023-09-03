@@ -40,20 +40,19 @@ bool ParallelBenchmark::run() {
 }
 
 void ParallelBenchmark::generate_data() {
-  pmem_data_.push_back(generate_pmem_data(configs_[0], memory_regions_[0]));
-  pmem_data_.push_back(generate_pmem_data(configs_[1], memory_regions_[1]));
-
-  dram_data_.push_back(generate_dram_data(configs_[0], configs_[0].dram_memory_range));
-  dram_data_.push_back(generate_dram_data(configs_[1], configs_[1].dram_memory_range));
+  if (!data_.empty()) {
+    spdlog::critical("generate_data() called more than once for the same benchmark.");
+    utils::crash_exit();
+  }
+  data_.push_back(prepare_data(configs_[0], configs_[0].memory_region_size));
+  data_.push_back(prepare_data(configs_[1], configs_[1].memory_region_size));
 }
 
 void ParallelBenchmark::set_up() {
   pools_.resize(2);
   thread_configs_.resize(2);
-  single_set_up(configs_[0], pmem_data_[0], dram_data_[0], executions_[0].get(), results_[0].get(), &pools_[0],
-                &thread_configs_[0]);
-  single_set_up(configs_[1], pmem_data_[1], dram_data_[1], executions_[1].get(), results_[1].get(), &pools_[1],
-                &thread_configs_[1]);
+  single_set_up(configs_[0], data_[0], executions_[0].get(), results_[0].get(), &pools_[0], &thread_configs_[0]);
+  single_set_up(configs_[1], data_[1], executions_[1].get(), results_[1].get(), &pools_[1], &thread_configs_[1]);
 }
 
 nlohmann::json ParallelBenchmark::get_result_as_json() {
@@ -70,38 +69,8 @@ ParallelBenchmark::ParallelBenchmark(const std::string& benchmark_name, std::str
                                      const BenchmarkConfig& second_config,
                                      std::vector<std::unique_ptr<BenchmarkExecution>>&& executions,
                                      std::vector<std::unique_ptr<BenchmarkResult>>&& results)
-    : Benchmark(benchmark_name, BenchmarkType::Parallel,
-                std::vector<MemoryRegion>{
-                    {utils::generate_random_file_name(first_config.pmem_directory), true, first_config.is_hybrid},
-                    {utils::generate_random_file_name(second_config.pmem_directory), true, second_config.is_hybrid}},
-                std::vector<BenchmarkConfig>{first_config, second_config}, std::move(executions), std::move(results)),
-      benchmark_name_one_{std::move(first_benchmark_name)},
-      benchmark_name_two_{std::move(second_benchmark_name)} {}
-
-ParallelBenchmark::ParallelBenchmark(const std::string& benchmark_name, std::string first_benchmark_name,
-                                     std::string second_benchmark_name, const BenchmarkConfig& first_config,
-                                     const BenchmarkConfig& second_config,
-                                     std::vector<std::unique_ptr<BenchmarkExecution>>&& executions,
-                                     std::vector<std::unique_ptr<BenchmarkResult>>&& results,
-                                     std::filesystem::path pmem_file_first)
-    : Benchmark(benchmark_name, BenchmarkType::Parallel,
-                std::vector<MemoryRegion>{
-                    {{std::move(pmem_file_first), false, first_config.is_hybrid},
-                     {utils::generate_random_file_name(second_config.pmem_directory), true, second_config.is_hybrid}}},
-                std::vector<BenchmarkConfig>{first_config, second_config}, std::move(executions), std::move(results)),
-      benchmark_name_one_{std::move(first_benchmark_name)},
-      benchmark_name_two_{std::move(second_benchmark_name)} {}
-
-ParallelBenchmark::ParallelBenchmark(const std::string& benchmark_name, std::string first_benchmark_name,
-                                     std::string second_benchmark_name, const BenchmarkConfig& first_config,
-                                     const BenchmarkConfig& second_config,
-                                     std::vector<std::unique_ptr<BenchmarkExecution>>&& executions,
-                                     std::vector<std::unique_ptr<BenchmarkResult>>&& results,
-                                     std::filesystem::path pmem_file_first, std::filesystem::path pmem_file_second)
-    : Benchmark(benchmark_name, BenchmarkType::Parallel,
-                std::vector<MemoryRegion>{{{std::move(pmem_file_first), false, first_config.is_hybrid},
-                                           {std::move(pmem_file_second), false, second_config.is_hybrid}}},
-                std::vector<BenchmarkConfig>{first_config, second_config}, std::move(executions), std::move(results)),
+    : Benchmark(benchmark_name, BenchmarkType::Parallel, std::vector<BenchmarkConfig>{first_config, second_config},
+                std::move(executions), std::move(results)),
       benchmark_name_one_{std::move(first_benchmark_name)},
       benchmark_name_two_{std::move(second_benchmark_name)} {}
 

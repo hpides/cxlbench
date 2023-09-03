@@ -17,7 +17,7 @@ KEY_EXPLODED_NUMA_MEMORY_NODES = "benchmarks.config.numa_memory_nodes"
 KEY_EXPLODED_NUMA_TASK_NODES = "benchmarks.config.numa_task_nodes"
 KEY_LAT_AVG = "latency.avg"
 KEY_MATRIX_ARGS = "matrix_args"
-KEY_MEMORY_RANGE = "memory_range"
+KEY_MEMORY_REGION_SIZE = "memory_region_size"
 KEY_NUMA_MEMORY_NODES = "numa_memory_nodes"
 KEY_OPERATION = "operation"
 KEY_OPERATION_COUNT = "number_operations"
@@ -67,7 +67,7 @@ def assert_config_columns_one_value(df, exclude_columns):
         KEY_OPERATION,
         KEY_OPERATION_COUNT,
         KEY_WRITE_INSTRUCTION,
-        KEY_MEMORY_RANGE,
+        KEY_MEMORY_REGION_SIZE,
         KEY_RUN_TIME,
         KEY_RANDOM_DISTRIBUTION,
     ]
@@ -164,7 +164,7 @@ class PlotGenerator:
             "exec_mode",
             "memory_type",
             "threads",
-            "prefault_file",
+            "prefault_memory",
         ]
 
         # (comment in for debug purposes)

@@ -11,55 +11,39 @@
 
 namespace mema {
 
-constexpr size_t TMP_FILE_SIZE = 131072;  // 128 KiB
+constexpr auto MEMORY_REGION_SIZE = size_t{131072};  // 128 KiB
 
 class ReadWriteTest : public BaseTest {
  protected:
   void SetUp() override {
-    temp_file_ = utils::generate_random_file_name(std::filesystem::temp_directory_path());
-
-    std::ofstream temp_stream{temp_file_};
-    temp_stream.close();
-    std::filesystem::resize_file(temp_file_, TMP_FILE_SIZE);
-
-    fd = open(temp_file_.c_str(), O_RDWR, S_IRWXU);
-    ASSERT_GE(fd, 0);
-
-    addr = static_cast<char*>(mmap(nullptr, TMP_FILE_SIZE, PROT_WRITE, MAP_SHARED, fd, 0));
+    addr = static_cast<char*>(mmap(nullptr, MEMORY_REGION_SIZE, PROT_READ | PROT_WRITE, utils::MAP_FLAGS, -1, 0));
     ASSERT_NE(addr, MAP_FAILED);
   }
 
-  void TearDown() override {
-    munmap(addr, TMP_FILE_SIZE);
-    close(fd);
-  }
+  void TearDown() override { munmap(addr, MEMORY_REGION_SIZE); }
 
   using MultiWriteFn = void(const std::vector<char*>&);
   void run_multi_write_test(MultiWriteFn write_fn, const size_t access_size) {
-    const size_t num_writes = TMP_FILE_SIZE / access_size;
-    const char* last_op = addr + TMP_FILE_SIZE;
+    const size_t write_count = MEMORY_REGION_SIZE / access_size;
+    const char* last_op = addr + MEMORY_REGION_SIZE;
     std::vector<char*> op_addresses{};
-    op_addresses.reserve(num_writes);
+    op_addresses.reserve(write_count);
 
     for (char* write_addr = addr; write_addr < last_op; write_addr += access_size) {
       op_addresses.emplace_back(write_addr);
     }
 
     write_fn(op_addresses);
-    ASSERT_EQ(msync(addr, TMP_FILE_SIZE, MS_SYNC), 0);
-    check_file_written(temp_file_, TMP_FILE_SIZE);
+    ASSERT_EQ(msync(addr, MEMORY_REGION_SIZE, MS_SYNC), 0);
   }
 
   using SingleWriteFn = void(char*);
   void run_single_write_test(SingleWriteFn write_fn, const size_t access_size) {
     write_fn(addr);
     ASSERT_EQ(msync(addr, access_size, MS_SYNC), 0);
-    check_file_written(temp_file_, TMP_FILE_SIZE, access_size);
   }
 
-  std::filesystem::path temp_file_;
   char* addr;
-  int64_t fd;
 };
 
 #ifdef HAS_ANY_AVX

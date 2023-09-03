@@ -20,31 +20,21 @@ class MemaException : public std::exception {
 
 namespace utils {
 
-static constexpr size_t NUM_UTIL_THREADS = 8;                  // Should be a power of two
-static constexpr size_t PMEM_PAGE_SIZE = 2 * (1024ul * 1024);  // 2 MiB persistent memory page size
-static constexpr size_t DRAM_PAGE_SIZE = 4 * 1024ul;           // 4 KiB DRAM page size
-static constexpr size_t ONE_GB = 1024ul * 1024 * 1024;
+static constexpr auto DATA_GEN_THREAD_COUNT = size_t{8};  // Should be a power of two
+static constexpr auto PAGE_SIZE = size_t{4 * 1024ul};     // 4 KiB page size
+static constexpr auto ONE_GB = size_t{1024ul * 1024 * 1024};
+static constexpr auto SHORT_STRING_SIZE = size_t{1};
 
-static int PMEM_MAP_FLAGS = MAP_SHARED_VALIDATE | MAP_SYNC;
-static int DRAM_MAP_FLAGS = MAP_PRIVATE | MAP_ANONYMOUS;
+static int MAP_FLAGS = MAP_PRIVATE | MAP_ANONYMOUS;
 
-void setPMEM_MAP_FLAGS(int flags);
-
-// File-maps the given file to a memory region. No data is mapped if `expected_length` is 0.
-char* map_pmem(const std::filesystem::path& file, const size_t expected_length);
-
-// Maps an anonymous DRAM region. No data is mapped if `expected_length` is 0.
-char* map_dram(const size_t expected_length, const bool use_huge_pages, const NumaNodeIDs& numa_memory_nodes);
+// Maps an anonymous memory region. No data is mapped if `expected_length` is 0.
+char* map(const size_t expected_length, const bool use_huge_pages, const NumaNodeIDs& numa_memory_nodes);
 
 NumaNodeID get_numa_task_node();
 
-char* create_pmem_file(const std::filesystem::path& file, const size_t length);
-
-std::filesystem::path generate_random_file_name(const std::filesystem::path& base_dir);
-
 void generate_read_data(char* addr, const uint64_t memory_size);
 
-void prefault_file(char* addr, const uint64_t memory_size, const uint64_t page_size);
+void prefault_memory(char* addr, const uint64_t memory_size, const uint64_t page_size);
 
 uint64_t duration_to_nanoseconds(const std::chrono::steady_clock::duration duration);
 
@@ -60,11 +50,18 @@ std::filesystem::path create_result_file(const std::filesystem::path& result_dir
                                          const std::filesystem::path& config_path);
 void write_benchmark_results(const std::filesystem::path& result_path, const nlohmann::json& results);
 
+// Returns the first std::string that is mapped to as a specified enum value. If short_result is set, only strings of
+// size SHORT_STRING_SIZE are returned.
 template <typename T>
-std::string get_enum_as_string(const std::unordered_map<std::string, T>& enum_map, T value) {
+std::string get_enum_as_string(const std::unordered_map<std::string, T>& enum_map, T value, bool short_result = false) {
   for (auto it = enum_map.cbegin(); it != enum_map.cend(); ++it) {
     if (it->second == value) {
-      return it->first;
+      const auto is_short_char = it->first.size() == SHORT_STRING_SIZE;
+      if (short_result && is_short_char) {
+        return it->first;
+      } else if (!(short_result || is_short_char)) {
+        return it->first;
+      }
     }
   }
   throw std::invalid_argument("Unknown enum value for " + std::string(typeid(T).name()));

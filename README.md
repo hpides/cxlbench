@@ -57,7 +57,7 @@ random_reads:
   # Each of the six runs will perform 200 million random reads on a 10 GiB memory range.
   args:
     operation: read
-    memory_range: 10G
+    memory_region_size: 10G
     number_operations: 200000000
     exec_mode: random
 ```
@@ -68,15 +68,8 @@ This code is taken from [src/benchmark_config.hpp](src/benchmark_config.hpp).
 /** Represents the size of an individual memory access in Byte. Must be a power of two. */
 uint32_t access_size = 256;
 
-/** Represents the total PMem memory range to use for the benchmark. Must be a multiple of `access_size`.  */
-uint64_t memory_range = 10 * BYTES_IN_GIGABYTE;  // 10 GiB
-
-/** Represents the total DRAM memory range to use for the benchmark. Must be a multiple of `access_size`.  */
-uint64_t dram_memory_range = 0;
-
-/** Represents the ratio of DRAM IOOperations to PMem IOOperations. Must only contain one digit after decimal point,
- * i.e., 0.1 or 0.2. */
-double dram_operation_ratio = 0.0;
+/** Represents the total memory range to use for the benchmark. Must be a multiple of `access_size`.  */
+uint64_t memory_region_size = 10 * BYTES_IN_GIGABYTE;  // 10 GiB
 
 /** Represents the number of random access / custom operations to perform. Can *not* be set for sequential access. */
 uint64_t number_operations = 100'000'000;
@@ -97,7 +90,7 @@ Mode exec_mode = Mode::Sequential;
  * `PersistInstruction` for more details on available options. */
 PersistInstruction persist_instruction = PersistInstruction::NoCache;
 
-/** Number of disjoint memory regions to partition the `memory_range` into. Must be 0 or a divisor of
+/** Number of disjoint memory regions to partition the `memory_region_size` into. Must be 0 or a divisor of
  * `number_threads` i.e., one or more threads map to one partition. When set to 0, it is equal to the number of
  * threads, i.e., each thread has its own partition. Default is set to 1.  */
 uint16_t number_partitions = 1;
@@ -119,10 +112,10 @@ uint64_t latency_sample_frequency = 0;
 
 /** Whether or not to prefault the memory region before writing to it. If set to false, the benchmark will include the
  * time caused by page faults on first access to the allocated memory region. */
-bool prefault_file = true;
+bool prefault_memory = true;
 
-/** Whether or not to use transparent huge pages in DRAM, i.e., 2 MiB instead of regular 4 KiB pages. */
-bool dram_huge_pages = true;
+/** Whether or not to use transparent huge pages, i.e., 2 MiB instead of regular 4 KiB pages. */
+bool huge_pages = true;
 
 /** Represents the minimum size of an atomic work package. A chunk contains chunk_size / access_size number of
  * operations. Assuming the lowest bandwidth of 1 GiB/s operations per thread, 64 MiB is a ~60 ms execution unit. */
@@ -136,38 +129,18 @@ You can check out the examples in [workloads/operations/](workloads/operations/)
 To use these custom workloads, you need to specify them as `custom_operations` in the YAML and choose `exec_mode: custom`.
 
 The string representation of a custom operation is:
-For reads: `r(<location>)_<size>`
+For reads: `r_<size>`
 with:
  'r' for read,
- (optional) `<location>` is 'd' or 'p' for DRAM/PMem (with p as default is nothing is specified),
  `<size>` is the size of the access (must be power of 2).
 
-For writes: `w(<location>)_<size>_<persist_instruction>(_<offset>)`
+For writes: `w_<size>_<persist_instruction>(_<offset>)`
 with:
  'w' for write,
- (optional) `<location>` is 'd' or 'p' for DRAM/PMem (with p as default is nothing is specified),
  `<size>` is the size of the access (must be power of 2),
  `<persist_instruction>` is the instruction to use after the write (none, cache, cacheinv, noache),
  (optional) `<offset>` is the offset to the previously accessed address (can be negative, default is 0)
 
-See the following example for more details.
-
-```yaml
-# Represent updates to a (very simplified) hybrid tree-index structure.
-hybrid_tree_index_update:
-  matrix:
-    # ...
-  args:
-    # This string represents a random 1024 Byte read to DRAM (rd_1024), followed by a dependent (pointer-chasing) 1024 Byte read to PMem (rp_1024). It the performs a 64 Byte write 512 Bytes into the previously read 1024 Byte (wp_64_cache_512), followed by the same write at the beginning pf the initial 1024 Byte (specified via _-512).
-    custom_operations: "rd_1024,rp_1024,wp_64_cache_512,wp_64_cache_-512"
-
-    # As we use both DRAM and PMem, we must also specify a DRAM range.
-    dram_memory_range: 10G
-    memory_range: 20G
-
-    exec_mode: custom
-    # ...
-```
 ## Used AVX-512 Intrinsics
 
 Read: `_mm512_load_si512`

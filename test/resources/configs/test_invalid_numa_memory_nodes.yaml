@@ -1,7 +1,7 @@
 test_seq:
   args:
     access_size: 256
-    memory_range: 64M
+    memory_region_size: 64M
     exec_mode: sequential
     # Invalid because `numa_memory_nodes` needs to be a sequence, i.e., [a, b, c]
     numa_memory_nodes: 0

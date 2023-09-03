@@ -16,35 +16,7 @@ namespace mema::utils {
 
 namespace fs = std::filesystem;
 
-constexpr size_t FILE_SIZE = 8 * (1024u * 1024);  // 8 MiB
-
-class UtilsTest : public BaseTest {
- protected:
-  void SetUp() override {
-    std::string file_name_create = std::filesystem::temp_directory_path() / "tmp_create_file.XXXXXX";
-    std::string file_name_read = std::filesystem::temp_directory_path() / "tmp_read_file.XXXXXX";
-
-    int fd;
-    fd = mkstemp(&file_name_create[0]);
-    close(fd);
-    tmp_file_name_create = file_name_create;
-
-    fd = mkstemp(&file_name_read[0]);
-    close(fd);
-    tmp_file_name_read = file_name_read;
-    fs::resize_file(file_name_read, FILE_SIZE);
-
-    setPMEM_MAP_FLAGS(MAP_SHARED);
-  }
-
-  void TearDown() override {
-    std::filesystem::remove(tmp_file_name_create);
-    std::filesystem::remove(tmp_file_name_read);
-  }
-
-  std::filesystem::path tmp_file_name_create;
-  std::filesystem::path tmp_file_name_read;
-};
+class UtilsTest : public BaseTest {};
 
 /**
  * Verifies whether the first 100'000 zipfian generated values are in between the given boundaries.
@@ -55,25 +27,6 @@ TEST_F(UtilsTest, ZipfBound) {
     EXPECT_GE(value, 0);
     EXPECT_LT(value, 1000);
   }
-}
-
-/**
- * Verifies whether the memory mapped file is the same size as the file.
- */
-TEST_F(UtilsTest, ReadMapFileCorrectSizePmem) { EXPECT_NO_THROW(map_pmem(tmp_file_name_read, FILE_SIZE)); }
-
-/**
- * Verifies whether the memory mapped file can be mapped without a backing file.
- */
-TEST_F(UtilsTest, ReadMapFileCorrectSizeDRAM) { EXPECT_NO_THROW(map_pmem(tmp_file_name_read, FILE_SIZE)); }
-
-/**
- * Verifies whether the created memory mapped file is of the correct size.
- */
-TEST_F(UtilsTest, CreateMapFileSize) {
-  ASSERT_NO_THROW(create_pmem_file(tmp_file_name_create, FILE_SIZE));
-  size_t file_size = fs::file_size(tmp_file_name_create);
-  EXPECT_EQ(file_size, FILE_SIZE);
 }
 
 TEST_F(UtilsTest, CreateResultFileFromConfigFile) {

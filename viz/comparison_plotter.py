@@ -105,7 +105,7 @@ class ComparisonPlotter:
             "operation",
             "threads",
             "persist_instruction",
-            "prefault_file",
+            "prefault_memory",
             "random_distribution",
         ]
         for column in df.columns:

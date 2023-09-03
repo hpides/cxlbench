@@ -119,43 +119,41 @@ BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
   spdlog::info("Decoding benchmark config from file: {}", node["config_file"].as<std::string>());
   node.remove("config_file");
   BenchmarkConfig bm_config{};
-  size_t num_found = 0;
+  size_t found_count = 0;
   try {
-    num_found +=
-        get_size_if_present(node, "memory_range", ConfigEnums::scale_suffix_to_factor, &bm_config.memory_range);
-    num_found += get_size_if_present(node, "dram_memory_range", ConfigEnums::scale_suffix_to_factor,
-                                     &bm_config.dram_memory_range);
-    num_found += get_size_if_present(node, "access_size", ConfigEnums::scale_suffix_to_factor, &bm_config.access_size);
-    num_found += get_size_if_present(node, "min_io_chunk_size", ConfigEnums::scale_suffix_to_factor,
-                                     &bm_config.min_io_chunk_size);
+    found_count += get_size_if_present(node, "memory_region_size", ConfigEnums::scale_suffix_to_factor,
+                                       &bm_config.memory_region_size);
+    found_count +=
+        get_size_if_present(node, "access_size", ConfigEnums::scale_suffix_to_factor, &bm_config.access_size);
+    found_count += get_size_if_present(node, "min_io_chunk_size", ConfigEnums::scale_suffix_to_factor,
+                                       &bm_config.min_io_chunk_size);
 
-    num_found += get_if_present(node, "dram_operation_ratio", &bm_config.dram_operation_ratio);
-    num_found += get_if_present(node, "number_operations", &bm_config.number_operations);
-    num_found += get_if_present(node, "run_time", &bm_config.run_time);
-    num_found += get_if_present(node, "number_partitions", &bm_config.number_partitions);
-    num_found += get_if_present(node, "number_threads", &bm_config.number_threads);
-    num_found += get_if_present(node, "zipf_alpha", &bm_config.zipf_alpha);
-    num_found += get_if_present(node, "prefault_file", &bm_config.prefault_file);
-    num_found += get_if_present(node, "latency_sample_frequency", &bm_config.latency_sample_frequency);
-    num_found += get_if_present(node, "dram_huge_pages", &bm_config.dram_huge_pages);
+    found_count += get_if_present(node, "number_operations", &bm_config.number_operations);
+    found_count += get_if_present(node, "run_time", &bm_config.run_time);
+    found_count += get_if_present(node, "number_partitions", &bm_config.number_partitions);
+    found_count += get_if_present(node, "number_threads", &bm_config.number_threads);
+    found_count += get_if_present(node, "zipf_alpha", &bm_config.zipf_alpha);
+    found_count += get_if_present(node, "prefault_memory", &bm_config.prefault_memory);
+    found_count += get_if_present(node, "latency_sample_frequency", &bm_config.latency_sample_frequency);
+    found_count += get_if_present(node, "huge_pages", &bm_config.huge_pages);
 
-    num_found += get_enum_if_present(node, "exec_mode", ConfigEnums::str_to_mode, &bm_config.exec_mode);
-    num_found += get_enum_if_present(node, "operation", ConfigEnums::str_to_operation, &bm_config.operation);
-    num_found += get_enum_if_present(node, "random_distribution", ConfigEnums::str_to_random_distribution,
-                                     &bm_config.random_distribution);
-    num_found += get_enum_if_present(node, "persist_instruction", ConfigEnums::str_to_persist_instruction,
-                                     &bm_config.persist_instruction);
-    num_found += get_uints_if_present(node, "numa_memory_nodes", bm_config.numa_memory_nodes);
-    num_found += get_uints_if_present(node, "numa_task_nodes", bm_config.numa_task_nodes);
+    found_count += get_enum_if_present(node, "exec_mode", ConfigEnums::str_to_mode, &bm_config.exec_mode);
+    found_count += get_enum_if_present(node, "operation", ConfigEnums::str_to_operation, &bm_config.operation);
+    found_count += get_enum_if_present(node, "random_distribution", ConfigEnums::str_to_random_distribution,
+                                       &bm_config.random_distribution);
+    found_count += get_enum_if_present(node, "persist_instruction", ConfigEnums::str_to_persist_instruction,
+                                       &bm_config.persist_instruction);
+    found_count += get_uints_if_present(node, "numa_memory_nodes", bm_config.numa_memory_nodes);
+    found_count += get_uints_if_present(node, "numa_task_nodes", bm_config.numa_task_nodes);
 
     std::string custom_ops;
     const bool has_custom_ops = get_if_present(node, "custom_operations", &custom_ops);
     if (has_custom_ops) {
       bm_config.custom_operations = CustomOp::all_from_string(custom_ops);
-      ++num_found;
+      ++found_count;
     }
 
-    if (num_found != node.size()) {
+    if (found_count != node.size()) {
       for (YAML::const_iterator entry = node.begin(); entry != node.end(); ++entry) {
         if (entry->second.Tag() != VISITED_TAG) {
           throw std::invalid_argument("Unknown config entry '" + entry->first.as<std::string>() +
@@ -182,30 +180,9 @@ void BenchmarkConfig::validate() const {
   const bool is_access_size_power_of_two = (access_size & (access_size - 1)) == 0;
   CHECK_ARGUMENT(is_access_size_power_of_two, "Access size must be a power of 2.");
 
-  // Check if PMem memory range is multiple of access size
-  const bool is_memory_range_multiple_of_access_size = (memory_range % access_size) == 0;
-  CHECK_ARGUMENT(is_memory_range_multiple_of_access_size, "PMem memory range must be a multiple of access size.");
-
-  // Check if DRAM memory range is multiple of access size
-  const bool is_dram_memory_range_multiple_of_access_size = (dram_memory_range % access_size) == 0;
-  CHECK_ARGUMENT(is_dram_memory_range_multiple_of_access_size,
-                 "DRAM memory range must be a multiple of access size or 0.");
-
-  // Check if set DRAM operation has random or custom mode
-  const bool is_dram_operation_mode_valid = dram_operation_ratio == 0.0 || exec_mode == Mode::Random;
-  CHECK_ARGUMENT(is_dram_operation_mode_valid, "DRAM operation ratio only supported in random execution.");
-
-  // Check if DRAM ratio is greater and equal to 0 and smaller than 1
-  const bool is_dram_operation_ratio_valid =
-      dram_operation_ratio == 0.0 ||
-      (0.0 < dram_operation_ratio && dram_operation_ratio <= 1.0 && dram_memory_range > 0);
-  CHECK_ARGUMENT(is_dram_operation_ratio_valid,
-                 "DRAM ratio must be at least 0 and not greater than 1. If greater than 0, dram memory range must be "
-                 "greater than 0.");
-
-  const bool has_dram_size_for_dram_operations = !contains_dram_op() || dram_memory_range > 0;
-  CHECK_ARGUMENT(has_dram_size_for_dram_operations,
-                 "Must set dram_memory_range > 0 if the benchmark contains DRAM operations.");
+  // Check if memory range is multiple of access size
+  const bool is_memory_region_size_multiple_of_access_size = (memory_region_size % access_size) == 0;
+  CHECK_ARGUMENT(is_memory_region_size_multiple_of_access_size, "Memory range must be a multiple of access size.");
 
   // Check if at least one thread
   const bool is_at_least_one_thread = number_threads > 0;
@@ -218,18 +195,11 @@ void BenchmarkConfig::validate() const {
                  "Number threads must be a multiple of number partitions.");
 
   // Assumption: total memory range must be evenly divisible into number of partitions
-  const bool is_partitionable = (number_partitions == 0 && ((memory_range / number_threads) % access_size) == 0) ||
-                                (number_partitions > 0 && ((memory_range / number_partitions) % access_size) == 0);
+  const bool is_partitionable =
+      (number_partitions == 0 && ((memory_region_size / number_threads) % access_size) == 0) ||
+      (number_partitions > 0 && ((memory_region_size / number_partitions) % access_size) == 0);
   CHECK_ARGUMENT(is_partitionable,
                  "Total memory range must be evenly divisible into number of partitions. "
-                 "Most likely you can fix this by using 2^x partitions.");
-
-  // Assumption: total memory range must be evenly divisible into number of partitions
-  const bool is_dram_partitionable =
-      (number_partitions == 0 && ((dram_memory_range / number_threads) % access_size) == 0) ||
-      (number_partitions > 0 && ((dram_memory_range / number_partitions) % access_size) == 0);
-  CHECK_ARGUMENT(is_dram_partitionable,
-                 "DRAM memory range must be evenly divisible into number of partitions. "
                  "Most likely you can fix this by using 2^x partitions.");
 
   // Assumption: number_operations should only be set for random/custom access. It is ignored in sequential IO.
@@ -257,13 +227,12 @@ void BenchmarkConfig::validate() const {
   }
 
   // Assumption: total memory needs to fit into N chunks exactly
-  const bool is_time_based_seq_total_memory_chunkable = (memory_range % min_io_chunk_size) == 0;
+  const bool is_time_based_seq_total_memory_chunkable = (memory_region_size % min_io_chunk_size) == 0;
   CHECK_ARGUMENT(is_time_based_seq_total_memory_chunkable,
-                 "The total file size needs to be multiple of chunk size " + std::to_string(min_io_chunk_size));
+                 "The total memory range needs to be multiple of chunk size " + std::to_string(min_io_chunk_size));
 
   // Assumption: we chunk operations, so we need enough data to fill at least one chunk
-  const bool is_total_memory_large_enough =
-      (memory_range / number_threads) >= min_io_chunk_size || dram_operation_ratio == 1;
+  const bool is_total_memory_large_enough = (memory_region_size / number_threads) >= min_io_chunk_size;
   CHECK_ARGUMENT(is_total_memory_large_enough,
                  "Each thread needs at least " + std::to_string(min_io_chunk_size) + " Bytes of memory.");
 
@@ -290,16 +259,9 @@ bool BenchmarkConfig::contains_write_op() const {
          std::any_of(custom_operations.begin(), custom_operations.end(), find_custom_write_op);
 }
 
-bool BenchmarkConfig::contains_dram_op() const {
-  auto find_custom_dram_op = [](const CustomOp& op) { return !op.is_pmem; };
-  return dram_operation_ratio > 0.0 ||
-         std::any_of(custom_operations.begin(), custom_operations.end(), find_custom_dram_op);
-}
-
 std::string BenchmarkConfig::to_string(const std::string sep) const {
   auto stream = std::stringstream{};
-  stream << "memory type: " << utils::get_enum_as_string(ConfigEnums::str_to_mem_type, is_pmem);
-  stream << sep << "memory range: " << memory_range;
+  stream << "memory range: " << memory_region_size;
   stream << sep << "exec mode: " << utils::get_enum_as_string(ConfigEnums::str_to_mode, exec_mode);
   stream << sep << "memory numa nodes: [";
   auto delim = "";
@@ -344,21 +306,15 @@ std::string BenchmarkConfig::to_string(const std::string sep) const {
 
 nlohmann::json BenchmarkConfig::as_json() const {
   nlohmann::json config;
-  config["memory_type"] = utils::get_enum_as_string(ConfigEnums::str_to_mem_type, is_pmem);
-  config["memory_range"] = memory_range;
+  config["memory_region_size"] = memory_region_size;
   config["exec_mode"] = utils::get_enum_as_string(ConfigEnums::str_to_mode, exec_mode);
   config["numa_memory_nodes"] = numa_memory_nodes;
   config["numa_task_nodes"] = numa_task_nodes;
   config["number_partitions"] = number_partitions;
   config["number_threads"] = number_threads;
-  config["prefault_file"] = prefault_file;
+  config["prefault_memory"] = prefault_memory;
   config["min_io_chunk_size"] = min_io_chunk_size;
-
-  if (is_hybrid) {
-    config["dram_memory_range"] = dram_memory_range;
-    config["dram_operation_ratio"] = dram_operation_ratio;
-    config["dram_huge_pages"] = dram_huge_pages;
-  }
+  config["huge_pages"] = huge_pages;
 
   if (exec_mode != Mode::Custom) {
     config["access_size"] = access_size;
@@ -405,8 +361,8 @@ CustomOp CustomOp::from_string(const std::string& str) {
     op_str_parts.emplace_back(op_str_part);
   }
 
-  const size_t num_op_str_parts = op_str_parts.size();
-  if (num_op_str_parts < 2) {
+  const size_t op_str_part_count = op_str_parts.size();
+  if (op_str_part_count < 2) {
     spdlog::error("Custom operation is too short: '{}'. Expected at least <operation>_<size>", str);
     utils::crash_exit();
   }
@@ -416,13 +372,12 @@ CustomOp CustomOp::from_string(const std::string& str) {
 
   // Get operation and location
   const std::string& operation_str = op_str_parts[0];
-  auto op_location_it = ConfigEnums::str_to_op_location.find(operation_str);
-  if (op_location_it == ConfigEnums::str_to_op_location.end()) {
-    spdlog::error("Unknown operation and/or location: {}", operation_str);
+  auto op_location_it = ConfigEnums::str_to_operation.find(operation_str);
+  if (op_location_it == ConfigEnums::str_to_operation.end()) {
+    spdlog::error("Unknown operation: {}", operation_str);
     utils::crash_exit();
   }
-  custom_op.type = op_location_it->second.first;
-  custom_op.is_pmem = op_location_it->second.second;
+  custom_op.type = op_location_it->second;
 
   // Get size of access
   const std::string& size_str = op_str_parts[1];
@@ -440,11 +395,15 @@ CustomOp CustomOp::from_string(const std::string& str) {
   const bool is_write = custom_op.type == Operation::Write;
 
   if (!is_write) {
+    if (op_str_part_count > 2) {
+      spdlog::error("Custom read op must not have further information. Got: '{}'", op_str_part_count);
+      utils::crash_exit();
+    }
     // Read op has no further information.
     return custom_op;
   }
 
-  if (num_op_str_parts < 3) {
+  if (op_str_part_count < 3) {
     spdlog::error("Custom write op must have '_<persist_instruction>' after size, e.g., w64_cache. Got: '{}'", str);
     utils::crash_exit();
   }
@@ -458,7 +417,7 @@ CustomOp CustomOp::from_string(const std::string& str) {
 
   custom_op.persist = persist_it->second;
 
-  const bool has_offset_information = num_op_str_parts == 4;
+  const bool has_offset_information = op_str_part_count == 4;
   if (has_offset_information) {
     const std::string& offset_str = op_str_parts[3];
     auto offset_result = std::from_chars(offset_str.data(), offset_str.data() + offset_str.size(), custom_op.offset);
@@ -502,7 +461,7 @@ std::vector<CustomOp> CustomOp::all_from_string(const std::string& str) {
 
 std::string CustomOp::to_string() const {
   std::stringstream out;
-  out << utils::get_enum_as_string(ConfigEnums::str_to_op_location, std::make_pair(type, is_pmem));
+  out << utils::get_enum_as_string(ConfigEnums::str_to_operation, type, true);
   out << '_' << size;
   if (type == Operation::Write) {
     out << '_' << utils::get_enum_as_string(ConfigEnums::str_to_persist_instruction, persist);
@@ -534,36 +493,22 @@ bool CustomOp::validate(const std::vector<CustomOp>& operations) {
     return false;
   }
 
-  // Check if write is to same memory type
-  bool is_currently_pmem = operations[0].is_pmem;
-  for (const CustomOp& op : operations) {
-    if ((op.type == Operation::Write) && (is_currently_pmem ^ op.is_pmem)) {
-      spdlog::error("A write must occur after a read to the same memory type, i.e., DRAM or PMem.");
-      spdlog::error("Bad operation: {}", op.to_string());
-      return false;
-    }
-    is_currently_pmem = op.is_pmem;
-  }
-
   return true;
 }
 
 bool CustomOp::operator==(const CustomOp& rhs) const {
-  return type == rhs.type && is_pmem == rhs.is_pmem && size == rhs.size && persist == rhs.persist &&
-         offset == rhs.offset;
+  return type == rhs.type && size == rhs.size && persist == rhs.persist && offset == rhs.offset;
 }
 bool CustomOp::operator!=(const CustomOp& rhs) const { return !(rhs == *this); }
 std::ostream& operator<<(std::ostream& os, const CustomOp& op) { return os << op.to_string(); }
-
-const std::unordered_map<std::string, bool> ConfigEnums::str_to_mem_type{{"pmem", true}, {"dram", false}};
 
 const std::unordered_map<std::string, Mode> ConfigEnums::str_to_mode{{"sequential", Mode::Sequential},
                                                                      {"sequential_desc", Mode::Sequential_Desc},
                                                                      {"random", Mode::Random},
                                                                      {"custom", Mode::Custom}};
 
-const std::unordered_map<std::string, Operation> ConfigEnums::str_to_operation{{"read", Operation::Read},
-                                                                               {"write", Operation::Write}};
+const std::unordered_map<std::string, Operation> ConfigEnums::str_to_operation{
+    {"read", Operation::Read}, {"write", Operation::Write}, {"r", Operation::Read}, {"w", Operation::Write}};
 
 const std::unordered_map<std::string, PersistInstruction> ConfigEnums::str_to_persist_instruction{
     {"nocache", PersistInstruction::NoCache},
@@ -573,11 +518,6 @@ const std::unordered_map<std::string, PersistInstruction> ConfigEnums::str_to_pe
 
 const std::unordered_map<std::string, RandomDistribution> ConfigEnums::str_to_random_distribution{
     {"uniform", RandomDistribution::Uniform}, {"zipf", RandomDistribution::Zipf}};
-
-const std::unordered_map<std::string, ConfigEnums::OpLocation> ConfigEnums::str_to_op_location = {
-    {"r", {Operation::Read, true}},   {"w", {Operation::Write, true}},  {"rp", {Operation::Read, true}},
-    {"wp", {Operation::Write, true}}, {"rd", {Operation::Read, false}}, {"wd", {Operation::Write, false}},
-};
 
 const std::unordered_map<char, uint64_t> ConfigEnums::scale_suffix_to_factor{{'k', 1024},
                                                                              {'K', 1024},

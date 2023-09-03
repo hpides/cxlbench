@@ -38,15 +38,17 @@ bool SingleBenchmark::run() {
 }
 
 void SingleBenchmark::generate_data() {
-  pmem_data_.push_back(generate_pmem_data(configs_[0], memory_regions_[0]));
-  dram_data_.push_back(generate_dram_data(configs_[0], configs_[0].dram_memory_range));
+  if (!data_.empty()) {
+    spdlog::critical("generate_data() called more than once for the same benchmark.");
+    utils::crash_exit();
+  }
+  data_.push_back(prepare_data(configs_[0], configs_[0].memory_region_size));
 }
 
 void SingleBenchmark::set_up() {
   pools_.resize(1);
   thread_configs_.resize(1);
-  single_set_up(configs_[0], pmem_data_[0], dram_data_[0], executions_[0].get(), results_[0].get(), &pools_[0],
-                &thread_configs_[0]);
+  single_set_up(configs_[0], data_[0], executions_[0].get(), results_[0].get(), &pools_[0], &thread_configs_[0]);
 }
 
 nlohmann::json SingleBenchmark::get_result_as_json() {
@@ -59,17 +61,7 @@ nlohmann::json SingleBenchmark::get_result_as_json() {
 SingleBenchmark::SingleBenchmark(const std::string& benchmark_name, const BenchmarkConfig& config,
                                  std::vector<std::unique_ptr<BenchmarkExecution>>&& executions,
                                  std::vector<std::unique_ptr<BenchmarkResult>>&& results)
-    : Benchmark(
-          benchmark_name, BenchmarkType::Single,
-          std::vector<MemoryRegion>{{utils::generate_random_file_name(config.pmem_directory), true, config.is_hybrid}},
-          std::vector<BenchmarkConfig>{config}, std::move(executions), std::move(results)) {}
-
-SingleBenchmark::SingleBenchmark(const std::string& benchmark_name, const BenchmarkConfig& config,
-                                 std::vector<std::unique_ptr<BenchmarkExecution>>&& executions,
-                                 std::vector<std::unique_ptr<BenchmarkResult>>&& results,
-                                 std::filesystem::path pmem_file)
-    : Benchmark(benchmark_name, BenchmarkType::Single,
-                std::vector<MemoryRegion>{{std::move(pmem_file), false, config.is_hybrid}},
-                std::vector<BenchmarkConfig>{config}, std::move(executions), std::move(results)) {}
+    : Benchmark(benchmark_name, BenchmarkType::Single, std::vector<BenchmarkConfig>{config}, std::move(executions),
+                std::move(results)) {}
 
 }  // namespace mema

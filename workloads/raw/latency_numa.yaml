@@ -26,7 +26,7 @@ operation_latency:
       - "r_512,w_512_nocache"
 
   args:
-    memory_range: 8G
+    memory_region_size: 8G
     numa_task_nodes: [ 0 ]
     number_operations: 10000000
     latency_sample_frequency: 10000

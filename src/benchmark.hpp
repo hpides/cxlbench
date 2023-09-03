@@ -17,15 +17,6 @@
 
 namespace mema {
 
-struct MemoryRegion {
-  const std::filesystem::path pmem_file;
-  const bool owns_pmem_file;
-  const bool is_dram;
-
-  MemoryRegion(std::filesystem::path pmem_file, const bool owns_pmem_file, const bool is_dram)
-      : pmem_file{std::move(pmem_file)}, owns_pmem_file{owns_pmem_file}, is_dram{is_dram} {};
-};
-
 enum BenchmarkType { Single, Parallel };
 
 struct BenchmarkEnums {
@@ -56,9 +47,7 @@ struct BenchmarkExecution {
 
 struct ThreadRunConfig {
   char* partition_start_addr;
-  char* dram_partition_start_addr;
   const uint64_t partition_size;
-  const uint64_t dram_partition_size;
   const uint64_t thread_count_per_partition;
   const uint64_t thread_idx;
   const uint64_t ops_count_per_chunk;
@@ -72,16 +61,13 @@ struct ThreadRunConfig {
   ExecutionDuration* total_operation_duration;
   std::vector<uint64_t>* custom_op_latencies;
 
-  ThreadRunConfig(char* partition_start_addr, char* dram_partition_start_addr, const uint64_t partition_size,
-                  const uint64_t dram_partition_size, const uint64_t thread_count_per_partition,
+  ThreadRunConfig(char* partition_start_addr, const uint64_t partition_size, const uint64_t thread_count_per_partition,
                   const uint64_t thread_idx, const uint64_t ops_count_per_chunk, const uint64_t chunk_count,
                   const BenchmarkConfig& config, BenchmarkExecution* execution,
                   ExecutionDuration* total_operation_duration, uint64_t* total_operation_size,
                   std::vector<uint64_t>* custom_op_latencies)
       : partition_start_addr{partition_start_addr},
-        dram_partition_start_addr{dram_partition_start_addr},
         partition_size{partition_size},
-        dram_partition_size{dram_partition_size},
         thread_count_per_partition{thread_count_per_partition},
         thread_idx{thread_idx},
         ops_count_per_chunk{ops_count_per_chunk},
@@ -113,12 +99,11 @@ struct BenchmarkResult {
 
 class Benchmark {
  public:
-  Benchmark(std::string benchmark_name, BenchmarkType benchmark_type, std::vector<MemoryRegion> memory_regions,
-            std::vector<BenchmarkConfig> configs, std::vector<std::unique_ptr<BenchmarkExecution>> executions,
+  Benchmark(std::string benchmark_name, BenchmarkType benchmark_type, std::vector<BenchmarkConfig> configs,
+            std::vector<std::unique_ptr<BenchmarkExecution>> executions,
             std::vector<std::unique_ptr<BenchmarkResult>> results)
       : benchmark_name_{std::move(benchmark_name)},
         benchmark_type_{benchmark_type},
-        memory_regions_{std::move(memory_regions)},
         configs_{std::move(configs)},
         executions_{std::move(executions)},
         results_{std::move(results)} {}
@@ -128,8 +113,9 @@ class Benchmark {
   Benchmark& operator=(const Benchmark& other) = delete;
   Benchmark& operator=(Benchmark&& other) = delete;
 
-  /** Main run method which executes the benchmark. `set_up()` should be called before this.
-   *  Return true if benchmark ran successfully, false if an error was encountered.
+  /**
+   * Main run method which executes the benchmark. `set_up()` should be called before this.
+   * Return true if benchmark ran successfully, false if an error was encountered.
    */
   virtual bool run() = 0;
 
@@ -156,11 +142,7 @@ class Benchmark {
   std::string benchmark_type_as_str() const;
   BenchmarkType get_benchmark_type() const;
 
-  const std::filesystem::path& get_pmem_file(uint8_t index) const;
-  bool owns_pmem_file(uint8_t index) const;
-
-  const std::vector<char*>& get_pmem_data() const;
-  const std::vector<char*>& get_dram_data() const;
+  const std::vector<char*>& get_data() const;
 
   const std::vector<BenchmarkConfig>& get_benchmark_configs() const;
   const std::vector<std::vector<ThreadRunConfig>>& get_thread_configs() const;
@@ -169,14 +151,11 @@ class Benchmark {
   nlohmann::json get_json_config(uint8_t config_index);
 
  protected:
-  static void single_set_up(const BenchmarkConfig& config, char* pmem_data, char* dram_data,
-                            BenchmarkExecution* execution, BenchmarkResult* result, std::vector<std::thread>* pool,
+  static void single_set_up(const BenchmarkConfig& config, char* data, BenchmarkExecution* execution,
+                            BenchmarkResult* result, std::vector<std::thread>* pool,
                             std::vector<ThreadRunConfig>* thread_config);
 
-  static char* generate_pmem_data(const BenchmarkConfig& config, const MemoryRegion& memory_region);
-  static char* generate_dram_data(const BenchmarkConfig& config, size_t memory_range);
-  static void prepare_data_file(char* file_data, const BenchmarkConfig& config, uint64_t memory_range,
-                                uint64_t page_size);
+  static char* prepare_data(const BenchmarkConfig& config, size_t memory_region_size);
 
   static void run_custom_ops_in_thread(ThreadRunConfig* thread_config, const BenchmarkConfig& config);
   static void run_in_thread(ThreadRunConfig* thread_config, const BenchmarkConfig& config);
@@ -189,10 +168,8 @@ class Benchmark {
   const std::string benchmark_name_;
 
   const BenchmarkType benchmark_type_;
-  std::vector<MemoryRegion> memory_regions_;
-  std::vector<char*> pmem_data_;
 
-  std::vector<char*> dram_data_;
+  std::vector<char*> data_;
   const std::vector<BenchmarkConfig> configs_;
   std::vector<std::unique_ptr<BenchmarkResult>> results_;
   std::vector<std::unique_ptr<BenchmarkExecution>> executions_;

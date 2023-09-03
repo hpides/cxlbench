@@ -78,13 +78,11 @@ void BenchmarkSuite::run_benchmarks(const MemaOptions& options) {
   nlohmann::json results = nlohmann::json::array();
 
   // Create single benchmarks
-  std::vector<SingleBenchmark> single_benchmarks =
-      BenchmarkFactory::create_single_benchmarks(options.pmem_directory, configs, !options.is_pmem);
+  std::vector<SingleBenchmark> single_benchmarks = BenchmarkFactory::create_single_benchmarks(configs);
   spdlog::info("Found {} single benchmark{}.", single_benchmarks.size(), single_benchmarks.size() != 1 ? "s" : "");
 
   // Create parallel benchmarks
-  std::vector<ParallelBenchmark> parallel_benchmarks =
-      BenchmarkFactory::create_parallel_benchmarks(options.pmem_directory, configs, !options.is_pmem);
+  std::vector<ParallelBenchmark> parallel_benchmarks = BenchmarkFactory::create_parallel_benchmarks(configs);
   spdlog::info("Found {} parallel benchmark{}.", parallel_benchmarks.size(),
                parallel_benchmarks.size() != 1 ? "s" : "");
 

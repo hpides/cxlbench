@@ -18,38 +18,15 @@
 
 namespace mema::utils {
 
-void setPMEM_MAP_FLAGS(const int flags) { PMEM_MAP_FLAGS = flags; }
-
-char* map_pmem(const std::filesystem::path& file, const size_t expected_length) {
+char* map(const size_t expected_length, const bool use_huge_pages, const NumaNodeIDs& numa_memory_nodes) {
   // Do not mmap any data if length is 0
   if (expected_length == 0) {
     return nullptr;
   }
 
-  const mode_t mode = 0644;
-  int32_t fd = open(file.c_str(), O_RDWR | O_DIRECT, mode);
-  if (fd == -1) {
-    throw std::runtime_error{"Could not open file: " + file.string()};
-  }
-
-  void* addr = mmap(nullptr, expected_length, PROT_READ | PROT_WRITE, PMEM_MAP_FLAGS, fd, 0);
-  close(fd);
+  void* addr = mmap(nullptr, expected_length, PROT_READ | PROT_WRITE, MAP_FLAGS, -1, 0);
   if (addr == MAP_FAILED || addr == nullptr) {
-    throw std::runtime_error{"Could not map file: " + file.string() + "; Error: " + std::strerror(errno)};
-  }
-
-  return static_cast<char*>(addr);
-}
-
-char* map_dram(const size_t expected_length, const bool use_huge_pages, const NumaNodeIDs& numa_memory_nodes) {
-  // Do not mmap any data if length is 0
-  if (expected_length == 0) {
-    return nullptr;
-  }
-
-  void* addr = mmap(nullptr, expected_length, PROT_READ | PROT_WRITE, DRAM_MAP_FLAGS, -1, 0);
-  if (addr == MAP_FAILED || addr == nullptr) {
-    spdlog::critical("Could not map anonymous DRAM region. Error: {}", std::strerror(errno));
+    spdlog::critical("Could not map anonymous memory region. Error: {}", std::strerror(errno));
     crash_exit();
   }
 
@@ -74,7 +51,7 @@ char* map_dram(const size_t expected_length, const bool use_huge_pages, const Nu
 
   if (use_huge_pages) {
     if (madvise(addr, expected_length, MADV_HUGEPAGE) == -1) {
-      spdlog::critical("madavise for DRAM huge pages failed. Error: {}", std::strerror(errno));
+      spdlog::critical("madavise for huge pages failed. Error: {}", std::strerror(errno));
       crash_exit();
     } else {
       spdlog::debug("Enabled Transparent Huge Pages for the given memory region.");
@@ -82,7 +59,7 @@ char* map_dram(const size_t expected_length, const bool use_huge_pages, const Nu
   } else {
     // Explicitly don't use huge pages.
     if (madvise(addr, expected_length, MADV_NOHUGEPAGE) == -1) {
-      spdlog::critical("madavise for DRAM no huge pages failed. Error: {}", std::strerror(errno));
+      spdlog::critical("madavise for no huge pages failed. Error: {}", std::strerror(errno));
       crash_exit();
     } else {
       spdlog::debug("Prohibited Transparent Huge Pages for the given memory region.");
@@ -125,30 +102,6 @@ NumaNodeID get_numa_task_node() {
   return 0;
 }
 
-char* create_pmem_file(const std::filesystem::path& file, const size_t length) {
-  const std::filesystem::path base_dir = file.parent_path();
-  if (!std::filesystem::exists(base_dir)) {
-    if (!std::filesystem::create_directories(base_dir)) {
-      throw std::runtime_error{"Could not create dir: " + base_dir.string()};
-    }
-  }
-
-  std::ofstream temp_stream{file};
-  temp_stream.close();
-  std::filesystem::resize_file(file, length);
-  return map_pmem(file, length);
-}
-
-std::filesystem::path generate_random_file_name(const std::filesystem::path& base_dir) {
-  std::string str("abcdefghijklmnopqrstuvwxyz");
-  std::random_device rd;
-  std::mt19937 generator(rd());
-  std::shuffle(str.begin(), str.end(), generator);
-  const std::string file_name = str + ".file";
-  const std::filesystem::path file{file_name};
-  return base_dir / file;
-}
-
 void generate_read_data(char* addr, const uint64_t memory_size) {
   if (memory_size == 0) {
     spdlog::debug("Did not generate data as the memory size was 0.");
@@ -157,15 +110,15 @@ void generate_read_data(char* addr, const uint64_t memory_size) {
 
   spdlog::debug("Generating {} GB of random data to read.", memory_size / ONE_GB);
   std::vector<std::thread> thread_pool;
-  thread_pool.reserve(NUM_UTIL_THREADS - 1);
-  uint64_t thread_memory_size = memory_size / NUM_UTIL_THREADS;
-  for (uint8_t thread_count = 0; thread_count < NUM_UTIL_THREADS - 1; thread_count++) {
+  thread_pool.reserve(DATA_GEN_THREAD_COUNT - 1);
+  uint64_t thread_memory_size = memory_size / DATA_GEN_THREAD_COUNT;
+  for (uint8_t thread_count = 0; thread_count < DATA_GEN_THREAD_COUNT - 1; thread_count++) {
     char* from = addr + thread_count * thread_memory_size;
     const char* to = addr + (thread_count + 1) * thread_memory_size;
     thread_pool.emplace_back(rw_ops::write_data, from, to);
   }
 
-  rw_ops::write_data(addr + (NUM_UTIL_THREADS - 1) * thread_memory_size, addr + memory_size);
+  rw_ops::write_data(addr + (DATA_GEN_THREAD_COUNT - 1) * thread_memory_size, addr + memory_size);
 
   // wait for all threads
   for (std::thread& thread : thread_pool) {
@@ -174,7 +127,7 @@ void generate_read_data(char* addr, const uint64_t memory_size) {
   spdlog::debug("Finished generating data.");
 }
 
-void prefault_file(char* addr, const uint64_t memory_size, const uint64_t page_size) {
+void prefault_memory(char* addr, const uint64_t memory_size, const uint64_t page_size) {
   if (memory_size == 0) {
     spdlog::debug("Did not prefault the memory region as the memory size was 0.");
     return;

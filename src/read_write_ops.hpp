@@ -20,8 +20,8 @@ namespace mema::rw_ops {
 /** flush the cache line using clwb. */
 #ifdef HAS_CLWB
 inline void flush_clwb(char* addr, const size_t len) {
-  const char* end_addr = addr + len;
-  for (char* current_cl = addr; current_cl < end_addr; current_cl += CACHE_LINE_SIZE) {
+  const auto* end_addr = addr + len;
+  for (auto* current_cl = addr; current_cl < end_addr; current_cl += CACHE_LINE_SIZE) {
     _mm_clwb(current_cl);
   }
 }
@@ -30,8 +30,8 @@ inline void flush_clwb(char* addr, const size_t len) {
 /** flush the cache line using clflushopt. */
 #ifdef HAS_CLFLUSHOPT
 inline void flush_clflushopt(char* addr, const size_t len) {
-  const char* end_addr = addr + len;
-  for (char* current_cl = addr; current_cl < end_addr; current_cl += CACHE_LINE_SIZE) {
+  const auto* end_addr = addr + len;
+  for (auto* current_cl = addr; current_cl < end_addr; current_cl += CACHE_LINE_SIZE) {
     _mm_clflushopt(current_cl);
   }
 }
@@ -45,32 +45,32 @@ inline void flush_clflushopt(char* addr, const size_t len) {
  */
 
 inline void simd_write_64(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
-  for (char* addr : addresses) {
+  for (auto* addr : addresses) {
     simd_write_64(addr, flush, barrier);
   }
 }
 
 inline void simd_write_128(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
-  for (char* addr : addresses) {
+  for (auto* addr : addresses) {
     simd_write_128(addr, flush, barrier);
   }
 }
 
 inline void simd_write_256(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
-  for (char* addr : addresses) {
+  for (auto* addr : addresses) {
     simd_write_256(addr, flush, barrier);
   }
 }
 
 inline void simd_write_512(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
-  for (char* addr : addresses) {
+  for (auto* addr : addresses) {
     simd_write_512(addr, flush, barrier);
   }
 }
 
 inline void simd_write(const std::vector<char*>& addresses, const size_t access_size, flush_fn flush,
                        barrier_fn barrier) {
-  for (char* addr : addresses) {
+  for (auto* addr : addresses) {
     simd_write(addr, access_size, flush, barrier);
   }
 }
@@ -199,31 +199,31 @@ inline void simd_write_none(const std::vector<char*>& addresses, const size_t ac
  */
 
 inline void simd_write_nt_64(const std::vector<char*>& addresses) {
-  for (char* addr : addresses) {
+  for (auto* addr : addresses) {
     simd_write_nt_64(addr);
   }
 }
 
 inline void simd_write_nt_128(const std::vector<char*>& addresses) {
-  for (char* addr : addresses) {
+  for (auto* addr : addresses) {
     simd_write_nt_128(addr);
   }
 }
 
 inline void simd_write_nt_256(const std::vector<char*>& addresses) {
-  for (char* addr : addresses) {
+  for (auto* addr : addresses) {
     simd_write_nt_256(addr);
   }
 }
 
 inline void simd_write_nt_512(const std::vector<char*>& addresses) {
-  for (char* addr : addresses) {
+  for (auto* addr : addresses) {
     simd_write_nt_512(addr);
   }
 }
 
 inline void simd_write_nt(const std::vector<char*>& addresses, const size_t access_size) {
-  for (char* addr : addresses) {
+  for (auto* addr : addresses) {
     simd_write_nt(addr, access_size);
   }
 }

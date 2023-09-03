@@ -6,7 +6,6 @@
 
 #include <cstddef>
 #include <cstring>
-#include <iostream>
 #include <string>
 #include <unordered_set>
 
@@ -46,7 +45,7 @@ TEST_F(NumaReadWriteTest, SimpleWriteRead) {
   for (auto numa_idx = NumaNodeID{0}; numa_idx < numa_node_count; ++numa_idx) {
     SCOPED_TRACE("NUMA node index: " + std::to_string(numa_idx));
     char* base_addr =
-        static_cast<char*>(mmap(nullptr, memory_region_size, PROT_READ | PROT_WRITE, utils::DRAM_MAP_FLAGS, -1, 0));
+        static_cast<char*>(mmap(nullptr, memory_region_size, PROT_READ | PROT_WRITE, utils::MAP_FLAGS, -1, 0));
     ASSERT_NE(base_addr, MAP_FAILED);
     ASSERT_NE(base_addr, nullptr);
     set_memory_on_numa_nodes(base_addr, memory_region_size, {numa_idx});
@@ -76,7 +75,7 @@ TEST_F(NumaReadWriteTest, AVX2WriteRead) {
   for (auto numa_idx = NumaNodeID{0}; numa_idx < numa_node_count; ++numa_idx) {
     SCOPED_TRACE("NUMA node index: " + std::to_string(numa_idx));
     char* base_addr =
-        static_cast<char*>(mmap(nullptr, memory_region_size, PROT_READ | PROT_WRITE, utils::DRAM_MAP_FLAGS, -1, 0));
+        static_cast<char*>(mmap(nullptr, memory_region_size, PROT_READ | PROT_WRITE, utils::MAP_FLAGS, -1, 0));
     ASSERT_NE(base_addr, MAP_FAILED);
     ASSERT_NE(base_addr, nullptr);
     set_memory_on_numa_nodes(base_addr, memory_region_size, {numa_idx});
@@ -112,7 +111,7 @@ TEST_F(NumaReadWriteTest, AVX512WriteRead) {
   for (auto numa_idx = NumaNodeID{0}; numa_idx < numa_node_count; ++numa_idx) {
     SCOPED_TRACE("NUMA node index: " + std::to_string(numa_idx));
     char* base_addr =
-        static_cast<char*>(mmap(nullptr, memory_region_size, PROT_READ | PROT_WRITE, utils::DRAM_MAP_FLAGS, -1, 0));
+        static_cast<char*>(mmap(nullptr, memory_region_size, PROT_READ | PROT_WRITE, utils::MAP_FLAGS, -1, 0));
     ASSERT_NE(base_addr, MAP_FAILED);
     ASSERT_NE(base_addr, nullptr);
     set_memory_on_numa_nodes(base_addr, memory_region_size, {numa_idx});

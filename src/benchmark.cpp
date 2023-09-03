@@ -57,26 +57,26 @@ std::string Benchmark::benchmark_type_as_str() const {
 
 BenchmarkType Benchmark::get_benchmark_type() const { return benchmark_type_; }
 
-void Benchmark::single_set_up(const BenchmarkConfig& config, char* pmem_data, char* dram_data,
-                              BenchmarkExecution* execution, BenchmarkResult* result, std::vector<std::thread>* pool,
+void Benchmark::single_set_up(const BenchmarkConfig& config, char* data, BenchmarkExecution* execution,
+                              BenchmarkResult* result, std::vector<std::thread>* pool,
                               std::vector<ThreadRunConfig>* thread_configs) {
-  const size_t num_total_range_ops = config.memory_range / config.access_size;
+  const size_t total_range_op_count = config.memory_region_size / config.access_size;
   const bool is_custom_execution = config.exec_mode == Mode::Custom;
   const size_t num_operations =
-      (config.exec_mode == Mode::Random || is_custom_execution) ? config.number_operations : num_total_range_ops;
-  const size_t num_ops_per_thread = num_operations / config.number_threads;
+      (config.exec_mode == Mode::Random || is_custom_execution) ? config.number_operations : total_range_op_count;
+  const size_t op_per_thread_count = num_operations / config.number_threads;
 
   pool->reserve(config.number_threads);
   thread_configs->reserve(config.number_threads);
   result->total_operation_durations.resize(config.number_threads);
   result->total_operation_sizes.resize(config.number_threads, 0);
 
-  uint64_t estimate_num_latency_measurements = 0;
+  uint64_t latency_measurements_count = 0;
   if (is_custom_execution) {
     result->custom_operation_latencies.resize(config.number_threads);
 
     if (config.latency_sample_frequency > 0) {
-      estimate_num_latency_measurements = (num_ops_per_thread / config.latency_sample_frequency) * 2;
+      latency_measurements_count = (op_per_thread_count / config.latency_sample_frequency) * 2;
     }
   }
 
@@ -84,8 +84,7 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, char* pmem_data, ch
   const uint16_t partition_count = config.number_partitions == 0 ? config.number_threads : config.number_partitions;
 
   const uint16_t thread_count_per_partition = config.number_threads / partition_count;
-  const uint64_t partition_size = config.memory_range / partition_count;
-  const uint64_t dram_partition_size = config.dram_memory_range / partition_count;
+  const uint64_t partition_size = config.memory_region_size / partition_count;
 
   // Set up thread synchronization and execution parameters
   const size_t ops_per_chunk =
@@ -102,20 +101,17 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, char* pmem_data, ch
   execution->io_operations.resize(chunk_count);
   execution->num_custom_chunks_remaining = static_cast<int64_t>(chunk_count);
 
-  for (uint16_t partition_idx = 0; partition_idx < partition_count; partition_idx++) {
+  for (uint16_t partition_idx = 0; partition_idx < partition_count; ++partition_idx) {
     char* partition_start = (config.exec_mode == Mode::Sequential_Desc)
-                                ? pmem_data + ((partition_count - partition_idx) * partition_size) - config.access_size
-                                : pmem_data + (partition_idx * partition_size);
+                                ? data + ((partition_count - partition_idx) * partition_size) - config.access_size
+                                : data + (partition_idx * partition_size);
 
-    // Only possible in random or custom mode
-    char* dram_partition_start = dram_data + (partition_idx * partition_size);
-
-    for (uint16_t partition_thread_idx = 0; partition_thread_idx < thread_count_per_partition; partition_thread_idx++) {
+    for (uint16_t partition_thread_idx = 0; partition_thread_idx < thread_count_per_partition; ++partition_thread_idx) {
       const uint32_t thread_idx = (partition_idx * thread_count_per_partition) + partition_thread_idx;
 
       // Reserve space for custom operation latency measurements to avoid resizing during benchmark execution.
       if (is_custom_execution) {
-        result->custom_operation_latencies[thread_idx].reserve(estimate_num_latency_measurements);
+        result->custom_operation_latencies[thread_idx].reserve(latency_measurements_count);
       }
 
       ExecutionDuration* total_op_duration = &result->total_operation_durations[thread_idx];
@@ -123,50 +119,30 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, char* pmem_data, ch
       std::vector<uint64_t>* custom_op_latencies =
           is_custom_execution ? &result->custom_operation_latencies[thread_idx] : nullptr;
 
-      thread_configs->emplace_back(partition_start, dram_partition_start, partition_size, dram_partition_size,
-                                   thread_count_per_partition, thread_idx, ops_per_chunk, chunk_count, config,
-                                   execution, total_op_duration, total_op_size, custom_op_latencies);
+      thread_configs->emplace_back(partition_start, partition_size, thread_count_per_partition, thread_idx,
+                                   ops_per_chunk, chunk_count, config, execution, total_op_duration, total_op_size,
+                                   custom_op_latencies);
     }
   }
 }
 
-char* Benchmark::generate_pmem_data(const BenchmarkConfig& config, const MemoryRegion& memory_region) {
-  // Generalize: use special type (e.g., PMem, certain NUMA node, RDMA) instead of only PMem.
-  if (!config.is_pmem) {
-    // Replace PMem range with DRAM if user specifies a dram-only run.
-    return generate_dram_data(config, config.memory_range);
-  }
+char* Benchmark::prepare_data(const BenchmarkConfig& config, const size_t memory_region_size) {
+  char* data = utils::map(memory_region_size, config.huge_pages, config.numa_memory_nodes);
+  spdlog::debug("Finished mapping memory range.");
 
-  if (std::filesystem::exists(memory_region.pmem_file)) {
-    // Data was already generated and a file containing the data was created. Only re-map it.
-    return utils::map_pmem(memory_region.pmem_file, config.memory_range);
-  }
-
-  char* file_data = utils::create_pmem_file(memory_region.pmem_file, config.memory_range);
-  prepare_data_file(file_data, config, config.memory_range, utils::PMEM_PAGE_SIZE);
-  return file_data;
-}
-
-char* Benchmark::generate_dram_data(const BenchmarkConfig& config, const size_t memory_range) {
-  char* dram_data = utils::map_dram(memory_range, config.dram_huge_pages, config.numa_memory_nodes);
-  spdlog::debug("Finished mapping DRAM memory range.");
-  prepare_data_file(dram_data, config, memory_range, utils::DRAM_PAGE_SIZE);
-  spdlog::debug("Finished preparing DRAM memory range.");
-  return dram_data;
-}
-
-void Benchmark::prepare_data_file(char* file_data, const BenchmarkConfig& config, const uint64_t memory_range,
-                                  const uint64_t page_size) {
   if (config.contains_read_op()) {
     // If we read data in this benchmark, we need to generate it first.
-    utils::generate_read_data(file_data, memory_range);
+    utils::generate_read_data(data, memory_region_size);
     spdlog::debug("Finished generating read data.");
   }
 
-  if (config.contains_write_op() && config.prefault_file) {
-    utils::prefault_file(file_data, memory_range, page_size);
+  if (config.contains_write_op() && config.prefault_memory) {
+    utils::prefault_memory(data, memory_region_size, utils::PAGE_SIZE);
     spdlog::debug("Finished memory range.");
   }
+
+  spdlog::debug("Finished preparing memory range.");
+  return data;
 }
 
 void Benchmark::run_custom_ops_in_thread(ThreadRunConfig* thread_config, const BenchmarkConfig& config) {
@@ -183,16 +159,11 @@ void Benchmark::run_custom_ops_in_thread(ThreadRunConfig* thread_config, const B
   }
 
   const size_t aligned_range_size = thread_config->partition_size - max_access_size;
-  const size_t aligned_dram_range_size = thread_config->dram_partition_size - max_access_size;
 
   for (size_t i = 0; i < num_ops; ++i) {
     const CustomOp& op = operations[i];
 
-    if (op.is_pmem) {
-      operation_chain.emplace_back(op, thread_config->partition_start_addr, aligned_range_size);
-    } else {
-      operation_chain.emplace_back(op, thread_config->dram_partition_start_addr, aligned_dram_range_size);
-    }
+    operation_chain.emplace_back(op, thread_config->partition_start_addr, aligned_range_size);
 
     if (i > 0) {
       operation_chain[i - 1].set_next(&operation_chain[i]);
@@ -259,10 +230,8 @@ void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkCon
   lehmer64_seed(seed);
 
   const uint32_t access_count_in_range = thread_config->partition_size / config.access_size;
-  const uint32_t dram_access_count_in_range = thread_config->dram_partition_size / config.access_size;
 
   auto access_distribution = [&]() { return lehmer64() % access_count_in_range; };
-  auto dram_access_distribution = [&]() { return lehmer64() % dram_access_count_in_range; };
 
   spdlog::debug("Thread #{}: Starting address generation", thread_config->thread_idx);
   const auto generation_begin_ts = std::chrono::steady_clock::now();
@@ -272,7 +241,7 @@ void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkCon
   const size_t remaining_chunk_count = thread_config->chunk_count % config.number_threads;
   if (remaining_chunk_count > 0 && thread_config->thread_idx < remaining_chunk_count) {
     // This thread needs to create an extra chunk for an uneven number.
-    chunk_count_per_thread++;
+    ++chunk_count_per_thread;
   }
 
   const size_t thread_idx_in_partition = thread_config->thread_idx % thread_config->thread_count_per_partition;
@@ -282,9 +251,6 @@ void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkCon
   // continue with accessing with C_5. The offset delta between C_0's and C_5's start address is 4 * chunk size.
   const size_t partition_threads_access_size = thread_config->thread_count_per_partition * config.min_io_chunk_size;
   const bool is_read_op = config.operation == Operation::Read;
-
-  const auto dram_target_ratio = static_cast<uint64_t>(config.dram_operation_ratio * 100);
-  auto dram_target_distribution = [&]() { return (lehmer64() % 100) < dram_target_ratio; };
 
   for (size_t chunk_idx = 0; chunk_idx < chunk_count_per_thread; ++chunk_idx) {
     const size_t thread_chunk_offset =
@@ -300,26 +266,15 @@ void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkCon
       switch (config.exec_mode) {
         case Mode::Random: {
           char* partition_start;
-          uint32_t target_access_count_in_range;
           std::function<uint64_t()> random_distribution;
-          // Get memory target
-          if (config.is_hybrid && dram_target_distribution()) {
-            // DRAM target
-            partition_start = thread_config->dram_partition_start_addr;
-            target_access_count_in_range = dram_access_count_in_range;
-            random_distribution = dram_access_distribution;
-          } else {
-            // PMEM target
-            partition_start = thread_config->partition_start_addr;
-            target_access_count_in_range = access_count_in_range;
-            random_distribution = access_distribution;
-          }
+          partition_start = thread_config->partition_start_addr;
+          random_distribution = access_distribution;
 
           uint64_t random_value;
           if (config.random_distribution == RandomDistribution::Uniform) {
             random_value = random_distribution();
           } else {
-            random_value = utils::zipf(config.zipf_alpha, target_access_count_in_range);
+            random_value = utils::zipf(config.zipf_alpha, access_count_in_range);
           }
           op_addresses[op_idx] = partition_start + (random_value * config.access_size);
           break;
@@ -407,7 +362,7 @@ uint64_t Benchmark::run_fixed_sized_benchmark(std::vector<IoOperation>* io_opera
     }
 
     (*io_operations)[op_pos].run();
-    executed_op_count++;
+    ++executed_op_count;
   }
 
   return executed_op_count;
@@ -423,7 +378,7 @@ uint64_t Benchmark::run_duration_based_benchmark(std::vector<IoOperation>* io_op
     const uint64_t work_package = io_position->fetch_add(1) % total_op_count;
 
     (*io_operations)[work_package].run();
-    executed_op_count++;
+    ++executed_op_count;
 
     const auto current_time = std::chrono::steady_clock::now();
     if (current_time > execution_end) {
@@ -436,15 +391,7 @@ uint64_t Benchmark::run_duration_based_benchmark(std::vector<IoOperation>* io_op
 
 const std::vector<BenchmarkConfig>& Benchmark::get_benchmark_configs() const { return configs_; }
 
-const std::filesystem::path& Benchmark::get_pmem_file(const uint8_t index) const {
-  return memory_regions_[index].pmem_file;
-}
-
-bool Benchmark::owns_pmem_file(const uint8_t index) const { return memory_regions_[index].owns_pmem_file; }
-
-const std::vector<char*>& Benchmark::get_pmem_data() const { return pmem_data_; }
-
-const std::vector<char*>& Benchmark::get_dram_data() const { return dram_data_; }
+const std::vector<char*>& Benchmark::get_data() const { return data_; }
 
 const std::vector<std::vector<ThreadRunConfig>>& Benchmark::get_thread_configs() const { return thread_configs_; }
 const std::vector<std::unique_ptr<BenchmarkResult>>& Benchmark::get_benchmark_results() const { return results_; }
@@ -455,20 +402,10 @@ void Benchmark::tear_down(bool force) {
   executions_.clear();
   results_.clear();
 
-  for (size_t index = 0; index < pmem_data_.size(); index++) {
-    if (pmem_data_[index] != nullptr) {
-      munmap(pmem_data_[index], configs_[index].memory_range);
-      pmem_data_[index] = nullptr;
-    }
-    if (configs_[index].is_pmem && (memory_regions_[index].owns_pmem_file || force)) {
-      std::filesystem::remove(memory_regions_[index].pmem_file);
-    }
-  }
-  for (size_t index = 0; index < dram_data_.size(); index++) {
-    //  Only unmap dram data as no file is created
-    if (dram_data_[index] != nullptr) {
-      munmap(dram_data_[index], configs_[index].dram_memory_range);
-      dram_data_[index] = nullptr;
+  for (size_t index = 0; index < data_.size(); ++index) {
+    if (data_[index] != nullptr) {
+      munmap(data_[index], configs_[index].memory_region_size);
+      data_[index] = nullptr;
     }
   }
 }
@@ -515,7 +452,7 @@ nlohmann::json BenchmarkResult::get_result_as_json() const {
   std::vector<double> per_thread_bandwidth(config.number_threads);
   nlohmann::json per_thread_results = nlohmann::json::array();
 
-  for (uint16_t thread_idx = 0; thread_idx < config.number_threads; thread_idx++) {
+  for (uint16_t thread_idx = 0; thread_idx < config.number_threads; ++thread_idx) {
     const ExecutionDuration& thread_timestamps = total_operation_durations[thread_idx];
     const std::chrono::steady_clock::duration thread_duration = thread_timestamps.duration();
     auto thread_duration_s = std::chrono::duration<double>(std::chrono::nanoseconds{thread_duration}).count();

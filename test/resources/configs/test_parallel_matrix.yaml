@@ -4,7 +4,7 @@ parallel_test:
       matrix:
         access_size: [ 64, 256 ]
       args:
-        memory_range: 10G  # 10 GiB
+        memory_region_size: 10G  # 10 GiB
         numa_memory_nodes: [ 1 ]
         numa_task_nodes: [ 0 ]
         number_threads: 16
@@ -18,7 +18,7 @@ parallel_test:
       args:
         exec_mode: random
         access_size: 4K
-        memory_range: 10G
+        memory_region_size: 10G
         numa_memory_nodes: [ 1 ]
         numa_task_nodes: [ 0 ]
         number_operations: 10000000

@@ -82,17 +82,16 @@ class ConfigTest : public BaseTest {
 std::filesystem::path ConfigTest::test_logger_path;
 
 TEST_F(ConfigTest, SingleDecodeSequential) {
-  std::vector<SingleBenchmark> benchmarks =
-      BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_single_sequential, true);
-  std::vector<ParallelBenchmark> par_benchmarks =
-      BenchmarkFactory::create_parallel_benchmarks("/tmp/foo", config_single_sequential, true);
-  ASSERT_EQ(benchmarks.size(), 1);
-  ASSERT_EQ(par_benchmarks.size(), 0);
-  bm_config = benchmarks.at(0).get_benchmark_configs()[0];
+  std::vector<SingleBenchmark> single_bms = BenchmarkFactory::create_single_benchmarks(config_single_sequential);
+  std::vector<ParallelBenchmark> parallel_benchmarks =
+      BenchmarkFactory::create_parallel_benchmarks(config_single_sequential);
+  ASSERT_EQ(single_bms.size(), 1);
+  ASSERT_EQ(parallel_benchmarks.size(), 0);
+  bm_config = single_bms.at(0).get_benchmark_configs()[0];
 
   BenchmarkConfig bm_config_default{};
 
-  EXPECT_EQ(bm_config.memory_range, 67108864);
+  EXPECT_EQ(bm_config.memory_region_size, 67108864);
   EXPECT_EQ(bm_config.access_size, 256);
   EXPECT_EQ(bm_config.exec_mode, Mode::Sequential);
 
@@ -101,14 +100,12 @@ TEST_F(ConfigTest, SingleDecodeSequential) {
   EXPECT_EQ(bm_config.operation, Operation::Read);
   EXPECT_EQ(bm_config.min_io_chunk_size, 16 * 1024);
 
-  EXPECT_EQ(bm_config.dram_memory_range, bm_config_default.dram_memory_range);
-  EXPECT_EQ(bm_config.dram_operation_ratio, bm_config_default.dram_operation_ratio);
   EXPECT_EQ(bm_config.number_operations, bm_config_default.number_operations);
   EXPECT_EQ(bm_config.random_distribution, bm_config_default.random_distribution);
   EXPECT_EQ(bm_config.zipf_alpha, bm_config_default.zipf_alpha);
   EXPECT_EQ(bm_config.persist_instruction, bm_config_default.persist_instruction);
   EXPECT_EQ(bm_config.number_partitions, bm_config_default.number_partitions);
-  EXPECT_EQ(bm_config.prefault_file, bm_config_default.prefault_file);
+  EXPECT_EQ(bm_config.prefault_memory, bm_config_default.prefault_memory);
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
   EXPECT_EQ(bm_config.numa_memory_nodes, (NumaNodeIDs{0, 1}));
@@ -116,10 +113,9 @@ TEST_F(ConfigTest, SingleDecodeSequential) {
 }
 
 TEST_F(ConfigTest, DecodeRandom) {
-  std::vector<SingleBenchmark> benchmarks =
-      BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_single_random, true);
-  ASSERT_EQ(benchmarks.size(), 1);
-  bm_config = benchmarks.at(0).get_benchmark_configs()[0];
+  std::vector<SingleBenchmark> single_bms = BenchmarkFactory::create_single_benchmarks(config_single_random);
+  ASSERT_EQ(single_bms.size(), 1);
+  bm_config = single_bms.at(0).get_benchmark_configs()[0];
 
   BenchmarkConfig bm_config_default{};
 
@@ -130,15 +126,13 @@ TEST_F(ConfigTest, DecodeRandom) {
 
   EXPECT_EQ(bm_config.operation, Operation::Write);
 
-  EXPECT_EQ(bm_config.dram_memory_range, bm_config_default.dram_memory_range);
-  EXPECT_EQ(bm_config.dram_operation_ratio, bm_config_default.dram_operation_ratio);
-  EXPECT_EQ(bm_config.memory_range, bm_config_default.memory_range);
+  EXPECT_EQ(bm_config.memory_region_size, bm_config_default.memory_region_size);
   EXPECT_EQ(bm_config.access_size, bm_config_default.access_size);
   EXPECT_EQ(bm_config.number_operations, bm_config_default.number_operations);
   EXPECT_EQ(bm_config.persist_instruction, bm_config_default.persist_instruction);
   EXPECT_EQ(bm_config.number_partitions, bm_config_default.number_partitions);
   EXPECT_EQ(bm_config.number_threads, bm_config_default.number_threads);
-  EXPECT_EQ(bm_config.prefault_file, bm_config_default.prefault_file);
+  EXPECT_EQ(bm_config.prefault_memory, bm_config_default.prefault_memory);
   EXPECT_EQ(bm_config.min_io_chunk_size, bm_config_default.min_io_chunk_size);
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
@@ -147,20 +141,20 @@ TEST_F(ConfigTest, DecodeRandom) {
 }
 
 TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
-  std::vector<SingleBenchmark> benchmarks =
-      BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_parallel_sequential_random, true);
-  std::vector<ParallelBenchmark> par_benchmarks =
-      BenchmarkFactory::create_parallel_benchmarks("/tmp/foo", config_parallel_sequential_random, true);
-  ASSERT_EQ(benchmarks.size(), 0);
-  ASSERT_EQ(par_benchmarks.size(), 1);
-  bm_config = par_benchmarks.at(0).get_benchmark_configs()[0];
+  std::vector<SingleBenchmark> single_bms =
+      BenchmarkFactory::create_single_benchmarks(config_parallel_sequential_random);
+  std::vector<ParallelBenchmark> parallel_bms =
+      BenchmarkFactory::create_parallel_benchmarks(config_parallel_sequential_random);
+  ASSERT_EQ(single_bms.size(), 0);
+  ASSERT_EQ(parallel_bms.size(), 1);
+  bm_config = parallel_bms.at(0).get_benchmark_configs()[0];
 
-  EXPECT_EQ(par_benchmarks.at(0).get_benchmark_name_one(), "buffer_read");
-  EXPECT_EQ(par_benchmarks.at(0).get_benchmark_name_two(), "logging");
+  EXPECT_EQ(parallel_bms.at(0).get_benchmark_name_one(), "buffer_read");
+  EXPECT_EQ(parallel_bms.at(0).get_benchmark_name_two(), "logging");
 
   BenchmarkConfig bm_config_default{};
 
-  EXPECT_EQ(bm_config.memory_range, 10737418240);
+  EXPECT_EQ(bm_config.memory_region_size, 10737418240);
   EXPECT_EQ(bm_config.access_size, 4096);
   EXPECT_EQ(bm_config.exec_mode, Mode::Random);
   EXPECT_EQ(bm_config.number_operations, 10000000);
@@ -169,21 +163,19 @@ TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
 
   EXPECT_EQ(bm_config.operation, Operation::Read);
 
-  EXPECT_EQ(bm_config.dram_memory_range, bm_config_default.dram_memory_range);
-  EXPECT_EQ(bm_config.dram_operation_ratio, bm_config_default.dram_operation_ratio);
   EXPECT_EQ(bm_config.random_distribution, bm_config_default.random_distribution);
   EXPECT_EQ(bm_config.zipf_alpha, bm_config_default.zipf_alpha);
   EXPECT_EQ(bm_config.persist_instruction, bm_config_default.persist_instruction);
   EXPECT_EQ(bm_config.number_partitions, bm_config_default.number_partitions);
-  EXPECT_EQ(bm_config.prefault_file, bm_config_default.prefault_file);
+  EXPECT_EQ(bm_config.prefault_memory, bm_config_default.prefault_memory);
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
   EXPECT_EQ(bm_config.numa_memory_nodes, (NumaNodeIDs{0}));
   EXPECT_EQ(bm_config.numa_task_nodes, (NumaNodeIDs{0, 1}));
 
-  bm_config = par_benchmarks.at(0).get_benchmark_configs()[1];
+  bm_config = parallel_bms.at(0).get_benchmark_configs()[1];
 
-  EXPECT_EQ(bm_config.memory_range, 10737418240);
+  EXPECT_EQ(bm_config.memory_region_size, 10737418240);
   EXPECT_EQ(bm_config.access_size, 256);
   EXPECT_EQ(bm_config.exec_mode, Mode::Sequential);
   EXPECT_EQ(bm_config.persist_instruction, PersistInstruction::NoCache);
@@ -192,13 +184,11 @@ TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
 
   EXPECT_EQ(bm_config.operation, Operation::Write);
 
-  EXPECT_EQ(bm_config.dram_memory_range, bm_config_default.dram_memory_range);
-  EXPECT_EQ(bm_config.dram_operation_ratio, bm_config_default.dram_operation_ratio);
   EXPECT_EQ(bm_config.number_operations, bm_config_default.number_operations);
   EXPECT_EQ(bm_config.random_distribution, bm_config_default.random_distribution);
   EXPECT_EQ(bm_config.zipf_alpha, bm_config_default.zipf_alpha);
   EXPECT_EQ(bm_config.number_partitions, bm_config_default.number_partitions);
-  EXPECT_EQ(bm_config.prefault_file, bm_config_default.prefault_file);
+  EXPECT_EQ(bm_config.prefault_memory, bm_config_default.prefault_memory);
   EXPECT_EQ(bm_config.min_io_chunk_size, bm_config_default.min_io_chunk_size);
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
@@ -207,44 +197,40 @@ TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
 }
 
 TEST_F(ConfigTest, DecodeMatrix) {
-  const size_t num_bms = 6;
-  std::vector<SingleBenchmark> benchmarks =
-      BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_single_matrix, true);
-  std::vector<ParallelBenchmark> par_benchmarks =
-      BenchmarkFactory::create_parallel_benchmarks("/tmp/foo", config_single_matrix, true);
-  ASSERT_EQ(benchmarks.size(), num_bms);
-  ASSERT_EQ(par_benchmarks.size(), 0);
-  EXPECT_EQ(benchmarks[0].get_benchmark_configs()[0].number_threads, 1);
-  EXPECT_EQ(benchmarks[0].get_benchmark_configs()[0].access_size, 256);
-  EXPECT_EQ(benchmarks[1].get_benchmark_configs()[0].number_threads, 1);
-  EXPECT_EQ(benchmarks[1].get_benchmark_configs()[0].access_size, 4096);
-  EXPECT_EQ(benchmarks[2].get_benchmark_configs()[0].number_threads, 2);
-  EXPECT_EQ(benchmarks[2].get_benchmark_configs()[0].access_size, 256);
-  EXPECT_EQ(benchmarks[3].get_benchmark_configs()[0].number_threads, 2);
-  EXPECT_EQ(benchmarks[3].get_benchmark_configs()[0].access_size, 4096);
-  EXPECT_EQ(benchmarks[4].get_benchmark_configs()[0].number_threads, 4);
-  EXPECT_EQ(benchmarks[4].get_benchmark_configs()[0].access_size, 256);
-  EXPECT_EQ(benchmarks[5].get_benchmark_configs()[0].number_threads, 4);
-  EXPECT_EQ(benchmarks[5].get_benchmark_configs()[0].access_size, 4096);
+  const size_t bm_count = 6;
+  std::vector<SingleBenchmark> single_bms = BenchmarkFactory::create_single_benchmarks(config_single_matrix);
+  std::vector<ParallelBenchmark> parallel_bms = BenchmarkFactory::create_parallel_benchmarks(config_single_matrix);
+  ASSERT_EQ(single_bms.size(), bm_count);
+  ASSERT_EQ(parallel_bms.size(), 0);
+  EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].number_threads, 1);
+  EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].access_size, 256);
+  EXPECT_EQ(single_bms[1].get_benchmark_configs()[0].number_threads, 1);
+  EXPECT_EQ(single_bms[1].get_benchmark_configs()[0].access_size, 4096);
+  EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].number_threads, 2);
+  EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].access_size, 256);
+  EXPECT_EQ(single_bms[3].get_benchmark_configs()[0].number_threads, 2);
+  EXPECT_EQ(single_bms[3].get_benchmark_configs()[0].access_size, 4096);
+  EXPECT_EQ(single_bms[4].get_benchmark_configs()[0].number_threads, 4);
+  EXPECT_EQ(single_bms[4].get_benchmark_configs()[0].access_size, 256);
+  EXPECT_EQ(single_bms[5].get_benchmark_configs()[0].number_threads, 4);
+  EXPECT_EQ(single_bms[5].get_benchmark_configs()[0].access_size, 4096);
 
   BenchmarkConfig bm_config_default{};
-  for (size_t i = 0; i < num_bms; ++i) {
-    const SingleBenchmark& bm = benchmarks[i];
+  for (size_t i = 0; i < bm_count; ++i) {
+    const SingleBenchmark& bm = single_bms[i];
     const BenchmarkConfig& config = bm.get_benchmark_configs()[0];
 
     // Other args are identical for all configs
-    EXPECT_EQ(config.memory_range, 536870912);
+    EXPECT_EQ(config.memory_region_size, 536870912);
     EXPECT_EQ(config.exec_mode, Mode::Sequential);
     EXPECT_EQ(config.operation, Operation::Read);
 
-    EXPECT_EQ(config.dram_memory_range, bm_config_default.dram_memory_range);
-    EXPECT_EQ(bm_config.dram_operation_ratio, bm_config_default.dram_operation_ratio);
     EXPECT_EQ(config.number_operations, bm_config_default.number_operations);
     EXPECT_EQ(config.random_distribution, bm_config_default.random_distribution);
     EXPECT_EQ(config.zipf_alpha, bm_config_default.zipf_alpha);
     EXPECT_EQ(config.persist_instruction, bm_config_default.persist_instruction);
     EXPECT_EQ(config.number_partitions, bm_config_default.number_partitions);
-    EXPECT_EQ(config.prefault_file, bm_config_default.prefault_file);
+    EXPECT_EQ(config.prefault_memory, bm_config_default.prefault_memory);
     EXPECT_EQ(config.min_io_chunk_size, bm_config_default.min_io_chunk_size);
     EXPECT_EQ(config.run_time, bm_config_default.run_time);
     EXPECT_EQ(config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
@@ -254,51 +240,48 @@ TEST_F(ConfigTest, DecodeMatrix) {
 }
 
 TEST_F(ConfigTest, DecodeCustomOperationsMatrix) {
-  const size_t num_bms = 3;
-  std::vector<SingleBenchmark> benchmarks =
-      BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_custom_operations_matrix, true);
+  const size_t bm_count = 3;
+  std::vector<SingleBenchmark> single_bms = BenchmarkFactory::create_single_benchmarks(config_custom_operations_matrix);
 
-  ASSERT_EQ(benchmarks.size(), num_bms);
-  EXPECT_EQ(benchmarks[0].get_benchmark_configs()[0].custom_operations.size(), 3);
-  EXPECT_EQ(benchmarks[0].get_benchmark_configs()[0].custom_operations[0].type, Operation::Read);
-  EXPECT_EQ(benchmarks[0].get_benchmark_configs()[0].custom_operations[0].size, 64);
-  EXPECT_EQ(benchmarks[0].get_benchmark_configs()[0].custom_operations[1].type, Operation::Write);
-  EXPECT_EQ(benchmarks[0].get_benchmark_configs()[0].custom_operations[1].size, 64);
-  EXPECT_EQ(benchmarks[0].get_benchmark_configs()[0].custom_operations[1].persist, PersistInstruction::NoCache);
-  EXPECT_EQ(benchmarks[0].get_benchmark_configs()[0].custom_operations[2].type, Operation::Read);
-  EXPECT_EQ(benchmarks[0].get_benchmark_configs()[0].custom_operations[2].size, 128);
+  ASSERT_EQ(single_bms.size(), bm_count);
+  EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations.size(), 3);
+  EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[0].type, Operation::Read);
+  EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[0].size, 64);
+  EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[1].type, Operation::Write);
+  EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[1].size, 64);
+  EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[1].persist, PersistInstruction::NoCache);
+  EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[2].type, Operation::Read);
+  EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[2].size, 128);
 
-  EXPECT_EQ(benchmarks[1].get_benchmark_configs()[0].custom_operations.size(), 2);
-  EXPECT_EQ(benchmarks[1].get_benchmark_configs()[0].custom_operations[0].type, Operation::Read);
-  EXPECT_EQ(benchmarks[1].get_benchmark_configs()[0].custom_operations[0].size, 256);
-  EXPECT_EQ(benchmarks[1].get_benchmark_configs()[0].custom_operations[1].type, Operation::Write);
-  EXPECT_EQ(benchmarks[1].get_benchmark_configs()[0].custom_operations[1].size, 256);
-  EXPECT_EQ(benchmarks[1].get_benchmark_configs()[0].custom_operations[1].persist, PersistInstruction::None);
+  EXPECT_EQ(single_bms[1].get_benchmark_configs()[0].custom_operations.size(), 2);
+  EXPECT_EQ(single_bms[1].get_benchmark_configs()[0].custom_operations[0].type, Operation::Read);
+  EXPECT_EQ(single_bms[1].get_benchmark_configs()[0].custom_operations[0].size, 256);
+  EXPECT_EQ(single_bms[1].get_benchmark_configs()[0].custom_operations[1].type, Operation::Write);
+  EXPECT_EQ(single_bms[1].get_benchmark_configs()[0].custom_operations[1].size, 256);
+  EXPECT_EQ(single_bms[1].get_benchmark_configs()[0].custom_operations[1].persist, PersistInstruction::None);
 
-  EXPECT_EQ(benchmarks[2].get_benchmark_configs()[0].custom_operations.size(), 2);
-  EXPECT_EQ(benchmarks[2].get_benchmark_configs()[0].custom_operations[0].type, Operation::Read);
-  EXPECT_EQ(benchmarks[2].get_benchmark_configs()[0].custom_operations[0].size, 1024);
-  EXPECT_EQ(benchmarks[2].get_benchmark_configs()[0].custom_operations[1].type, Operation::Write);
-  EXPECT_EQ(benchmarks[2].get_benchmark_configs()[0].custom_operations[1].size, 128);
-  EXPECT_EQ(benchmarks[2].get_benchmark_configs()[0].custom_operations[1].persist, PersistInstruction::Cache);
+  EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].custom_operations.size(), 2);
+  EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].custom_operations[0].type, Operation::Read);
+  EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].custom_operations[0].size, 1024);
+  EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].custom_operations[1].type, Operation::Write);
+  EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].custom_operations[1].size, 128);
+  EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].custom_operations[1].persist, PersistInstruction::Cache);
 
   BenchmarkConfig bm_config_default{};
-  for (size_t i = 0; i < num_bms; ++i) {
-    const SingleBenchmark& bm = benchmarks[i];
+  for (size_t i = 0; i < bm_count; ++i) {
+    const SingleBenchmark& bm = single_bms[i];
     const BenchmarkConfig& config = bm.get_benchmark_configs()[0];
 
     // Other args are identical for all configs
-    EXPECT_EQ(config.memory_range, 2147483648);
+    EXPECT_EQ(config.memory_region_size, 2147483648);
     EXPECT_EQ(config.exec_mode, Mode::Custom);
     EXPECT_EQ(config.number_operations, 100000000);
     EXPECT_EQ(config.number_threads, 16);
 
-    EXPECT_EQ(config.dram_memory_range, bm_config_default.dram_memory_range);
-    EXPECT_EQ(bm_config.dram_operation_ratio, bm_config_default.dram_operation_ratio);
     EXPECT_EQ(config.random_distribution, bm_config_default.random_distribution);
     EXPECT_EQ(config.zipf_alpha, bm_config_default.zipf_alpha);
     EXPECT_EQ(config.number_partitions, bm_config_default.number_partitions);
-    EXPECT_EQ(config.prefault_file, bm_config_default.prefault_file);
+    EXPECT_EQ(config.prefault_memory, bm_config_default.prefault_memory);
     EXPECT_EQ(config.min_io_chunk_size, bm_config_default.min_io_chunk_size);
     EXPECT_EQ(config.run_time, bm_config_default.run_time);
     EXPECT_EQ(config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
@@ -308,65 +291,59 @@ TEST_F(ConfigTest, DecodeCustomOperationsMatrix) {
 }
 
 TEST_F(ConfigTest, ParallelDecodeMatrix) {
-  const uint8_t num_bms = 4;
-  std::vector<SingleBenchmark> benchmarks =
-      BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_parallel_matrix, true);
-  std::vector<ParallelBenchmark> par_benchmarks =
-      BenchmarkFactory::create_parallel_benchmarks("/tmp/foo", config_parallel_matrix, true);
-  ASSERT_EQ(benchmarks.size(), 0);
-  ASSERT_EQ(par_benchmarks.size(), num_bms);
+  const uint8_t bm_count = 4;
+  std::vector<SingleBenchmark> single_bms = BenchmarkFactory::create_single_benchmarks(config_parallel_matrix);
+  std::vector<ParallelBenchmark> parallel_bms = BenchmarkFactory::create_parallel_benchmarks(config_parallel_matrix);
+  ASSERT_EQ(single_bms.size(), 0);
+  ASSERT_EQ(parallel_bms.size(), bm_count);
 
-  EXPECT_EQ(par_benchmarks.at(0).get_benchmark_name_one(), "buffer_read");
-  EXPECT_EQ(par_benchmarks.at(0).get_benchmark_name_two(), "logging");
+  EXPECT_EQ(parallel_bms.at(0).get_benchmark_name_one(), "buffer_read");
+  EXPECT_EQ(parallel_bms.at(0).get_benchmark_name_two(), "logging");
 
-  EXPECT_EQ(par_benchmarks[0].get_benchmark_configs()[0].number_threads, 8);
-  EXPECT_EQ(par_benchmarks[0].get_benchmark_configs()[1].access_size, 64);
-  EXPECT_EQ(par_benchmarks[1].get_benchmark_configs()[0].number_threads, 16);
-  EXPECT_EQ(par_benchmarks[1].get_benchmark_configs()[1].access_size, 64);
-  EXPECT_EQ(par_benchmarks[2].get_benchmark_configs()[0].number_threads, 8);
-  EXPECT_EQ(par_benchmarks[2].get_benchmark_configs()[1].access_size, 256);
-  EXPECT_EQ(par_benchmarks[3].get_benchmark_configs()[0].number_threads, 16);
-  EXPECT_EQ(par_benchmarks[3].get_benchmark_configs()[1].access_size, 256);
+  EXPECT_EQ(parallel_bms[0].get_benchmark_configs()[0].number_threads, 8);
+  EXPECT_EQ(parallel_bms[0].get_benchmark_configs()[1].access_size, 64);
+  EXPECT_EQ(parallel_bms[1].get_benchmark_configs()[0].number_threads, 16);
+  EXPECT_EQ(parallel_bms[1].get_benchmark_configs()[1].access_size, 64);
+  EXPECT_EQ(parallel_bms[2].get_benchmark_configs()[0].number_threads, 8);
+  EXPECT_EQ(parallel_bms[2].get_benchmark_configs()[1].access_size, 256);
+  EXPECT_EQ(parallel_bms[3].get_benchmark_configs()[0].number_threads, 16);
+  EXPECT_EQ(parallel_bms[3].get_benchmark_configs()[1].access_size, 256);
 
   BenchmarkConfig bm_config_default{};
-  for (size_t i = 0; i < num_bms; ++i) {
-    const ParallelBenchmark& bm = par_benchmarks[i];
+  for (size_t i = 0; i < bm_count; ++i) {
+    const ParallelBenchmark& bm = parallel_bms[i];
     const BenchmarkConfig& config_one = bm.get_benchmark_configs()[0];
     const BenchmarkConfig& config_two = bm.get_benchmark_configs()[1];
 
     // Other args are identical for all configs
-    EXPECT_EQ(config_one.memory_range, 10737418240);
+    EXPECT_EQ(config_one.memory_region_size, 10737418240);
     EXPECT_EQ(config_one.access_size, 4096);
     EXPECT_EQ(config_one.exec_mode, Mode::Random);
     EXPECT_EQ(config_one.number_operations, 10000000);
     EXPECT_EQ(config_one.operation, Operation::Read);
 
-    EXPECT_EQ(config_one.dram_memory_range, bm_config_default.dram_memory_range);
-    EXPECT_EQ(config_one.dram_operation_ratio, bm_config_default.dram_operation_ratio);
     EXPECT_EQ(config_one.random_distribution, bm_config_default.random_distribution);
     EXPECT_EQ(config_one.zipf_alpha, bm_config_default.zipf_alpha);
     EXPECT_EQ(config_one.persist_instruction, bm_config_default.persist_instruction);
     EXPECT_EQ(config_one.number_partitions, bm_config_default.number_partitions);
-    EXPECT_EQ(config_one.prefault_file, bm_config_default.prefault_file);
+    EXPECT_EQ(config_one.prefault_memory, bm_config_default.prefault_memory);
     EXPECT_EQ(config_one.min_io_chunk_size, bm_config_default.min_io_chunk_size);
     EXPECT_EQ(config_one.run_time, bm_config_default.run_time);
     EXPECT_EQ(config_one.latency_sample_frequency, bm_config_default.latency_sample_frequency);
     EXPECT_TRUE(bm_config.numa_memory_nodes.empty());
     EXPECT_TRUE(bm_config.numa_task_nodes.empty());
 
-    EXPECT_EQ(config_two.memory_range, 10737418240);
+    EXPECT_EQ(config_two.memory_region_size, 10737418240);
     EXPECT_EQ(config_two.exec_mode, Mode::Sequential);
     EXPECT_EQ(config_two.operation, Operation::Write);
     EXPECT_EQ(config_two.number_threads, 16);
     EXPECT_EQ(config_two.persist_instruction, PersistInstruction::NoCache);
 
-    EXPECT_EQ(config_two.dram_memory_range, bm_config_default.dram_memory_range);
-    EXPECT_EQ(config_two.dram_operation_ratio, bm_config_default.dram_operation_ratio);
     EXPECT_EQ(config_two.number_operations, bm_config_default.number_operations);
     EXPECT_EQ(config_two.random_distribution, bm_config_default.random_distribution);
     EXPECT_EQ(config_two.zipf_alpha, bm_config_default.zipf_alpha);
     EXPECT_EQ(config_two.number_partitions, bm_config_default.number_partitions);
-    EXPECT_EQ(config_two.prefault_file, bm_config_default.prefault_file);
+    EXPECT_EQ(config_two.prefault_memory, bm_config_default.prefault_memory);
     EXPECT_EQ(config_two.min_io_chunk_size, bm_config_default.min_io_chunk_size);
     EXPECT_EQ(config_two.run_time, bm_config_default.run_time);
     EXPECT_EQ(config_two.latency_sample_frequency, bm_config_default.latency_sample_frequency);
@@ -377,14 +354,12 @@ TEST_F(ConfigTest, ParallelDecodeMatrix) {
 
 TEST_F(ConfigTest, SingleDecodeInvalidNumaMemoryNodes) {
   // Throw since the `numa_memory_node` YAML field is not a sequence, i.e., [a, b, c], but a single value.
-  EXPECT_THROW(BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_invalid_numa_memory_nodes, true),
-               std::invalid_argument);
+  EXPECT_THROW(BenchmarkFactory::create_single_benchmarks(config_invalid_numa_memory_nodes), std::invalid_argument);
 }
 
 TEST_F(ConfigTest, SingleDecodeInvalidNumaTaskNodes) {
   // Throw since the `numa_task_node` YAML field is not a sequence, i.e., [ a ], but a single value.
-  EXPECT_THROW(BenchmarkFactory::create_single_benchmarks("/tmp/foo", config_invalid_numa_task_nodes, true),
-               std::invalid_argument);
+  EXPECT_THROW(BenchmarkFactory::create_single_benchmarks(config_invalid_numa_task_nodes), std::invalid_argument);
 }
 
 TEST_F(ConfigTest, InvalidSmallAccessSize) {
@@ -400,7 +375,7 @@ TEST_F(ConfigTest, InvalidPowerAccessSize) {
 }
 
 TEST_F(ConfigTest, InvalidMemoryRangeAccessSizeMultiple) {
-  bm_config.memory_range = 100000;
+  bm_config.memory_region_size = 100000;
   EXPECT_THROW(bm_config.validate(), MemaException);
   check_log_for_critical("multiple of access size");
 }
@@ -452,51 +427,14 @@ TEST_F(ConfigTest, BadLatencySample) {
   check_log_for_critical("Latency sampling can only");
 }
 
-TEST_F(ConfigTest, InvalidDRAMMode) {
-  bm_config.dram_operation_ratio = 0.2;
-  bm_config.exec_mode = Mode::Sequential;
-  EXPECT_THROW(bm_config.validate(), MemaException);
-  check_log_for_critical("DRAM operation ratio only supported in random execution");
-}
-
-TEST_F(ConfigTest, InvalidDRAMRationNegativ) {
-  bm_config.exec_mode = Mode::Random;
-  bm_config.dram_operation_ratio = -0.9;
-  EXPECT_THROW(bm_config.validate(), MemaException);
-  check_log_for_critical("DRAM ratio must be at least 0 and not greater than 1");
-}
-
-TEST_F(ConfigTest, InvalidDRAMRationPositiv) {
-  bm_config.exec_mode = Mode::Random;
-  bm_config.dram_operation_ratio = 1.01;
-  EXPECT_THROW(bm_config.validate(), MemaException);
-  check_log_for_critical("DRAM ratio must be at least 0 and not greater than 1");
-}
-
-TEST_F(ConfigTest, InvalidDRAMMemoryRange) {
-  bm_config.exec_mode = Mode::Random;
-  bm_config.dram_operation_ratio = 0.5;
-  EXPECT_THROW(bm_config.validate(), MemaException);
-  check_log_for_critical("If greater than 0, dram memory range must be greater ");
-}
-
-TEST_F(ConfigTest, MissingDRAMMemoryRangeForCustomOp) {
-  bm_config.exec_mode = Mode::Custom;
-  bm_config.custom_operations = {CustomOp{.type = Operation::Read, .is_pmem = false, .size = 64}};
-  EXPECT_THROW(bm_config.validate(), MemaException);
-  check_log_for_critical("dram_memory_range > 0 if the benchmark contains DRAM operations");
-}
-
 TEST_F(ConfigTest, AsJsonReadSequential) {
   auto bm_config = BenchmarkConfig{};
   bm_config.operation = Operation::Read;
   bm_config.exec_mode = Mode::Sequential;
 
   const auto json = bm_config.as_json();
-  ASSERT_JSON_TRUE(json, contains("memory_type"));
-  EXPECT_EQ(json["memory_type"], "pmem");
-  ASSERT_JSON_TRUE(json, contains("memory_range"));
-  EXPECT_EQ(json["memory_range"].get<uint64_t>(), bm_config.memory_range);
+  ASSERT_JSON_TRUE(json, contains("memory_region_size"));
+  EXPECT_EQ(json["memory_region_size"].get<uint64_t>(), bm_config.memory_region_size);
   ASSERT_JSON_TRUE(json, contains("exec_mode"));
   EXPECT_EQ(json["exec_mode"], "sequential");
   ASSERT_JSON_TRUE(json, contains("numa_memory_nodes"));
@@ -507,14 +445,12 @@ TEST_F(ConfigTest, AsJsonReadSequential) {
   EXPECT_EQ(json["number_partitions"].get<uint16_t>(), bm_config.number_partitions);
   ASSERT_JSON_TRUE(json, contains("number_threads"));
   EXPECT_EQ(json["number_threads"].get<uint16_t>(), bm_config.number_threads);
-  ASSERT_JSON_TRUE(json, contains("prefault_file"));
-  EXPECT_EQ(json["prefault_file"].get<bool>(), bm_config.prefault_file);
+  ASSERT_JSON_TRUE(json, contains("prefault_memory"));
+  EXPECT_EQ(json["prefault_memory"].get<bool>(), bm_config.prefault_memory);
   ASSERT_JSON_TRUE(json, contains("min_io_chunk_size"));
   EXPECT_EQ(json["min_io_chunk_size"].get<uint64_t>(), bm_config.min_io_chunk_size);
-  // Relevant for hybrid memory regions
-  ASSERT_JSON_FALSE(json, contains("dram_memory_range"));
-  ASSERT_JSON_FALSE(json, contains("dram_operation_ratio"));
-  ASSERT_JSON_FALSE(json, contains("dram_huge_pages"));
+  ASSERT_JSON_TRUE(json, contains("huge_pages"));
+  EXPECT_EQ(json["huge_pages"].get<bool>(), bm_config.huge_pages);
   // Relevant for non-custom operations
   ASSERT_JSON_TRUE(json, contains("access_size"));
   EXPECT_EQ(json["access_size"].get<uint32_t>(), bm_config.access_size);
@@ -532,70 +468,14 @@ TEST_F(ConfigTest, AsJsonReadSequential) {
   ASSERT_JSON_FALSE(json, contains("run_time"));
 }
 
-TEST_F(ConfigTest, AsJsonWriteRandomHybrid) {
-  auto bm_config = BenchmarkConfig{};
-  bm_config.operation = Operation::Write;
-  bm_config.exec_mode = Mode::Random;
-  bm_config.random_distribution = RandomDistribution::Zipf;
-  bm_config.is_hybrid = true;
-
-  const auto json = bm_config.as_json();
-  ASSERT_JSON_TRUE(json, contains("memory_type"));
-  EXPECT_EQ(json["memory_type"], "pmem");
-  ASSERT_JSON_TRUE(json, contains("memory_range"));
-  EXPECT_EQ(json["memory_range"].get<uint64_t>(), bm_config.memory_range);
-  ASSERT_JSON_TRUE(json, contains("exec_mode"));
-  EXPECT_EQ(json["exec_mode"], "random");
-  ASSERT_JSON_TRUE(json, contains("numa_memory_nodes"));
-  EXPECT_EQ(json["numa_memory_nodes"].get<NumaNodeIDs>(), bm_config.numa_memory_nodes);
-  ASSERT_JSON_TRUE(json, contains("numa_task_nodes"));
-  EXPECT_EQ(json["numa_task_nodes"].get<NumaNodeIDs>(), bm_config.numa_task_nodes);
-  ASSERT_JSON_TRUE(json, contains("number_partitions"));
-  EXPECT_EQ(json["number_partitions"].get<uint16_t>(), bm_config.number_partitions);
-  ASSERT_JSON_TRUE(json, contains("number_threads"));
-  EXPECT_EQ(json["number_threads"].get<uint16_t>(), bm_config.number_threads);
-  ASSERT_JSON_TRUE(json, contains("prefault_file"));
-  EXPECT_EQ(json["prefault_file"].get<bool>(), bm_config.prefault_file);
-  ASSERT_JSON_TRUE(json, contains("min_io_chunk_size"));
-  EXPECT_EQ(json["min_io_chunk_size"].get<uint64_t>(), bm_config.min_io_chunk_size);
-  // Relevant for hybrid memory regions
-  ASSERT_JSON_TRUE(json, contains("dram_memory_range"));
-  EXPECT_EQ(json["dram_memory_range"].get<uint64_t>(), bm_config.dram_memory_range);
-  ASSERT_JSON_TRUE(json, contains("dram_operation_ratio"));
-  EXPECT_EQ(json["dram_operation_ratio"].get<double>(), bm_config.dram_operation_ratio);
-  ASSERT_JSON_TRUE(json, contains("dram_huge_pages"));
-  EXPECT_EQ(json["dram_huge_pages"].get<bool>(), bm_config.dram_huge_pages);
-  // Relevant for non-custom operations
-  ASSERT_JSON_TRUE(json, contains("access_size"));
-  EXPECT_EQ(json["access_size"].get<uint32_t>(), bm_config.access_size);
-  ASSERT_JSON_TRUE(json, contains("operation"));
-  EXPECT_EQ(json["operation"], "write");
-  // Relevant for writes
-  ASSERT_JSON_TRUE(json, contains("persist_instruction"));
-  EXPECT_EQ(json["persist_instruction"], "nocache");
-  // Relevant for random execution mode
-  ASSERT_JSON_TRUE(json, contains("number_operations"));
-  EXPECT_EQ(json["number_operations"].get<uint64_t>(), bm_config.number_operations);
-  ASSERT_JSON_TRUE(json, contains("random_distribution"));
-  EXPECT_EQ(json["random_distribution"], "zipf");
-  ASSERT_JSON_TRUE(json, contains("zipf_alpha"));
-  EXPECT_EQ(json["zipf_alpha"].get<double>(), bm_config.zipf_alpha);
-  // Relevant for custom operations
-  ASSERT_JSON_FALSE(json, contains("custom_operations"));
-  // Relevant if run_time > 0
-  ASSERT_JSON_FALSE(json, contains("run_time"));
-}
-
 TEST_F(ConfigTest, AsJsonWriteCustom) {
   auto bm_config = BenchmarkConfig{};
   bm_config.operation = Operation::Write;
   bm_config.exec_mode = Mode::Custom;
 
   const auto json = bm_config.as_json();
-  ASSERT_JSON_TRUE(json, contains("memory_type"));
-  EXPECT_EQ(json["memory_type"], "pmem");
-  ASSERT_JSON_TRUE(json, contains("memory_range"));
-  EXPECT_EQ(json["memory_range"].get<uint64_t>(), bm_config.memory_range);
+  ASSERT_JSON_TRUE(json, contains("memory_region_size"));
+  EXPECT_EQ(json["memory_region_size"].get<uint64_t>(), bm_config.memory_region_size);
   ASSERT_JSON_TRUE(json, contains("exec_mode"));
   EXPECT_EQ(json["exec_mode"], "custom");
   ASSERT_JSON_TRUE(json, contains("numa_memory_nodes"));
@@ -606,14 +486,12 @@ TEST_F(ConfigTest, AsJsonWriteCustom) {
   EXPECT_EQ(json["number_partitions"].get<uint16_t>(), bm_config.number_partitions);
   ASSERT_JSON_TRUE(json, contains("number_threads"));
   EXPECT_EQ(json["number_threads"].get<uint16_t>(), bm_config.number_threads);
-  ASSERT_JSON_TRUE(json, contains("prefault_file"));
-  EXPECT_EQ(json["prefault_file"].get<bool>(), bm_config.prefault_file);
+  ASSERT_JSON_TRUE(json, contains("prefault_memory"));
+  EXPECT_EQ(json["prefault_memory"].get<bool>(), bm_config.prefault_memory);
   ASSERT_JSON_TRUE(json, contains("min_io_chunk_size"));
   EXPECT_EQ(json["min_io_chunk_size"].get<uint64_t>(), bm_config.min_io_chunk_size);
-  // Relevant for hybrid memory regions
-  ASSERT_JSON_FALSE(json, contains("dram_memory_range"));
-  ASSERT_JSON_FALSE(json, contains("dram_operation_ratio"));
-  ASSERT_JSON_FALSE(json, contains("dram_huge_pages"));
+  ASSERT_JSON_TRUE(json, contains("huge_pages"));
+  EXPECT_EQ(json["huge_pages"].get<bool>(), bm_config.huge_pages);
   // Relevant for non-custom operations
   ASSERT_JSON_FALSE(json, contains("access_size"));
   ASSERT_JSON_FALSE(json, contains("operation"));
@@ -643,8 +521,7 @@ TEST_F(ConfigTest, ToString) {
   auto bm_config = BenchmarkConfig{};
 
   // bm_config.
-  bm_config.is_pmem = false;
-  bm_config.memory_range = 40 * GIBIBYTES_IN_BYTES;
+  bm_config.memory_region_size = 40 * GIBIBYTES_IN_BYTES;
   bm_config.exec_mode = Mode::Random;
   bm_config.numa_memory_nodes = {1, 2};
   bm_config.number_partitions = 8;
@@ -658,7 +535,7 @@ TEST_F(ConfigTest, ToString) {
   bm_config.zipf_alpha = 0.8;
 
   std::string expected_output =
-      "memory type: dram, memory range: 42949672960, exec mode: random, "
+      "memory range: 42949672960, exec mode: random, "
       "memory numa nodes: [1, 2], partition count: 8, thread count: 4, min io chunk size: 33554432, access size: 512, "
       "operation: write, persist instruction: cache, number operations: 50000000, random distribution: zipf, "
       "zipf alpha: 0.8";

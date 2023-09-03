@@ -7,7 +7,7 @@ test_custom_ops:
 
   args:
     number_threads: 16
-    memory_range: 2G
+    memory_region_size: 2G
     numa_memory_nodes: [ 1 ]
     numa_task_nodes: [ 0 ]
     number_operations: 100000000

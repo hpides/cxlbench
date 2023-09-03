@@ -28,18 +28,16 @@ static constexpr size_t SECONDS_IN_NANOSECONDS = 1e9;
 /**
  * This represents a custom operation to be specified by the user. Its string representation, is:
  *
- * For reads: r(<location>)_<size>
+ * For reads: r_<size>
  *
  * with:
  * 'r' for read,
- * (optional) <location> is 'd' or 'p' for DRAM/PMem (with p as default is nothing is specified),
  * <size> is the size of the access (must be power of 2).
  *
- * For writes: w(<location>)_<size>_<persist_instruction>(_<offset>)
+ * For writes: w_<size>_<persist_instruction>(_<offset>)
  *
  * with:
  * 'w' for write,
- * (optional) <location> is 'd' or 'p' for DRAM/PMem (with p as default is nothing is specified),
  * <size> is the size of the access (must be power of 2),
  * <persist_instruction> is the instruction to use after the write (none, cache, cacheinv, noache),
  * (optional) <offset> is the offset to the previously accessed address (can be negative, default is 0)
@@ -47,7 +45,6 @@ static constexpr size_t SECONDS_IN_NANOSECONDS = 1e9;
  * */
 struct CustomOp {
   Operation type;
-  bool is_pmem = true;
   uint64_t size;
   PersistInstruction persist = PersistInstruction::None;
   // This can be signed, e.g., to represent the case when the previous cache line should be written to.
@@ -73,15 +70,8 @@ struct BenchmarkConfig {
   /** Represents the size of an individual memory access in Byte. Must be a power of two. */
   uint32_t access_size = 256;
 
-  /** Represents the total PMem memory range to use for the benchmark. Must be a multiple of `access_size`.  */
-  uint64_t memory_range = 10 * GIBIBYTES_IN_BYTES;  // 10 GiB
-
-  /** Represents the total DRAM memory range to use for the benchmark. Must be a multiple of `access_size`.  */
-  uint64_t dram_memory_range = 0;
-
-  /** Represents the ratio of DRAM IOOperations to PMem IOOperations. Must only contain one digit after decimal point,
-   * i.e., 0.1 or 0.2. */
-  double dram_operation_ratio = 0.0;
+  /** Represents the total memory range to use for the benchmark. Must be a multiple of `access_size`.  */
+  uint64_t memory_region_size = 10 * GIBIBYTES_IN_BYTES;  // 10 GiB
 
   /** Represents the number of random access / custom operations to perform. Can *not* be set for sequential access. */
   uint64_t number_operations = 100'000'000;
@@ -102,7 +92,7 @@ struct BenchmarkConfig {
    * `PersistInstruction` for more details on available options. */
   PersistInstruction persist_instruction = PersistInstruction::NoCache;
 
-  /** Number of disjoint memory regions to partition the `memory_range` into. Must be 0 or a divisor of
+  /** Number of disjoint memory regions to partition the `memory_region_size` into. Must be 0 or a divisor of
    * `number_threads` i.e., one or more threads map to one partition. When set to 0, it is equal to the number of
    * threads, i.e., each thread has its own partition. Default is set to 1.  */
   uint16_t number_partitions = 1;
@@ -127,40 +117,30 @@ struct BenchmarkConfig {
 
   /** Whether or not to prefault the memory region before writing to it. If set to false, the benchmark will include the
    * time caused by page faults on first access to the allocated memory region. */
-  bool prefault_file = true;
+  bool prefault_memory = true;
 
-  /** Whether or not to use transparent huge pages in DRAM, i.e., 2 MiB instead of regular 4 KiB pages. */
-  bool dram_huge_pages = true;
+  /** Whether or not to use transparent huge pages, i.e. 2 MiB instead of regular 4 KiB pages. */
+  bool huge_pages = true;
 
   /** Represents the minimum size of an atomic work package. A chunk contains chunk_size / access_size number of
    * operations. Assuming the lowest bandwidth of 1 GiB/s operations per thread, 64 MiB is a ~60 ms execution unit. */
   uint64_t min_io_chunk_size = 64 * MEBIBYTES_IN_BYTES;
 
-  /** These fields are set internally and do not represent user-facing options. */
-  /** This field is required and has no default value, i.e., it must be set as a command line argument. */
-  std::string pmem_directory{};
   std::vector<std::string> matrix_args{};
-  bool is_pmem = true;
-  bool is_hybrid = false;
 
   static BenchmarkConfig decode(YAML::Node& raw_config_data);
   void validate() const;
   bool contains_read_op() const;
   bool contains_write_op() const;
-  bool contains_dram_op() const;
 
   std::string to_string(const std::string sep = ", ") const;
   nlohmann::json as_json() const;
 };
 
 struct ConfigEnums {
-  // <read or write, is_pmem>
-  using OpLocation = std::pair<Operation, bool>;
-
   static const std::unordered_map<std::string, bool> str_to_mem_type;
   static const std::unordered_map<std::string, Mode> str_to_mode;
   static const std::unordered_map<std::string, Operation> str_to_operation;
-  static const std::unordered_map<std::string, OpLocation> str_to_op_location;
   static const std::unordered_map<std::string, PersistInstruction> str_to_persist_instruction;
   static const std::unordered_map<std::string, RandomDistribution> str_to_random_distribution;
 

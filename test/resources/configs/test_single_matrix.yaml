@@ -3,7 +3,7 @@ test_seq_matrix:
     number_threads: [ 1, 2, 4 ]
     access_size: [ 256, 4096 ]
   args:
-    memory_range: 512M
+    memory_region_size: 512M
     exec_mode: sequential
     numa_memory_nodes: [ 0, 3 ]
     numa_task_nodes: [ 0 ]
