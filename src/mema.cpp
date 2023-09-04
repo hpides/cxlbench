@@ -34,6 +34,13 @@ int main(int argc, char** argv) {
   std::filesystem::path result_path = std::filesystem::current_path() / DEFAULT_RESULT_PATH;
   app.add_option("-r,--results", result_path, "Path to the result directory (default: " + result_path.string() + ")");
 
+  try {
+    app.parse(argc, argv);
+  } catch (const CLI::ParseError& e) {
+    app.failure_message(CLI::FailureMessage::help);
+    return app.exit(e);
+  }
+
   if (be_verbose) {
     spdlog::set_level(spdlog::level::debug);
   }
