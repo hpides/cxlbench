@@ -364,12 +364,18 @@ class PlotGenerator:
 
     def create_barplot(self, data, x, y, x_label, y_label, hue, title, legend_title, filename, rotation_x_labels=False):
         hpi_palette = [(0.9609, 0.6563, 0), (0.8633, 0.3789, 0.0313), (0.6914, 0.0234, 0.2265)]
-        palette = [hpi_palette[0], hpi_palette[2]]
+        palette = [hpi_palette[0], hpi_palette[1], hpi_palette[2]]
 
-        barplot = sns.barplot(data=data, x=x, y=y, hue=hue, errorbar=None, palette=palette, linewidth=2, edgecolor="k")
+        x_count = len(data[x].unique())
+        hue_count = len(data[hue].unique())
+        fig_size_x = (x_count + hue_count) * 1.2
+        plt.figure(figsize=(fig_size_x, 7))
+        barplot = sns.barplot(
+            data=data, x=x, y=y, hue=hue, errorbar=None, palette=palette, linewidth=2, edgecolor="k", width=0.8
+        )
         barplot.set_xlabel(x_label)
         barplot.set_ylabel(y_label)
-        barplot.set_title(title)
+        barplot.set_title(title, pad=50)
 
         # Set hatches
         x_distinct_val_count = len(data[x].unique())
@@ -380,6 +386,17 @@ class PlotGenerator:
             bar.set_hatch(hatches[hatch_idx])
         # Update legend so that hatches are also visible
         barplot.legend(title=legend_title)
+        sns.move_legend(
+            barplot,
+            "lower center",
+            bbox_to_anchor=(0.5, 1.0),
+            ncol=3,
+            frameon=True,
+        )
+
+        # Add bar lables
+        for container_id in barplot.containers:
+            barplot.bar_label(container_id, rotation=90, padding=4, fmt="%.1f")
 
         if rotation_x_labels:
             plt.xticks(rotation=90)
