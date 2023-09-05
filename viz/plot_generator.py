@@ -178,7 +178,7 @@ class PlotGenerator:
         # For now, we assume that memory was allocated on a single numa node.
         assert (df[KEY_NUMA_MEMORY_NODES].str.len() == 1).all()
         df[KEY_NUMA_MEMORY_NODES] = df[KEY_NUMA_MEMORY_NODES].transform(lambda x: x[0])
-        df = df.drop(columns=drop_columns)
+        df = df.drop(columns=drop_columns, errors='ignore')
         df.to_csv("{}/flattened_reduced_df.csv".format(self.output_dir))
         if self.no_plots:
             sys.exit("Exiting without generating plots. CSV were stored.")
