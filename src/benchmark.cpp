@@ -271,6 +271,7 @@ void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkCon
           random_distribution = access_distribution;
 
           uint64_t random_value;
+          // Get a random number in the range [0, target_access_count_in_range - 1].
           if (config.random_distribution == RandomDistribution::Uniform) {
             random_value = random_distribution();
           } else {
