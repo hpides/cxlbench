@@ -138,8 +138,9 @@ class PlotGenerator:
         print("Selected BM groups: {}".format(selected_bm_groups))
 
         df = df[(df[KEY_BM_GROUP].isin(selected_bm_groups)) & (df[KEY_BM_TYPE] == "single")]
-        df = ju.flatten_nested_json_df(df, [KEY_MATRIX_ARGS, KEY_THREADS_LEVELED, KEY_EXPLODED_NUMA_MEMORY_NODES,
-                                            KEY_EXPLODED_NUMA_TASK_NODES])
+        df = ju.flatten_nested_json_df(
+            df, [KEY_MATRIX_ARGS, KEY_THREADS_LEVELED, KEY_EXPLODED_NUMA_MEMORY_NODES, KEY_EXPLODED_NUMA_TASK_NODES]
+        )
 
         # If only latency benchnarks have been performed, the dataframe does note have a KEY_ACCESS_SIZE column so it
         # must be added.
@@ -178,7 +179,7 @@ class PlotGenerator:
         # For now, we assume that memory was allocated on a single numa node.
         assert (df[KEY_NUMA_MEMORY_NODES].str.len() == 1).all()
         df[KEY_NUMA_MEMORY_NODES] = df[KEY_NUMA_MEMORY_NODES].transform(lambda x: x[0])
-        df = df.drop(columns=drop_columns, errors='ignore')
+        df = df.drop(columns=drop_columns, errors="ignore")
         df.to_csv("{}/flattened_reduced_df.csv".format(self.output_dir))
         if self.no_plots:
             sys.exit("Exiting without generating plots. CSV were stored.")

@@ -118,6 +118,8 @@ void generate_read_data(char* addr, const uint64_t memory_size) {
     thread_pool.emplace_back(rw_ops::write_data, from, to);
   }
 
+  // Since DATA_GEN_THREAD_COUNT - 1 already started writing data, we use the time to write the last partition of the
+  // memory region.
   rw_ops::write_data(addr + (DATA_GEN_THREAD_COUNT - 1) * thread_memory_size, addr + memory_size);
 
   // wait for all threads
