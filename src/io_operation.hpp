@@ -16,13 +16,13 @@ class IoOperation {
 
  public:
   IoOperation(std::vector<char*>&& op_addresses, uint32_t access_size, Operation op_type,
-              PersistInstruction persist_instruction)
+              FlushInstruction flush_instruction)
       : op_addresses_{std::move(op_addresses)},
         access_size_{access_size},
         op_type_{op_type},
-        persist_instruction_{persist_instruction} {}
+        flush_instruction_{flush_instruction} {}
 
-  IoOperation() : IoOperation{{}, 0, Operation::Read, PersistInstruction::None} {};
+  IoOperation() : IoOperation{{}, 0, Operation::Read, FlushInstruction::None} {};
 
   IoOperation(const IoOperation&) = delete;
   IoOperation& operator=(const IoOperation&) = delete;
@@ -68,9 +68,9 @@ class IoOperation {
 
   void run_write() {
 #ifdef HAS_ANY_AVX
-    switch (persist_instruction_) {
+    switch (flush_instruction_) {
 #ifdef HAS_CLWB
-      case PersistInstruction::Cache: {
+      case FlushInstruction::Cache: {
         switch (access_size_) {
           case 64:
             return rw_ops::simd_write_clwb_64(op_addresses_);
@@ -85,23 +85,7 @@ class IoOperation {
         }
       }
 #endif
-#ifdef HAS_CLFLUSHOPT
-      case PersistInstruction::CacheInvalidate: {
-        switch (access_size_) {
-          case 64:
-            return rw_ops::simd_write_clflushopt_64(op_addresses_);
-          case 128:
-            return rw_ops::simd_write_clflushopt_128(op_addresses_);
-          case 256:
-            return rw_ops::simd_write_clflushopt_256(op_addresses_);
-          case 512:
-            return rw_ops::simd_write_clflushopt_512(op_addresses_);
-          default:
-            return rw_ops::simd_write_clflushopt(op_addresses_, access_size_);
-        }
-      }
-#endif
-      case PersistInstruction::NoCache: {
+      case FlushInstruction::NoCache: {
         switch (access_size_) {
           case 64:
             return rw_ops::simd_write_nt_64(op_addresses_);
@@ -115,7 +99,7 @@ class IoOperation {
             return rw_ops::simd_write_nt(op_addresses_, access_size_);
         }
       }
-      case PersistInstruction::None: {
+      case FlushInstruction::None: {
         switch (access_size_) {
           case 64:
             return rw_ops::simd_write_none_64(op_addresses_);
@@ -136,7 +120,7 @@ class IoOperation {
   std::vector<char*> op_addresses_;
   uint32_t access_size_;
   Operation op_type_;
-  PersistInstruction persist_instruction_;
+  FlushInstruction flush_instruction_;
 };
 
 class ChainedOperation {
@@ -147,7 +131,7 @@ class ChainedOperation {
         range_size_(range_size),
         align_(-access_size_),
         type_(op.type),
-        persist_instruction_(op.persist),
+        flush_instruction_(op.flush),
         offset_(op.offset) {}
 
   inline void run(char* current_addr, char* dependent_addr) {
@@ -210,9 +194,9 @@ class ChainedOperation {
 
   inline void run_write(char* addr) {
 #ifdef HAS_ANY_AVX
-    switch (persist_instruction_) {
+    switch (flush_instruction_) {
 #ifdef HAS_CLWB
-      case PersistInstruction::Cache: {
+      case FlushInstruction::Cache: {
         switch (access_size_) {
           case 64:
             return rw_ops::simd_write_clwb_64(addr);
@@ -227,23 +211,7 @@ class ChainedOperation {
         }
       }
 #endif
-#ifdef HAS_CLFLUSHOPT
-      case PersistInstruction::CacheInvalidate: {
-        switch (access_size_) {
-          case 64:
-            return rw_ops::simd_write_clflushopt_64(addr);
-          case 128:
-            return rw_ops::simd_write_clflushopt_128(addr);
-          case 256:
-            return rw_ops::simd_write_clflushopt_256(addr);
-          case 512:
-            return rw_ops::simd_write_clflushopt_512(addr);
-          default:
-            return rw_ops::simd_write_clflushopt(addr, access_size_);
-        }
-      }
-#endif
-      case PersistInstruction::NoCache: {
+      case FlushInstruction::NoCache: {
         switch (access_size_) {
           case 64:
             return rw_ops::simd_write_nt_64(addr);
@@ -257,7 +225,7 @@ class ChainedOperation {
             return rw_ops::simd_write_nt(addr, access_size_);
         }
       }
-      case PersistInstruction::None: {
+      case FlushInstruction::None: {
         switch (access_size_) {
           case 64:
             return rw_ops::simd_write_none_64(addr);
@@ -282,7 +250,7 @@ class ChainedOperation {
   const size_t align_;
   ChainedOperation* next_ = nullptr;
   const Operation type_;
-  const PersistInstruction persist_instruction_;
+  const FlushInstruction flush_instruction_;
   const int64_t offset_;
 };
 

@@ -103,7 +103,7 @@ TEST_F(ConfigTest, SingleDecodeSequential) {
   EXPECT_EQ(bm_config.number_operations, bm_config_default.number_operations);
   EXPECT_EQ(bm_config.random_distribution, bm_config_default.random_distribution);
   EXPECT_EQ(bm_config.zipf_alpha, bm_config_default.zipf_alpha);
-  EXPECT_EQ(bm_config.persist_instruction, bm_config_default.persist_instruction);
+  EXPECT_EQ(bm_config.flush_instruction, bm_config_default.flush_instruction);
   EXPECT_EQ(bm_config.number_partitions, bm_config_default.number_partitions);
   EXPECT_EQ(bm_config.prefault_memory, bm_config_default.prefault_memory);
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
@@ -129,7 +129,7 @@ TEST_F(ConfigTest, DecodeRandom) {
   EXPECT_EQ(bm_config.memory_region_size, bm_config_default.memory_region_size);
   EXPECT_EQ(bm_config.access_size, bm_config_default.access_size);
   EXPECT_EQ(bm_config.number_operations, bm_config_default.number_operations);
-  EXPECT_EQ(bm_config.persist_instruction, bm_config_default.persist_instruction);
+  EXPECT_EQ(bm_config.flush_instruction, bm_config_default.flush_instruction);
   EXPECT_EQ(bm_config.number_partitions, bm_config_default.number_partitions);
   EXPECT_EQ(bm_config.number_threads, bm_config_default.number_threads);
   EXPECT_EQ(bm_config.prefault_memory, bm_config_default.prefault_memory);
@@ -165,7 +165,7 @@ TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
 
   EXPECT_EQ(bm_config.random_distribution, bm_config_default.random_distribution);
   EXPECT_EQ(bm_config.zipf_alpha, bm_config_default.zipf_alpha);
-  EXPECT_EQ(bm_config.persist_instruction, bm_config_default.persist_instruction);
+  EXPECT_EQ(bm_config.flush_instruction, bm_config_default.flush_instruction);
   EXPECT_EQ(bm_config.number_partitions, bm_config_default.number_partitions);
   EXPECT_EQ(bm_config.prefault_memory, bm_config_default.prefault_memory);
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
@@ -178,7 +178,7 @@ TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
   EXPECT_EQ(bm_config.memory_region_size, 10737418240);
   EXPECT_EQ(bm_config.access_size, 256);
   EXPECT_EQ(bm_config.exec_mode, Mode::Sequential);
-  EXPECT_EQ(bm_config.persist_instruction, PersistInstruction::NoCache);
+  EXPECT_EQ(bm_config.flush_instruction, FlushInstruction::NoCache);
 
   EXPECT_EQ(bm_config.number_threads, 16);
 
@@ -228,7 +228,7 @@ TEST_F(ConfigTest, DecodeMatrix) {
     EXPECT_EQ(config.number_operations, bm_config_default.number_operations);
     EXPECT_EQ(config.random_distribution, bm_config_default.random_distribution);
     EXPECT_EQ(config.zipf_alpha, bm_config_default.zipf_alpha);
-    EXPECT_EQ(config.persist_instruction, bm_config_default.persist_instruction);
+    EXPECT_EQ(config.flush_instruction, bm_config_default.flush_instruction);
     EXPECT_EQ(config.number_partitions, bm_config_default.number_partitions);
     EXPECT_EQ(config.prefault_memory, bm_config_default.prefault_memory);
     EXPECT_EQ(config.min_io_chunk_size, bm_config_default.min_io_chunk_size);
@@ -249,7 +249,7 @@ TEST_F(ConfigTest, DecodeCustomOperationsMatrix) {
   EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[0].size, 64);
   EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[1].type, Operation::Write);
   EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[1].size, 64);
-  EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[1].persist, PersistInstruction::NoCache);
+  EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[1].flush, FlushInstruction::NoCache);
   EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[2].type, Operation::Read);
   EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[2].size, 128);
 
@@ -258,14 +258,14 @@ TEST_F(ConfigTest, DecodeCustomOperationsMatrix) {
   EXPECT_EQ(single_bms[1].get_benchmark_configs()[0].custom_operations[0].size, 256);
   EXPECT_EQ(single_bms[1].get_benchmark_configs()[0].custom_operations[1].type, Operation::Write);
   EXPECT_EQ(single_bms[1].get_benchmark_configs()[0].custom_operations[1].size, 256);
-  EXPECT_EQ(single_bms[1].get_benchmark_configs()[0].custom_operations[1].persist, PersistInstruction::None);
+  EXPECT_EQ(single_bms[1].get_benchmark_configs()[0].custom_operations[1].flush, FlushInstruction::None);
 
   EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].custom_operations.size(), 2);
   EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].custom_operations[0].type, Operation::Read);
   EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].custom_operations[0].size, 1024);
   EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].custom_operations[1].type, Operation::Write);
   EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].custom_operations[1].size, 128);
-  EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].custom_operations[1].persist, PersistInstruction::Cache);
+  EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].custom_operations[1].flush, FlushInstruction::Cache);
 
   BenchmarkConfig bm_config_default{};
   for (size_t i = 0; i < bm_count; ++i) {
@@ -324,7 +324,7 @@ TEST_F(ConfigTest, ParallelDecodeMatrix) {
 
     EXPECT_EQ(config_one.random_distribution, bm_config_default.random_distribution);
     EXPECT_EQ(config_one.zipf_alpha, bm_config_default.zipf_alpha);
-    EXPECT_EQ(config_one.persist_instruction, bm_config_default.persist_instruction);
+    EXPECT_EQ(config_one.flush_instruction, bm_config_default.flush_instruction);
     EXPECT_EQ(config_one.number_partitions, bm_config_default.number_partitions);
     EXPECT_EQ(config_one.prefault_memory, bm_config_default.prefault_memory);
     EXPECT_EQ(config_one.min_io_chunk_size, bm_config_default.min_io_chunk_size);
@@ -337,7 +337,7 @@ TEST_F(ConfigTest, ParallelDecodeMatrix) {
     EXPECT_EQ(config_two.exec_mode, Mode::Sequential);
     EXPECT_EQ(config_two.operation, Operation::Write);
     EXPECT_EQ(config_two.number_threads, 16);
-    EXPECT_EQ(config_two.persist_instruction, PersistInstruction::NoCache);
+    EXPECT_EQ(config_two.flush_instruction, FlushInstruction::NoCache);
 
     EXPECT_EQ(config_two.number_operations, bm_config_default.number_operations);
     EXPECT_EQ(config_two.random_distribution, bm_config_default.random_distribution);
@@ -457,7 +457,7 @@ TEST_F(ConfigTest, AsJsonReadSequential) {
   ASSERT_JSON_TRUE(json, contains("operation"));
   EXPECT_EQ(json["operation"], "read");
   // Relevant for writes
-  ASSERT_JSON_FALSE(json, contains("persist_instruction"));
+  ASSERT_JSON_FALSE(json, contains("flush_instruction"));
   // Relevant for random execution mode
   ASSERT_JSON_FALSE(json, contains("number_operations"));
   ASSERT_JSON_FALSE(json, contains("random_distribution"));
@@ -496,7 +496,7 @@ TEST_F(ConfigTest, AsJsonWriteCustom) {
   ASSERT_JSON_FALSE(json, contains("access_size"));
   ASSERT_JSON_FALSE(json, contains("operation"));
   // Relevant for non-custom writes
-  ASSERT_JSON_FALSE(json, contains("persist_instruction"));
+  ASSERT_JSON_FALSE(json, contains("flush_instruction"));
   // Relevant for random execution mode
   ASSERT_JSON_FALSE(json, contains("random_distribution"));
   ASSERT_JSON_FALSE(json, contains("zipf_alpha"));
@@ -529,7 +529,7 @@ TEST_F(ConfigTest, ToString) {
   bm_config.min_io_chunk_size = 32 * MEBIBYTES_IN_BYTES;
   bm_config.access_size = 512;
   bm_config.operation = Operation::Write;
-  bm_config.persist_instruction = PersistInstruction::Cache;
+  bm_config.flush_instruction = FlushInstruction::Cache;
   bm_config.number_operations = 50'000'000;
   bm_config.random_distribution = RandomDistribution::Zipf;
   bm_config.zipf_alpha = 0.8;
@@ -537,7 +537,7 @@ TEST_F(ConfigTest, ToString) {
   std::string expected_output =
       "memory range: 42949672960, exec mode: random, "
       "memory numa nodes: [1, 2], partition count: 8, thread count: 4, min io chunk size: 33554432, access size: 512, "
-      "operation: write, persist instruction: cache, number operations: 50000000, random distribution: zipf, "
+      "operation: write, flush instruction: cache, number operations: 50000000, random distribution: zipf, "
       "zipf alpha: 0.8";
   EXPECT_EQ(bm_config.to_string(), expected_output);
 }

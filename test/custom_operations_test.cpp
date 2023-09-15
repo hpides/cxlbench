@@ -51,38 +51,32 @@ TEST_F(CustomOperationTest, CustomRead256String) {
 // Write Operations
 TEST_F(CustomOperationTest, ParseCustomWrite128None) {
   CustomOp op = CustomOp::from_string("w_128_none");
-  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 128, .persist = PersistInstruction::None}));
+  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 128, .flush = FlushInstruction::None}));
 }
 
 TEST_F(CustomOperationTest, ParseCustomWrite128NoCache) {
   CustomOp op = CustomOp::from_string("w_128_nocache");
-  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 128, .persist = PersistInstruction::NoCache}));
+  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 128, .flush = FlushInstruction::NoCache}));
 }
 
 TEST_F(CustomOperationTest, ParseCustomWrite128Cache) {
   CustomOp op = CustomOp::from_string("w_128_cache");
-  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 128, .persist = PersistInstruction::Cache}));
+  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 128, .flush = FlushInstruction::Cache}));
 }
 
-TEST_F(CustomOperationTest, ParseCustomWrite128CacheInv) {
-  CustomOp op = CustomOp::from_string("w_128_cacheinv");
-  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 128, .persist = PersistInstruction::CacheInvalidate}));
-}
-
-TEST_F(CustomOperationTest, ParseCustomWrite256) {
-  CustomOp op = CustomOp::from_string("w_256_cacheinv");
-  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 256, .persist = PersistInstruction::CacheInvalidate}));
+TEST_F(CustomOperationTest, ParseCustomWrite256Cache) {
+  CustomOp op = CustomOp::from_string("w_256_cache");
+  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 256, .flush = FlushInstruction::Cache}));
 }
 
 TEST_F(CustomOperationTest, ParseCustomWrite128Offset) {
   CustomOp op = CustomOp::from_string("w_128_nocache_64");
-  EXPECT_EQ(op,
-            (CustomOp{.type = Operation::Write, .size = 128, .persist = PersistInstruction::NoCache, .offset = 64}));
+  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 128, .flush = FlushInstruction::NoCache, .offset = 64}));
 }
 
 TEST_F(CustomOperationTest, ParseCustomWrite128NegativeOffset) {
   CustomOp op = CustomOp::from_string("w_128_cache_-64");
-  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 128, .persist = PersistInstruction::Cache, .offset = -64}));
+  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 128, .flush = FlushInstruction::Cache, .offset = -64}));
 }
 
 TEST_F(CustomOperationTest, ParseBadWriteOffset) {
@@ -95,9 +89,11 @@ TEST_F(CustomOperationTest, ParseBadWriteTooShort) { EXPECT_THROW(CustomOp::from
 
 TEST_F(CustomOperationTest, ParseBadWriteMissingSize) { EXPECT_THROW(CustomOp::from_string("w_"), MemaException); }
 
-TEST_F(CustomOperationTest, ParseBadWriteMissingPersist) { EXPECT_THROW(CustomOp::from_string("w_64"), MemaException); }
+TEST_F(CustomOperationTest, ParseBadWriteMissingFlushInstruction) {
+  EXPECT_THROW(CustomOp::from_string("w_64"), MemaException);
+}
 
-TEST_F(CustomOperationTest, ParseBadWriteMissingPersistWithUnderscore) {
+TEST_F(CustomOperationTest, ParseBadWriteMissingFlushInstructionWithUnderscore) {
   EXPECT_THROW(CustomOp::from_string("w_64_"), MemaException);
 }
 
@@ -106,32 +102,32 @@ TEST_F(CustomOperationTest, ParseBadWriteBadUnderscore) { EXPECT_THROW(CustomOp:
 TEST_F(CustomOperationTest, ParseBadWriteWhitespace) { EXPECT_THROW(CustomOp::from_string("w p"), MemaException); }
 
 TEST_F(CustomOperationTest, CustomWrite64NoCacheString) {
-  CustomOp op{.type = Operation::Write, .size = 64, .persist = PersistInstruction::NoCache};
+  CustomOp op{.type = Operation::Write, .size = 64, .flush = FlushInstruction::NoCache};
   EXPECT_EQ(op.to_string(), "w_64_nocache");
 }
 
 TEST_F(CustomOperationTest, CustomWrite128CacheString) {
-  CustomOp op{.type = Operation::Write, .size = 128, .persist = PersistInstruction::Cache};
+  CustomOp op{.type = Operation::Write, .size = 128, .flush = FlushInstruction::Cache};
   EXPECT_EQ(op.to_string(), "w_128_cache");
 }
 
-TEST_F(CustomOperationTest, CustomWrite256CacheInvString) {
-  CustomOp op{.type = Operation::Write, .size = 256, .persist = PersistInstruction::CacheInvalidate};
-  EXPECT_EQ(op.to_string(), "w_256_cacheinv");
+TEST_F(CustomOperationTest, CustomWrite256CacheString) {
+  CustomOp op{.type = Operation::Write, .size = 256, .flush = FlushInstruction::Cache};
+  EXPECT_EQ(op.to_string(), "w_256_cache");
 }
 
 TEST_F(CustomOperationTest, CustomWrite4096NoneString) {
-  CustomOp op{.type = Operation::Write, .size = 4096, .persist = PersistInstruction::None};
+  CustomOp op{.type = Operation::Write, .size = 4096, .flush = FlushInstruction::None};
   EXPECT_EQ(op.to_string(), "w_4096_none");
 }
 
 TEST_F(CustomOperationTest, CustomWrite128OffsetString) {
-  CustomOp op{.type = Operation::Write, .size = 128, .persist = PersistInstruction::Cache, .offset = 128};
+  CustomOp op{.type = Operation::Write, .size = 128, .flush = FlushInstruction::Cache, .offset = 128};
   EXPECT_EQ(op.to_string(), "w_128_cache_128");
 }
 
 TEST_F(CustomOperationTest, CustomWrite128NegativeOffsetString) {
-  CustomOp op{.type = Operation::Write, .size = 128, .persist = PersistInstruction::Cache, .offset = -64};
+  CustomOp op{.type = Operation::Write, .size = 128, .flush = FlushInstruction::Cache, .offset = -64};
   EXPECT_EQ(op.to_string(), "w_128_cache_-64");
 }
 

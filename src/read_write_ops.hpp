@@ -27,16 +27,6 @@ inline void flush_clwb(char* addr, const size_t len) {
 }
 #endif
 
-/** flush the cache line using clflushopt. */
-#ifdef HAS_CLFLUSHOPT
-inline void flush_clflushopt(char* addr, const size_t len) {
-  const auto* end_addr = addr + len;
-  for (auto* current_cl = addr; current_cl < end_addr; current_cl += CACHE_LINE_SIZE) {
-    _mm_clflushopt(current_cl);
-  }
-}
-#endif
-
 #ifdef HAS_ANY_AVX
 /**
  * #####################################################
@@ -74,46 +64,6 @@ inline void simd_write(const std::vector<char*>& addresses, const size_t access_
     simd_write(addr, access_size, flush, barrier);
   }
 }
-
-/**
- * #####################################################
- * STORE + CLFLUSH OPERATIONS
- * #####################################################
- */
-#ifdef HAS_CLFLUSHOPT
-inline void simd_write_clflushopt_512(char* addr) { simd_write_512(addr, flush_clflushopt, sfence_barrier); }
-
-inline void simd_write_clflushopt_256(char* addr) { simd_write_256(addr, flush_clflushopt, sfence_barrier); }
-
-inline void simd_write_clflushopt_128(char* addr) { simd_write_128(addr, flush_clflushopt, sfence_barrier); }
-
-inline void simd_write_clflushopt_64(char* addr) { simd_write_64(addr, flush_clflushopt, sfence_barrier); }
-
-inline void simd_write_clflushopt(char* addr, const size_t access_size) {
-  simd_write(addr, access_size, flush_clflushopt, sfence_barrier);
-}
-
-inline void simd_write_clflushopt_512(const std::vector<char*>& addresses) {
-  simd_write_512(addresses, flush_clflushopt, sfence_barrier);
-}
-
-inline void simd_write_clflushopt_256(const std::vector<char*>& addresses) {
-  simd_write_256(addresses, flush_clflushopt, sfence_barrier);
-}
-
-inline void simd_write_clflushopt_128(const std::vector<char*>& addresses) {
-  simd_write_128(addresses, flush_clflushopt, sfence_barrier);
-}
-
-inline void simd_write_clflushopt_64(const std::vector<char*>& addresses) {
-  simd_write_64(addresses, flush_clflushopt, sfence_barrier);
-}
-
-inline void simd_write_clflushopt(const std::vector<char*>& addresses, const size_t access_size) {
-  simd_write(addresses, access_size, flush_clflushopt, sfence_barrier);
-}
-
-#endif  // clflush
 
 /**
  * #####################################################

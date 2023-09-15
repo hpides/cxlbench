@@ -28,7 +28,7 @@ KEY_TAG = "tag"
 KEY_THREAD_COUNT = "number_threads"
 KEY_THREADS = "threads"
 KEY_THREADS_LEVELED = "benchmarks.results.threads"
-KEY_WRITE_INSTRUCTION = "persist_instruction"
+KEY_WRITE_INSTRUCTION = "flush_instruction"
 WRITE_INSTR_NONE = "none"
 
 PLOT_FILE_PREFIX = "plot"

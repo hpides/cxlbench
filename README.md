@@ -2,7 +2,7 @@
 
 # MemA-Bench
 
-A benchmarking suite and toolset to evaluate the performance of persistent memory access.
+A benchmarking suite and toolset to evaluate the performance of memory access.
 
 ## Quick Start
 MemA-Bench has a predefined set of workloads to benchmark and requires very little configuration to run directly on
@@ -86,9 +86,9 @@ Operation operation = Operation::Read;
 /** Mode of execution, i.e., sequential, random, or custom. See `Mode` for all options. */
 Mode exec_mode = Mode::Sequential;
 
-/** Persist instruction to use after write operations. Only works with `Operation::Write`. See
- * `PersistInstruction` for more details on available options. */
-PersistInstruction persist_instruction = PersistInstruction::NoCache;
+/** Flush instruction to use after write operations. Only works with `Operation::Write`. See
+ * `FlushInstruction` for more details on available options. */
+FlushInstruction flush_instruction = FlushInstruction::NoCache;
 
 /** Number of disjoint memory regions to partition the `memory_region_size` into. Must be 0 or a divisor of
  * `number_threads` i.e., one or more threads map to one partition. When set to 0, it is equal to the number of
@@ -134,11 +134,11 @@ with:
  'r' for read,
  `<size>` is the size of the access (must be power of 2).
 
-For writes: `w_<size>_<persist_instruction>(_<offset>)`
+For writes: `w_<size>_<flush_instruction>(_<offset>)`
 with:
  'w' for write,
  `<size>` is the size of the access (must be power of 2),
- `<persist_instruction>` is the instruction to use after the write (none, cache, cacheinv, noache),
+ `<flush_instruction>` is the instruction to use after the write (none, cache, noache),
  (optional) `<offset>` is the offset to the previously accessed address (can be negative, default is 0)
 
 ## Used AVX-512 Intrinsics

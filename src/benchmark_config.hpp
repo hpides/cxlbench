@@ -17,7 +17,7 @@ enum class Mode : uint8_t { Sequential, Sequential_Desc, Random, Custom };
 
 enum class RandomDistribution : uint8_t { Uniform, Zipf };
 
-enum class PersistInstruction : uint8_t { Cache, CacheInvalidate, NoCache, None };
+enum class FlushInstruction : uint8_t { Cache, NoCache, None };
 
 enum class Operation : uint8_t { Read, Write };
 
@@ -34,19 +34,19 @@ static constexpr size_t SECONDS_IN_NANOSECONDS = 1e9;
  * 'r' for read,
  * <size> is the size of the access (must be power of 2).
  *
- * For writes: w_<size>_<persist_instruction>(_<offset>)
+ * For writes: w_<size>_<flush_instruction>(_<offset>)
  *
  * with:
  * 'w' for write,
  * <size> is the size of the access (must be power of 2),
- * <persist_instruction> is the instruction to use after the write (none, cache, cacheinv, noache),
+ * <flush_instruction> is the instruction to use after the write (none, cache, noache),
  * (optional) <offset> is the offset to the previously accessed address (can be negative, default is 0)
  *
  * */
 struct CustomOp {
   Operation type;
   uint64_t size;
-  PersistInstruction persist = PersistInstruction::None;
+  FlushInstruction flush = FlushInstruction::None;
   // This can be signed, e.g., to represent the case when the previous cache line should be written to.
   int64_t offset = 0;
 
@@ -88,9 +88,9 @@ struct BenchmarkConfig {
   /** Mode of execution, i.e., sequential, random, or custom. See `Mode` for all options. */
   Mode exec_mode = Mode::Sequential;
 
-  /** Persist instruction to use after write operations. Only works with `Operation::Write`. See
-   * `PersistInstruction` for more details on available options. */
-  PersistInstruction persist_instruction = PersistInstruction::NoCache;
+  /** Flush instruction to use after write operations. Only works with `Operation::Write`. See
+   * `FlushInstruction` for more details on available options. */
+  FlushInstruction flush_instruction = FlushInstruction::NoCache;
 
   /** Number of disjoint memory regions to partition the `memory_region_size` into. Must be 0 or a divisor of
    * `number_threads` i.e., one or more threads map to one partition. When set to 0, it is equal to the number of
@@ -141,7 +141,7 @@ struct ConfigEnums {
   static const std::unordered_map<std::string, bool> str_to_mem_type;
   static const std::unordered_map<std::string, Mode> str_to_mode;
   static const std::unordered_map<std::string, Operation> str_to_operation;
-  static const std::unordered_map<std::string, PersistInstruction> str_to_persist_instruction;
+  static const std::unordered_map<std::string, FlushInstruction> str_to_flush_instruction;
   static const std::unordered_map<std::string, RandomDistribution> str_to_random_distribution;
 
   // Map to convert a K/M/G suffix to the correct kibi, mebi-, gibibyte value.

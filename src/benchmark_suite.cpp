@@ -57,10 +57,9 @@ nlohmann::json benchmark_results_to_json(const mema::Benchmark& bm, const nlohma
     mema::utils::crash_exit();
   }
   // 60 characters is large enough for a git commit, even if the repository is dirty.
-  constexpr auto buffer_size = uint32_t{60};
-  char buffer[buffer_size];
+  char buffer[60];
   auto git_hash = std::string{};
-  if (fgets(buffer, buffer_size, pipe.get()) == NULL) {
+  if (fgets(buffer, 60, pipe.get()) == NULL) {
     spdlog::critical("Failed to get git hash.");
     mema::utils::crash_exit();
   }

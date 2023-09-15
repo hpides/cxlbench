@@ -84,19 +84,6 @@ else ()
     message(STATUS "System does not support CLWB.")
 endif ()
 
-##################### CLFLUSHOPT ####################
-set(clflush_prog "#include <immintrin.h>\n int main() { _mm_clflushopt((void*)0); return 0; }")
-set(CMAKE_REQUIRED_FLAGS "${BASE_CMAKE_REQUIRED_FLAGS} -mclflushopt")
-check_cxx_source_compiles("${clflush_prog}" HAS_CLFLUSHOPT)
-if (${HAS_CLFLUSHOPT})
-    # Set HAS_CLFLUSHOPT so we can use it to enable all explicit CLFLUSHOPT instructions.
-    add_definitions("-DHAS_CLFLUSHOPT")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mclflushopt")
-    message(STATUS "System supports CLFLUSHOPT.")
-else ()
-    message(STATUS "System does not support CLFLUSHOPT.")
-endif ()
-
 ################### NUMA ####################
 set(NUMA_INCLUDE_PATH "" CACHE STRING "Path to custom NUMA include files")
 set(NUMA_LIBRARY_PATH "" CACHE STRING "Path to custom NUMA library")

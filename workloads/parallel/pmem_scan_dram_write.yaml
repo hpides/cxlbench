@@ -23,5 +23,5 @@ pmem_scan_dram_aggregation:
         memory_range: 1G
         dram_memory_range: 10G
         operation: write
-        persist_instruction: none
+        flush_instruction: none
         run_time: 10

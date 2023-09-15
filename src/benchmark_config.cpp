@@ -141,8 +141,8 @@ BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
     found_count += get_enum_if_present(node, "operation", ConfigEnums::str_to_operation, &bm_config.operation);
     found_count += get_enum_if_present(node, "random_distribution", ConfigEnums::str_to_random_distribution,
                                        &bm_config.random_distribution);
-    found_count += get_enum_if_present(node, "persist_instruction", ConfigEnums::str_to_persist_instruction,
-                                       &bm_config.persist_instruction);
+    found_count += get_enum_if_present(node, "flush_instruction", ConfigEnums::str_to_flush_instruction,
+                                       &bm_config.flush_instruction);
     found_count += get_uints_if_present(node, "numa_memory_nodes", bm_config.numa_memory_nodes);
     found_count += get_uints_if_present(node, "numa_task_nodes", bm_config.numa_task_nodes);
 
@@ -278,8 +278,8 @@ std::string BenchmarkConfig::to_string(const std::string sep) const {
     stream << sep << "operation: " << utils::get_enum_as_string(ConfigEnums::str_to_operation, operation);
 
     if (operation == Operation::Write) {
-      stream << sep << "persist instruction: "
-             << utils::get_enum_as_string(ConfigEnums::str_to_persist_instruction, persist_instruction);
+      stream << sep << "flush instruction: "
+             << utils::get_enum_as_string(ConfigEnums::str_to_flush_instruction, flush_instruction);
     }
   }
 
@@ -321,8 +321,7 @@ nlohmann::json BenchmarkConfig::as_json() const {
     config["operation"] = utils::get_enum_as_string(ConfigEnums::str_to_operation, operation);
 
     if (operation == Operation::Write) {
-      config["persist_instruction"] =
-          utils::get_enum_as_string(ConfigEnums::str_to_persist_instruction, persist_instruction);
+      config["flush_instruction"] = utils::get_enum_as_string(ConfigEnums::str_to_flush_instruction, flush_instruction);
     }
   }
 
@@ -404,18 +403,18 @@ CustomOp CustomOp::from_string(const std::string& str) {
   }
 
   if (op_str_part_count < 3) {
-    spdlog::error("Custom write op must have '_<persist_instruction>' after size, e.g., w64_cache. Got: '{}'", str);
+    spdlog::error("Custom write op must have '_<flush_instruction>' after size, e.g., w64_cache. Got: '{}'", str);
     utils::crash_exit();
   }
 
-  const std::string& persist_str = op_str_parts[2];
-  auto persist_it = ConfigEnums::str_to_persist_instruction.find(persist_str);
-  if (persist_it == ConfigEnums::str_to_persist_instruction.end()) {
-    spdlog::error("Could not parse the persist instruction in write op: '{}'", persist_str);
+  const std::string& flush_str = op_str_parts[2];
+  auto flush_it = ConfigEnums::str_to_flush_instruction.find(flush_str);
+  if (flush_it == ConfigEnums::str_to_flush_instruction.end()) {
+    spdlog::error("Could not parse the flush instruction in write op: '{}'", flush_str);
     utils::crash_exit();
   }
 
-  custom_op.persist = persist_it->second;
+  custom_op.flush = flush_it->second;
 
   const bool has_offset_information = op_str_part_count == 4;
   if (has_offset_information) {
@@ -464,7 +463,7 @@ std::string CustomOp::to_string() const {
   out << utils::get_enum_as_string(ConfigEnums::str_to_operation, type, true);
   out << '_' << size;
   if (type == Operation::Write) {
-    out << '_' << utils::get_enum_as_string(ConfigEnums::str_to_persist_instruction, persist);
+    out << '_' << utils::get_enum_as_string(ConfigEnums::str_to_flush_instruction, flush);
     if (offset != 0) {
       out << '_' << offset;
     }
@@ -497,7 +496,7 @@ bool CustomOp::validate(const std::vector<CustomOp>& operations) {
 }
 
 bool CustomOp::operator==(const CustomOp& rhs) const {
-  return type == rhs.type && size == rhs.size && persist == rhs.persist && offset == rhs.offset;
+  return type == rhs.type && size == rhs.size && flush == rhs.flush && offset == rhs.offset;
 }
 bool CustomOp::operator!=(const CustomOp& rhs) const { return !(rhs == *this); }
 std::ostream& operator<<(std::ostream& os, const CustomOp& op) { return os << op.to_string(); }
@@ -510,11 +509,8 @@ const std::unordered_map<std::string, Mode> ConfigEnums::str_to_mode{{"sequentia
 const std::unordered_map<std::string, Operation> ConfigEnums::str_to_operation{
     {"read", Operation::Read}, {"write", Operation::Write}, {"r", Operation::Read}, {"w", Operation::Write}};
 
-const std::unordered_map<std::string, PersistInstruction> ConfigEnums::str_to_persist_instruction{
-    {"nocache", PersistInstruction::NoCache},
-    {"cache", PersistInstruction::Cache},
-    {"cacheinv", PersistInstruction::CacheInvalidate},
-    {"none", PersistInstruction::None}};
+const std::unordered_map<std::string, FlushInstruction> ConfigEnums::str_to_flush_instruction{
+    {"nocache", FlushInstruction::NoCache}, {"cache", FlushInstruction::Cache}, {"none", FlushInstruction::None}};
 
 const std::unordered_map<std::string, RandomDistribution> ConfigEnums::str_to_random_distribution{
     {"uniform", RandomDistribution::Uniform}, {"zipf", RandomDistribution::Zipf}};

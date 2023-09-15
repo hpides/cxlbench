@@ -297,7 +297,7 @@ void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkCon
       }
     }
 
-    // We can always pass the persist_instruction as is. It is ignored for read access.
+    // We can always pass the flush_instruction as is. It is ignored for read access.
     Operation op = is_read_op ? Operation::Read : Operation::Write;
     const size_t insert_pos = (chunk_idx * config.number_threads) + thread_config->thread_idx;
 
@@ -305,7 +305,7 @@ void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkCon
     current_op.op_addresses_ = std::move(op_addresses);
     current_op.access_size_ = config.access_size;
     current_op.op_type_ = op;
-    current_op.persist_instruction_ = config.persist_instruction;
+    current_op.flush_instruction_ = config.flush_instruction;
   }
 
   const auto generation_end_ts = std::chrono::steady_clock::now();

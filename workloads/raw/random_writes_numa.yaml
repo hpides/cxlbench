@@ -4,7 +4,7 @@ random_writes:
     number_partitions: [1]
     numa_memory_nodes: [[0],[1],[2]]
     access_size: [ 64, 128, 256, 512 ]
-    persist_instruction: [ cache, nocache, none ]
+    flush_instruction: [ cache, nocache, none ]
 
   args:
     exec_mode: random

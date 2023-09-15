@@ -104,7 +104,7 @@ class ComparisonPlotter:
             "number_partitions",
             "operation",
             "threads",
-            "persist_instruction",
+            "flush_instruction",
             "prefault_memory",
             "random_distribution",
         ]

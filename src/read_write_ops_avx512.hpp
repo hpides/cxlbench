@@ -18,7 +18,7 @@ namespace mema::rw_ops {
 inline void simd_write_data_range(char* from, const char* to) {
   const auto* data = reinterpret_cast<const __m512i*>(WRITE_DATA);
   for (char* mem_addr = from; mem_addr < to; mem_addr += CACHE_LINE_SIZE) {
-    // Write 512 Bit (64 Byte) and persist it.
+    // Write 512 Bit (64 Byte) and flush it.
     WRITE_SIMD_512(mem_addr, 0, *data);
   }
 }
