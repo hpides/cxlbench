@@ -64,6 +64,8 @@ nlohmann::json benchmark_results_to_json(const mema::Benchmark& bm, const nlohma
     mema::utils::crash_exit();
   }
   git_hash += buffer;
+  // Remove newline character.
+  git_hash.pop_back();
 
   static std::stringstream compiler;
 #if defined(__clang__)
