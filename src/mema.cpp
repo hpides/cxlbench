@@ -20,6 +20,9 @@ int main(int argc, char** argv) {
 
   CLI::App app{"MemA-Bench: Benchmark your Memory"};
 
+  // Delete symlink to last result file if it exists
+  std::remove(utils::LAST_RESULTS_FILENAME);
+
 #if defined HAS_AVX_2
   spdlog::info("Using AVX-2 instructions.");
 #elif defined HAS_AVX_512

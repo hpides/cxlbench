@@ -27,6 +27,8 @@ static constexpr auto SHORT_STRING_SIZE = size_t{1};
 
 static int MAP_FLAGS = MAP_PRIVATE | MAP_ANONYMOUS;
 
+static constexpr auto LAST_RESULTS_FILENAME = "last_results.json";
+
 // Maps an anonymous memory region. No data is mapped if `expected_length` is 0.
 char* map(const size_t expected_length, const bool use_huge_pages, const NumaNodeIDs& numa_memory_nodes);
 

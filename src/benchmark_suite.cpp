@@ -158,6 +158,7 @@ void BenchmarkSuite::run_benchmarks(const MemaOptions& options) {
   if (!benchmarks.empty()) {
     nlohmann::json bm_results = benchmark_results_to_json(*previous_bm, matrix_bm_results);
     utils::write_benchmark_results(result_file, bm_results);
+    std::filesystem::create_symlink(result_file, utils::LAST_RESULTS_FILENAME);
     previous_bm->tear_down(/*force=*/true);
   }
 
