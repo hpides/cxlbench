@@ -23,8 +23,8 @@ set(
         read_write_ops_types.hpp
         read_write_ops.hpp
         utils.cpp
-        utils.hpp)
-
+        utils.hpp
+)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPILE_FLAGS}")
 

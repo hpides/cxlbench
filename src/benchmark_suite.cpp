@@ -12,16 +12,20 @@
 namespace {
 
 nlohmann::json single_results_to_json(const mema::SingleBenchmark& bm, const nlohmann::json& bm_results,
-                                      const std::string& simd_instruction_set) {
+                                      const std::string& simd_instruction_set, const std::string& git_hash,
+                                      const std::string& compiler) {
   return {{"bm_name", bm.benchmark_name()},
           {"bm_type", bm.benchmark_type_as_str()},
           {"matrix_args", bm.get_benchmark_configs()[0].matrix_args},
           {"benchmarks", bm_results},
-          {"simd_instruction_set", simd_instruction_set}};
+          {"simd_instruction_set", simd_instruction_set},
+          {"git-hash", git_hash},
+          {"compiler", compiler}};
 }
 
 nlohmann::json parallel_results_to_json(const mema::ParallelBenchmark& bm, const nlohmann::json& bm_results,
-                                        const std::string& simd_instruction_set) {
+                                        const std::string& simd_instruction_set, const std::string& git_hash,
+                                        const std::string& compiler) {
   return {{"bm_name", bm.benchmark_name()},
           {"sub_bm_names", {bm.get_benchmark_name_one(), bm.get_benchmark_name_two()}},
           {"bm_type", bm.benchmark_type_as_str()},
@@ -29,7 +33,9 @@ nlohmann::json parallel_results_to_json(const mema::ParallelBenchmark& bm, const
            {{bm.get_benchmark_name_one(), bm.get_benchmark_configs()[0].matrix_args},
             {bm.get_benchmark_name_two(), bm.get_benchmark_configs()[1].matrix_args}}},
           {"benchmarks", bm_results},
-          {"simd_instruction_set", simd_instruction_set}};
+          {"simd_instruction_set", simd_instruction_set},
+          {"git-hash", git_hash},
+          {"compiler", compiler}};
 }
 
 nlohmann::json benchmark_results_to_json(const mema::Benchmark& bm, const nlohmann::json& bm_results) {
@@ -42,15 +48,43 @@ nlohmann::json benchmark_results_to_json(const mema::Benchmark& bm, const nlohma
   simd_instruction_set = "none";
 #endif
 
+  // The following call of git describe will never find a tag because of --match="no-match^". Since --always is set, it
+  // will return the hash of the current commit instead.
+  const auto pipe =
+      std::shared_ptr<FILE>(popen("git describe --match=\"no-match^\" --always --abbrev=40 --dirty", "r"), pclose);
+  if (!pipe) {
+    spdlog::critical("Failed to get git hash.");
+    mema::utils::crash_exit();
+  }
+  // 60 characters is large enough for a git commit, even if the repository is dirty.
+  constexpr auto buffer_size = uint32_t{60};
+  char buffer[buffer_size];
+  auto git_hash = std::string{};
+  if (fgets(buffer, buffer_size, pipe.get()) == NULL) {
+    spdlog::critical("Failed to get git hash.");
+    mema::utils::crash_exit();
+  }
+  git_hash += buffer;
+
+  static std::stringstream compiler;
+#if defined(__clang__)
+  compiler << "clang " << __clang_major__ << "." << __clang_minor__ << "." << __clang_patchlevel__;
+#elif defined(__GNUC__)
+  compiler << "gcc " << __GNUC__ << "." << __GNUC_MINOR__;
+#else
+  compiler << "unknown";
+#endif
+
   if (bm.get_benchmark_type() == mema::BenchmarkType::Single) {
-    return single_results_to_json(dynamic_cast<const mema::SingleBenchmark&>(bm), bm_results, simd_instruction_set);
+    return single_results_to_json(dynamic_cast<const mema::SingleBenchmark&>(bm), bm_results, simd_instruction_set,
+                                  git_hash, compiler.str());
   } else if (bm.get_benchmark_type() == mema::BenchmarkType::Parallel) {
-    return parallel_results_to_json(dynamic_cast<const mema::ParallelBenchmark&>(bm), bm_results, simd_instruction_set);
+    return parallel_results_to_json(dynamic_cast<const mema::ParallelBenchmark&>(bm), bm_results, simd_instruction_set,
+                                    git_hash, compiler.str());
   } else {
-    return {{"bm_name", bm.benchmark_name()},
-            {"bm_type", bm.benchmark_type_as_str()},
-            {"benchmarks", bm_results},
-            {"simd_instruction_set", simd_instruction_set}};
+    return {{"bm_name", bm.benchmark_name()}, {"bm_type", bm.benchmark_type_as_str()},
+            {"benchmarks", bm_results},       {"simd_instruction_set", simd_instruction_set},
+            {"git-hash", git_hash},           {"compiler", compiler.str()}};
   }
 }
 

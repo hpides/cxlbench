@@ -48,6 +48,7 @@ int main(int argc, char** argv) {
 
   try {
     app.parse(argc, argv);
+    spdlog::debug("Parsed command line arguments.");
   } catch (const CLI::ParseError& e) {
     app.failure_message(CLI::FailureMessage::help);
     return app.exit(e);
