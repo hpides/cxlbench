@@ -8,7 +8,8 @@ import matplotlib.ticker as ticker
 import sys
 
 KEY_ACCESS_SIZE = "access_size"
-KEY_BANDWIDTH = "bandwidth"
+KEY_BANDWIDTH_GiB = "bandwidth"
+KEY_BANDWIDTH_GB = "bandwidth_gb"
 KEY_BM_GROUP = "bm_name"
 KEY_BM_TYPE = "bm_type"
 KEY_CHUNK_SIZE = "min_io_chunk_size"
@@ -155,6 +156,7 @@ class PlotGenerator:
         if KEY_WRITE_INSTRUCTION not in df.columns:
             df[KEY_WRITE_INSTRUCTION] = WRITE_INSTR_NONE
         df[KEY_WRITE_INSTRUCTION] = df[KEY_WRITE_INSTRUCTION].fillna(WRITE_INSTR_NONE)
+        df[KEY_BANDWIDTH_GB] = df[KEY_BANDWIDTH_GiB] * (1024**3 / 1e9)
 
         df.to_csv("{}/flattened_df.csv".format(self.output_dir))
 
@@ -247,7 +249,7 @@ class PlotGenerator:
                 self.create_barplot(
                     plot_df,
                     KEY_THREAD_COUNT,
-                    KEY_BANDWIDTH,
+                    KEY_BANDWIDTH_GB,
                     "Number of Threads",
                     "Throughput in GB/s",
                     KEY_NUMA_MEMORY_NODES,
@@ -266,7 +268,7 @@ class PlotGenerator:
                 self.create_barplot(
                     plot_df,
                     KEY_ACCESS_SIZE,
-                    KEY_BANDWIDTH,
+                    KEY_BANDWIDTH_GB,
                     "Access Size in Byte",
                     "Throughput in GB/s",
                     KEY_NUMA_MEMORY_NODES,
@@ -319,7 +321,7 @@ class PlotGenerator:
         palette = sns.color_palette("colorblind", 3).as_hex()
         x = KEY_ACCESS_SIZE
         x_label = "Access size (Byte)"
-        y = KEY_BANDWIDTH
+        y = KEY_BANDWIDTH_GB
         y_label = "Throughput (GB/s)"
         hue = KEY_NUMA_MEMORY_NODES
         legend_title = None
