@@ -1,3 +1,6 @@
+
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
 #include <map>
@@ -10,14 +13,9 @@ using namespace mema;  // NOLINT - [build/namespaces] Linter doesn't like using-
 
 constexpr auto DEFAULT_WORKLOAD_PATH = "workloads";
 constexpr auto DEFAULT_RESULT_PATH = "results";
+constexpr auto LOG_PATH = "logs";
 
 int main(int argc, char** argv) {
-#ifdef NDEBUG
-  spdlog::set_level(spdlog::level::info);
-#else
-  spdlog::set_level(spdlog::level::debug);
-#endif
-
   CLI::App app{"MemA-Bench: Benchmark your Memory"};
 
   // Delete symlink to last result file if it exists
@@ -53,6 +51,31 @@ int main(int argc, char** argv) {
     app.failure_message(CLI::FailureMessage::help);
     return app.exit(e);
   }
+
+  // Set up logging
+
+  // stdout logger
+  auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+  // Logs with level >= trace are shown in this sink
+  console_sink->set_level(spdlog::level::trace);
+
+  // file logger
+  auto file_path = std::filesystem::path(LOG_PATH) / (utils::get_time_string() + ".log");
+  auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(file_path, false);
+  // Logs with level >= trace are shown in this sink
+  file_sink->set_level(spdlog::level::trace);
+
+  auto combined_logger =
+      std::make_shared<spdlog::logger>("multi_sink", spdlog::sinks_init_list({console_sink, file_sink}));
+  spdlog::set_default_logger(combined_logger);
+  spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v");
+  spdlog::flush_on(spdlog::level::trace);
+
+#ifdef NDEBUG
+  spdlog::set_level(spdlog::level::info);
+#else
+  spdlog::set_level(spdlog::level::debug);
+#endif
 
   if (be_verbose) {
     spdlog::set_level(spdlog::level::debug);
