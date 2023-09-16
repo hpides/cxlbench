@@ -43,3 +43,12 @@ set_target_properties(mema-bench PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BI
 # TODO(MW) suppress shadow warnings.
 get_target_property(yaml-cpp_include_dirs yaml-cpp INTERFACE_INCLUDE_DIRECTORIES)
 target_include_directories(yaml-cpp SYSTEM PUBLIC ${yaml-cpp_include_dirs})
+
+# Microbenchmark targets
+add_executable(bench-cacheline microexperiments/bench_cacheline.cpp)
+target_link_libraries(bench-cacheline benchmark::benchmark ${NUMA_LIBRARIES})
+set_target_properties(bench-cacheline PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+
+add_executable(larger-than-node-allocations microexperiments/larger_than_node_allocation.cpp)
+target_link_libraries(larger-than-node-allocations benchmark::benchmark ${NUMA_LIBRARIES})
+set_target_properties(larger-than-node-allocations PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
