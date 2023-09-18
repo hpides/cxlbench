@@ -1,15 +1,15 @@
 # Represents the database workload logging (small sequential writes)
 sequential_writes:
   matrix:
-    number_threads: [ 1, 2, 4, 8 ]
+    number_threads: [ 16 ]
     number_partitions: [1]
-    numa_memory_nodes: [[0],[1],[2]]
-    access_size: [ 64, 128, 256, 512 ]
+    numa_memory_nodes: [[0]]
+    access_size: [ 64, 512, 4006 ]
     flush_instruction: [ cache, nocache, none ]
 
   args:
     exec_mode: sequential
-    memory_region_size: 8G
+    memory_region_size: 7G
     numa_task_nodes: [ 0 ]
     operation: write
-    run_time: 10
+    run_time: 2

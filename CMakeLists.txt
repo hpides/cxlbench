@@ -7,6 +7,7 @@ include(CheckCXXSourceCompiles)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -pthread")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g3 -gdwarf-4 -fno-omit-frame-pointer -march=native -DNDEBUG" CACHE STRING "" FORCE)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
@@ -160,9 +161,12 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googlebenchmark)
 
 ##################### MemA ####################
-add_custom_target(copy_configs
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/workloads/raw ${CMAKE_CURRENT_BINARY_DIR}/workloads/raw)
-
+add_custom_target(copy_directory
+        COMMAND ${CMAKE_COMMAND}
+        -Dsource_dir=${CMAKE_SOURCE_DIR}/workloads
+        -Ddestination_dir=${CMAKE_CURRENT_BINARY_DIR}/workloads
+        -P ${CMAKE_SOURCE_DIR}/copy_directory.cmake
+)
 include_directories(src)
 add_subdirectory(src)
 

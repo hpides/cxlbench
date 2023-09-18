@@ -15,6 +15,11 @@
 #include "test_utils.hpp"
 #include "utils.hpp"
 
+#define READ_SIMD_256(mem_addr, offset) _mm256_load_si256(reinterpret_cast<const __m256i*>((mem_addr) + ((offset)*32)))
+
+#define READ_SIMD_512(mem_addr, offset) \
+  _mm512_load_si512(reinterpret_cast<const void*>((mem_addr) + ((offset)*mema::rw_ops::CACHE_LINE_SIZE)))
+
 namespace {
 constexpr uint32_t MIB_IN_BYTES = 1024 * 1024;
 }
@@ -121,7 +126,7 @@ TEST_F(NumaReadWriteTest, AVX512WriteRead) {
       // write data to memory region via AVX512 intrinsics
       rw_ops::simd_write_none_64(addr);
       // read data from memory region via AVX512 intrinsics into SIMD registers
-      const __m512i read_result = rw_ops::simd_read_64(addr);
+      const __m512i read_result = READ_SIMD_512(addr, 0);
       // store data from SIMD registers into local char array
       char read_cache_line[rw_ops::CACHE_LINE_SIZE] __attribute__((aligned(64))) = {};
       _mm512_store_si512(read_cache_line, read_result);

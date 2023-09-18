@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <utility>
 
 namespace mema::rw_ops {
 
@@ -21,5 +22,18 @@ inline void sfence_barrier() { _mm_sfence(); }
 
 /** no memory order is guaranteed. */
 inline void no_barrier() {}
+
+using CharVec64 __attribute__((vector_size(64))) = char;
+
+template <typename Fn, size_t... indices>
+void unroll_impl(Fn fn, std::index_sequence<indices...>) {
+  // Call fn for all indices
+  (void(fn(indices)), ...);
+}
+
+template <int N, typename Fn>
+void unroll(Fn fn) {
+  unroll_impl(fn, std::make_index_sequence<N>());
+}
 
 }  // namespace mema::rw_ops

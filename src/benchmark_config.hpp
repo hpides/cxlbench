@@ -124,6 +124,7 @@ struct BenchmarkConfig {
 
   /** Represents the minimum size of an atomic work package. A chunk contains chunk_size / access_size number of
    * operations. Assuming the lowest bandwidth of 1 GiB/s operations per thread, 64 MiB is a ~60 ms execution unit. */
+  // Default: 67108864
   uint64_t min_io_chunk_size = 64 * MEBIBYTES_IN_BYTES;
 
   std::vector<std::string> matrix_args{};
