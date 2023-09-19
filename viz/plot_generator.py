@@ -140,7 +140,13 @@ class PlotGenerator:
 
         df = df[(df[KEY_BM_GROUP].isin(selected_bm_groups)) & (df[KEY_BM_TYPE] == "single")]
         df = ju.flatten_nested_json_df(
-            df, [KEY_MATRIX_ARGS, KEY_THREADS_LEVELED, KEY_EXPLODED_NUMA_MEMORY_NODES, KEY_EXPLODED_NUMA_TASK_NODES]
+            df,
+            [
+                KEY_MATRIX_ARGS,
+                KEY_THREADS_LEVELED,
+                KEY_EXPLODED_NUMA_MEMORY_NODES,
+                KEY_EXPLODED_NUMA_TASK_NODES,
+            ],
         )
 
         # If only latency benchnarks have been performed, the dataframe does note have a KEY_ACCESS_SIZE column so it
@@ -234,7 +240,11 @@ class PlotGenerator:
         plot_title_template = "{} [Flush: {}] {}, <custom>".format(tag, write_type, bm_group.replace("_", " ").title())
         legend_title = "Memory Node"
         pdf_filename_template = "{prefix}_{tag}_part_{partition_count}_{write_type}_{bm_group}_<custom>.pdf".format(
-            prefix=PLOT_FILE_PREFIX, partition_count=partition_count, bm_group=bm_group, write_type=write_type, tag=tag
+            prefix=PLOT_FILE_PREFIX,
+            partition_count=partition_count,
+            bm_group=bm_group,
+            write_type=write_type,
+            tag=tag,
         )
         df.to_csv("{}/{}".format(self.output_dir, pdf_filename_template.replace("_<custom>.pdf", ".csv")))
         if bm_group in bandwidth_plot_group:
@@ -372,7 +382,9 @@ class PlotGenerator:
         plt.grid(axis="y", color="k", linestyle=":")
         fig = barplot.get_figure()
         fig.savefig(
-            "{}/{}_paper_{}".format(self.output_dir, PLOT_FILE_PREFIX, filename), bbox_inches="tight", pad_inches=0.015
+            "{}/{}_paper_{}".format(self.output_dir, PLOT_FILE_PREFIX, filename),
+            bbox_inches="tight",
+            pad_inches=0.015,
         )
         plt.close(fig)
 
@@ -385,7 +397,15 @@ class PlotGenerator:
         fig_size_x = (x_count + hue_count) * 1.2
         plt.figure(figsize=(fig_size_x, 7))
         barplot = sns.barplot(
-            data=data, x=x, y=y, hue=hue, errorbar=None, palette=palette, linewidth=2, edgecolor="k", width=0.8
+            data=data,
+            x=x,
+            y=y,
+            hue=hue,
+            errorbar=None,
+            palette=palette,
+            linewidth=2,
+            edgecolor="k",
+            width=0.8,
         )
         barplot.set_xlabel(x_label)
         barplot.set_ylabel(y_label)
