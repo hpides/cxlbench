@@ -1,14 +1,14 @@
 # Represents the database workload table scan (sequential read)
 sequential_reads:
   matrix:
-    number_threads: [ 16 ]
+    number_threads: [ 1, 2, 4, 8, 16, 24 ]
     number_partitions: [1]
-    numa_memory_nodes: [[0]]
-    access_size: [ 64, 512, 4096 ]
+    numa_memory_nodes: [[0], [1]]
+    access_size: [ 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384 ]
 
   args:
     exec_mode: sequential
     memory_region_size: 7G
     numa_task_nodes: [ 0 ]
     operation: read
-    run_time: 2
+    run_time: 4
