@@ -286,7 +286,7 @@ class PlotGenerator:
                 )
                 df_sub = df[df[KEY_NUMA_MEMORY_NODES] == memory_node]
                 plot_title = plot_title_template.replace("<custom>", "Numa memory node: {}".format(memory_node))
-                filename = pdf_filename_template.replace("<custom>", "heatmap")
+                filename = pdf_filename_template.replace("<custom>", "heatmap_memory_node_{}".format(memory_node))
                 self.create_heatmap(df_sub, plot_title, filename)
         elif bm_group in latency_plot_group:
             # Todo: per custom instruction, show threads
