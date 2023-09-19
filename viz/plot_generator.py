@@ -289,11 +289,7 @@ class PlotGenerator:
             # Plot 3: heatmap (x: thread count, y: access size)
             numa_memory_nodes = df[KEY_NUMA_MEMORY_NODES].unique()
             for memory_node in numa_memory_nodes:
-                print(
-                    "Creating heatmap (access sizes, thread count, bandwidth) for BM group {}, Numa Memory Node {}".format(
-                        bm_group, memory_node
-                    )
-                )
+                print("Creating heatmap for BM group {}, Numa Memory Node {}".format(bm_group, memory_node))
                 df_sub = df[df[KEY_NUMA_MEMORY_NODES] == memory_node]
                 plot_title = plot_title_template.replace("<custom>", "Numa memory node: {}".format(memory_node))
                 filename = pdf_filename_template.replace("<custom>", "heatmap_memory_node_{}".format(memory_node))
