@@ -231,7 +231,7 @@ class PlotGenerator:
         tag = get_single_distinct_value(KEY_TAG, df)
         bandwidth_plot_group = ["sequential_reads", "random_reads", "sequential_writes", "random_writes"]
         latency_plot_group = ["operation_latency"]
-        plot_title_template = "Sys {}, {}, {}, <custom>".format(tag, write_type, bm_group.replace("_", " ").title())
+        plot_title_template = "{} [Flush: {}] {}, <custom>".format(tag, write_type, bm_group.replace("_", " ").title())
         legend_title = "Memory Node"
         pdf_filename_template = "{prefix}_{tag}_part_{partition_count}_{write_type}_{bm_group}_<custom>.pdf".format(
             prefix=PLOT_FILE_PREFIX, partition_count=partition_count, bm_group=bm_group, write_type=write_type, tag=tag
@@ -276,6 +276,18 @@ class PlotGenerator:
                     legend_title,
                     filename,
                 )
+            # Plot 3: heatmap (x: thread count, y: access size)
+            numa_memory_nodes = df[KEY_NUMA_MEMORY_NODES].unique()
+            for memory_node in numa_memory_nodes:
+                print(
+                    "Creating heatmap (access sizes, thread count, bandwidth) for BM group {}, Numa Memory Node {}".format(
+                        bm_group, memory_node
+                    )
+                )
+                df_sub = df[df[KEY_NUMA_MEMORY_NODES] == memory_node]
+                plot_title = plot_title_template.replace("<custom>", "Numa memory node: {}".format(memory_node))
+                filename = pdf_filename_template.replace("<custom>", "heatmap")
+                self.create_heatmap(df_sub, plot_title, filename)
         elif bm_group in latency_plot_group:
             # Todo: per custom instruction, show threads
             thread_counts = df[KEY_THREAD_COUNT].unique()
@@ -406,5 +418,16 @@ class PlotGenerator:
         plt.tight_layout()
         plt.grid(axis="y", color="k", linestyle=":")
         fig = barplot.get_figure()
+        fig.savefig("{}/{}".format(self.output_dir, filename))
+        plt.close(fig)
+
+    def create_heatmap(self, df, title, filename):
+        df_heatmap = df.pivot(index=KEY_ACCESS_SIZE, columns=KEY_THREAD_COUNT, values=KEY_BANDWIDTH_GB)
+        heatmap = sns.heatmap(df_heatmap, annot=True, fmt=".0f", cmap="magma")
+        heatmap.set_xlabel("Thread Count")
+        heatmap.set_ylabel("Access size (Byte)")
+        heatmap.invert_yaxis()
+        heatmap.set_title(title)
+        fig = heatmap.get_figure()
         fig.savefig("{}/{}".format(self.output_dir, filename))
         plt.close(fig)
