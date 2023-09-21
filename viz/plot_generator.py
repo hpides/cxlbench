@@ -84,10 +84,11 @@ class PlotGenerator:
     This class calls the methods of the plotter classes, according go the given JSON.
     """
 
-    def __init__(self, results, output_dir, no_plots):
+    def __init__(self, results, output_dir, no_plots, do_barplots):
         self.results = results
         self.output_dir = output_dir
         self.no_plots = no_plots
+        self.do_barplots = do_barplots
 
     # mainly used for legacy versions of json files. With newer versions, we want to be able to differentiate between
     # different setups, e.g., even if multiple json fils only contain DRAM measurements, the DRAM memory regions might
@@ -128,7 +129,7 @@ class PlotGenerator:
 
         df = pd.concat(dfs)
         bm_names = df[KEY_BM_GROUP].unique()
-        print("BM groups: {}".format(bm_names))
+        print("Existing BM groups: {}".format(bm_names))
         selected_bm_groups = [
             "random_writes",
             "random_reads",
@@ -136,7 +137,7 @@ class PlotGenerator:
             "sequential_reads",
             "operation_latency",
         ]
-        print("Selected BM groups: {}".format(selected_bm_groups))
+        print("Supported BM groups: {}".format(selected_bm_groups))
 
         df = df[(df[KEY_BM_GROUP].isin(selected_bm_groups)) & (df[KEY_BM_TYPE] == "single")]
         df = ju.flatten_nested_json_df(
@@ -181,8 +182,7 @@ class PlotGenerator:
         #     if column in ["index", KEY_MATRIX_ARGS, KEY_THREADS]:
         #         continue
         #     print("{}: {}".format(column, df[column].explode().unique()))
-
-        print("columns to be dropped: {}".format(drop_columns))
+        # print("columns to be dropped: {}".format(drop_columns))
 
         # For now, we assume that memory was allocated on a single numa node.
         assert (df[KEY_NUMA_MEMORY_NODES].str.len() == 1).all()
@@ -248,48 +248,54 @@ class PlotGenerator:
         )
         df.to_csv("{}/{}".format(self.output_dir, pdf_filename_template.replace("_<custom>.pdf", ".csv")))
         if bm_group in bandwidth_plot_group:
-            # Plot 1 (x: thread count, y: throughput, for each access size)
-            access_sizes = df[KEY_ACCESS_SIZE].unique()
-            for access_size in access_sizes:
-                plot_df = df[df[KEY_ACCESS_SIZE] == access_size]
-                assert_config_columns_one_value(plot_df, [KEY_THREAD_COUNT])
-                print("Creating barplot (# threads) for BM group {}, {}B".format(bm_group, access_size))
-                filename = pdf_filename_template.replace("<custom>", "{}B".format(access_size))
-                plot_title = plot_title_template.replace("<custom>", "{}B".format(access_size))
-                self.create_barplot(
-                    plot_df,
-                    KEY_THREAD_COUNT,
-                    KEY_BANDWIDTH_GB,
-                    "Number of Threads",
-                    "Throughput in GB/s",
-                    KEY_NUMA_MEMORY_NODES,
-                    plot_title,
-                    legend_title,
-                    filename,
-                )
-            # Plot 2 (x: access size, y: throughput)
-            thread_counts = df[KEY_THREAD_COUNT].unique()
-            for thread_count in thread_counts:
-                plot_df = df[df[KEY_THREAD_COUNT] == thread_count]
-                assert_config_columns_one_value(plot_df, [KEY_ACCESS_SIZE])
-                print("Creating barplot (access sizes) for BM group {}, {} threads".format(bm_group, thread_count))
-                filename = pdf_filename_template.replace("<custom>", "{}_threads".format(thread_count))
-                plot_title = plot_title_template.replace("<custom>", "{} Threads".format(thread_count))
-                self.create_barplot(
-                    plot_df,
-                    KEY_ACCESS_SIZE,
-                    KEY_BANDWIDTH_GB,
-                    "Access Size in Byte",
-                    "Throughput in GB/s",
-                    KEY_NUMA_MEMORY_NODES,
-                    plot_title,
-                    legend_title,
-                    filename,
-                )
+            if self.do_barplots:
+                # Plot 1 (x: thread count, y: throughput, for each access size)
+                access_sizes = df[KEY_ACCESS_SIZE].unique()
+                for access_size in access_sizes:
+                    plot_df = df[df[KEY_ACCESS_SIZE] == access_size]
+                    assert_config_columns_one_value(plot_df, [KEY_THREAD_COUNT])
+                    print("Creating barplot (# threads) for BM group {}, {}B".format(bm_group, access_size))
+                    filename = pdf_filename_template.replace("<custom>", "{}B".format(access_size))
+                    plot_title = plot_title_template.replace("<custom>", "{}B".format(access_size))
+                    self.create_barplot(
+                        plot_df,
+                        KEY_THREAD_COUNT,
+                        KEY_BANDWIDTH_GB,
+                        "Number of Threads",
+                        "Throughput in GB/s",
+                        KEY_NUMA_MEMORY_NODES,
+                        plot_title,
+                        legend_title,
+                        filename,
+                    )
+                # Plot 2 (x: access size, y: throughput)
+                thread_counts = df[KEY_THREAD_COUNT].unique()
+                for thread_count in thread_counts:
+                    plot_df = df[df[KEY_THREAD_COUNT] == thread_count]
+                    assert_config_columns_one_value(plot_df, [KEY_ACCESS_SIZE])
+                    print("Creating barplot (access sizes) for BM group {}, {} threads".format(bm_group, thread_count))
+                    filename = pdf_filename_template.replace("<custom>", "{}_threads".format(thread_count))
+                    plot_title = plot_title_template.replace("<custom>", "{} Threads".format(thread_count))
+                    self.create_barplot(
+                        plot_df,
+                        KEY_ACCESS_SIZE,
+                        KEY_BANDWIDTH_GB,
+                        "Access Size in Byte",
+                        "Throughput in GB/s",
+                        KEY_NUMA_MEMORY_NODES,
+                        plot_title,
+                        legend_title,
+                        filename,
+                    )
             # Plot 3: heatmap (x: thread count, y: access size)
             numa_memory_nodes = df[KEY_NUMA_MEMORY_NODES].unique()
             for memory_node in numa_memory_nodes:
-                print("Creating heatmap for BM group {}, Numa Memory Node {}".format(bm_group, memory_node))
+                write_type = get_single_distinct_value(KEY_WRITE_INSTRUCTION, df)
+                print(
+                    "Creating heatmap for BM group {}, {}, Numa Memory Node {}".format(
+                        bm_group, write_type, memory_node
+                    )
+                )
                 df_sub = df[df[KEY_NUMA_MEMORY_NODES] == memory_node]
                 plot_title = plot_title_template.replace("<custom>", "Numa memory node: {}".format(memory_node))
                 filename = pdf_filename_template.replace("<custom>", "heatmap_memory_node_{}".format(memory_node))
@@ -438,12 +444,15 @@ class PlotGenerator:
         plt.close(fig)
 
     def create_heatmap(self, df, title, filename):
-        df_heatmap = df.pivot(index=KEY_ACCESS_SIZE, columns=KEY_THREAD_COUNT, values=KEY_BANDWIDTH_GB)
-        heatmap = sns.heatmap(df_heatmap, annot=True, fmt=".0f", cmap="magma")
+        df_heatmap = pd.pivot_table(df, index=KEY_ACCESS_SIZE, columns=KEY_THREAD_COUNT, values=KEY_BANDWIDTH_GB)
+        heatmap = sns.heatmap(
+            df_heatmap, annot=True, annot_kws={"fontsize": 6, "va": "center_baseline"}, fmt=".1f", cmap="magma"
+        )
         heatmap.set_xlabel("Thread Count")
         heatmap.set_ylabel("Access size (Byte)")
         heatmap.invert_yaxis()
         heatmap.set_title(title)
+        heatmap.set_yticklabels(heatmap.get_yticklabels(), rotation=0)
         fig = heatmap.get_figure()
         fig.savefig("{}/{}".format(self.output_dir, filename))
         plt.close(fig)

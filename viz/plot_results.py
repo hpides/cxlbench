@@ -29,7 +29,8 @@ if __name__ == "__main__":
 
     parser.add_argument("results", type=valid_path, help="path to the results directory")
     parser.add_argument("-o", "--output_dir", help="path to the output directory")
-    parser.add_argument("--no_plots", action="store_true")
+    parser.add_argument("--noplots", action="store_true")
+    parser.add_argument("--bars", action="store_true")
     args = parser.parse_args()
 
     results_path = args.results
@@ -52,10 +53,11 @@ if __name__ == "__main__":
     print("Output directory:", output_dir_string)
     output_dir = os.path.abspath(output_dir_string)
     results = args.results
-    no_plots = args.no_plots
+    no_plots = args.noplots
+    do_barplots = args.bars
 
     os.makedirs(output_dir, exist_ok=True)
 
     # create plots
-    plotter = PlotGenerator(results, output_dir, no_plots)
+    plotter = PlotGenerator(results, output_dir, no_plots, do_barplots)
     plotter.process_matrix_jsons()
