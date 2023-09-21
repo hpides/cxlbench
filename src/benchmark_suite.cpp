@@ -71,15 +71,15 @@ nlohmann::json benchmark_results_to_json(const mema::Benchmark& bm, const nlohma
 
   static auto compiler = std::string{};
   if (compiler.empty()) {
-    auto ss = std::stringstream{};
+    auto stream = std::stringstream{};
 #if defined(__clang__)
-    ss << "clang " << __clang_major__ << "." << __clang_minor__ << "." << __clang_patchlevel__;
+    stream << "clang " << __clang_major__ << "." << __clang_minor__ << "." << __clang_patchlevel__;
 #elif defined(__GNUC__)
-    ss << "gcc " << __GNUC__ << "." << __GNUC_MINOR__;
+    stream << "gcc " << __GNUC__ << "." << __GNUC_MINOR__;
 #else
-    ss << "unknown";
+    stream << "unknown";
 #endif
-    compiler = ss.str();
+    compiler = stream.str();
   }
 
   if (bm.get_benchmark_type() == mema::BenchmarkType::Single) {
