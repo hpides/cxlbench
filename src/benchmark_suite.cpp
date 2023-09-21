@@ -69,25 +69,29 @@ nlohmann::json benchmark_results_to_json(const mema::Benchmark& bm, const nlohma
   // Remove newline character.
   git_hash.pop_back();
 
-  static std::stringstream compiler;
+  static auto compiler = std::string{};
+  if (compiler.empty()) {
+    auto ss = std::stringstream{};
 #if defined(__clang__)
-  compiler << "clang " << __clang_major__ << "." << __clang_minor__ << "." << __clang_patchlevel__;
+    ss << "clang " << __clang_major__ << "." << __clang_minor__ << "." << __clang_patchlevel__;
 #elif defined(__GNUC__)
-  compiler << "gcc " << __GNUC__ << "." << __GNUC_MINOR__;
+    ss << "gcc " << __GNUC__ << "." << __GNUC_MINOR__;
 #else
-  compiler << "unknown";
+    ss << "unknown";
 #endif
+    compiler = ss.str();
+  }
 
   if (bm.get_benchmark_type() == mema::BenchmarkType::Single) {
     return single_results_to_json(dynamic_cast<const mema::SingleBenchmark&>(bm), bm_results, simd_instruction_set,
-                                  git_hash, compiler.str());
+                                  git_hash, compiler);
   } else if (bm.get_benchmark_type() == mema::BenchmarkType::Parallel) {
     return parallel_results_to_json(dynamic_cast<const mema::ParallelBenchmark&>(bm), bm_results, simd_instruction_set,
-                                    git_hash, compiler.str());
+                                    git_hash, compiler);
   } else {
     return {{"bm_name", bm.benchmark_name()}, {"bm_type", bm.benchmark_type_as_str()},
             {"benchmarks", bm_results},       {"simd_instruction_set", simd_instruction_set},
-            {"git-hash", git_hash},           {"compiler", compiler.str()}};
+            {"git-hash", git_hash},           {"compiler", compiler}};
   }
 }
 
