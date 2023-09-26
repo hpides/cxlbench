@@ -7,18 +7,33 @@ include(CheckCXXSourceCompiles)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -pthread")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g3 -gdwarf-4 -fno-omit-frame-pointer -march=native -DNDEBUG" CACHE STRING "" FORCE)
 
 # Required for ARM64
 set(CMAKE_THREAD_LIBS_INIT "-pthread")
 
+# Set default build type if none was passed on the command line
 if(NOT CMAKE_BUILD_TYPE)
+    message("-- No release type specified, defaulting to Release")
     set(CMAKE_BUILD_TYPE "Release")
+endif()
+
+set(BUILD_TYPES Debug RelWithDebInfo Release)
+if(NOT CMAKE_BUILD_TYPE IN_LIST BUILD_TYPES)
+    message(FATAL_ERROR "Unknown Build Type: ${CMAKE_BUILD_TYPE}.")
 endif()
 
 if (${CMAKE_BUILD_TYPE} STREQUAL "Release")
     message("-- Release mode, all optimizations enabled")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG")
+endif ()
+
+if (${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+    message("-- RelWithDebInfo mode, all optimizations enabled")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -g3 -gdwarf-4 -fno-omit-frame-pointer -DNDEBUG")
+endif ()
+
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    message("-- Debug mode, optimizations disabled")
 endif ()
 
 set(INCLUDE_HINTS ${CMAKE_INCLUDE_PATH} "/usr/include" "/usr/local/include")
