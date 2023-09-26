@@ -15,19 +15,20 @@ namespace {
 
 nlohmann::json single_results_to_json(const mema::SingleBenchmark& bm, const nlohmann::json& bm_results,
                                       const std::string& simd_instruction_set, const std::string& git_hash,
-                                      const std::string& compiler) {
+                                      const std::string& compiler, const std::string& hostname) {
   return {{"bm_name", bm.benchmark_name()},
           {"bm_type", bm.benchmark_type_as_str()},
           {"matrix_args", bm.get_benchmark_configs()[0].matrix_args},
           {"benchmarks", bm_results},
           {"simd_instruction_set", simd_instruction_set},
-          {"git-hash", git_hash},
-          {"compiler", compiler}};
+          {"git_hash", git_hash},
+          {"compiler", compiler},
+          {"hostname", hostname}};
 }
 
 nlohmann::json parallel_results_to_json(const mema::ParallelBenchmark& bm, const nlohmann::json& bm_results,
                                         const std::string& simd_instruction_set, const std::string& git_hash,
-                                        const std::string& compiler) {
+                                        const std::string& compiler, const std::string& hostname) {
   return {{"bm_name", bm.benchmark_name()},
           {"sub_bm_names", {bm.get_benchmark_name_one(), bm.get_benchmark_name_two()}},
           {"bm_type", bm.benchmark_type_as_str()},
@@ -36,8 +37,9 @@ nlohmann::json parallel_results_to_json(const mema::ParallelBenchmark& bm, const
             {bm.get_benchmark_name_two(), bm.get_benchmark_configs()[1].matrix_args}}},
           {"benchmarks", bm_results},
           {"simd_instruction_set", simd_instruction_set},
-          {"git-hash", git_hash},
-          {"compiler", compiler}};
+          {"git_hash", git_hash},
+          {"compiler", compiler},
+          {"hostname", hostname}};
 }
 
 nlohmann::json benchmark_results_to_json(const mema::Benchmark& bm, const nlohmann::json& bm_results) {
@@ -59,13 +61,13 @@ nlohmann::json benchmark_results_to_json(const mema::Benchmark& bm, const nlohma
     mema::utils::crash_exit();
   }
   // 60 characters is large enough for a git commit, even if the repository is dirty.
-  char buffer[60];
+  auto git_hash_buffer = std::array<char, 60>{};
   auto git_hash = std::string{};
-  if (fgets(buffer, 60, pipe.get()) == NULL) {
+  if (fgets(git_hash_buffer.data(), 60, pipe.get()) == NULL) {
     spdlog::critical("Failed to get git hash.");
     mema::utils::crash_exit();
   }
-  git_hash += buffer;
+  git_hash = std::string{git_hash_buffer.data()};
   // Remove newline character.
   git_hash.pop_back();
 
@@ -82,16 +84,27 @@ nlohmann::json benchmark_results_to_json(const mema::Benchmark& bm, const nlohma
     compiler = stream.str();
   }
 
+  static auto hostname = std::string{};
+  if (hostname.empty()) {
+    auto hostname_buffer = std::array<char, 1024>{};
+    gethostname(hostname_buffer.data(), sizeof(hostname_buffer));
+    hostname = std::string{hostname_buffer.data()};
+  }
+
   if (bm.get_benchmark_type() == mema::BenchmarkType::Single) {
     return single_results_to_json(dynamic_cast<const mema::SingleBenchmark&>(bm), bm_results, simd_instruction_set,
-                                  git_hash, compiler);
+                                  git_hash, compiler, hostname);
   } else if (bm.get_benchmark_type() == mema::BenchmarkType::Parallel) {
     return parallel_results_to_json(dynamic_cast<const mema::ParallelBenchmark&>(bm), bm_results, simd_instruction_set,
-                                    git_hash, compiler);
+                                    git_hash, compiler, hostname);
   } else {
-    return {{"bm_name", bm.benchmark_name()}, {"bm_type", bm.benchmark_type_as_str()},
-            {"benchmarks", bm_results},       {"simd_instruction_set", simd_instruction_set},
-            {"git-hash", git_hash},           {"compiler", compiler}};
+    return {{"bm_name", bm.benchmark_name()},
+            {"bm_type", bm.benchmark_type_as_str()},
+            {"benchmarks", bm_results},
+            {"simd_instruction_set", simd_instruction_set},
+            {"git_hash", git_hash},
+            {"compiler", compiler},
+            {"hostname", hostname}};
   }
 }
 
