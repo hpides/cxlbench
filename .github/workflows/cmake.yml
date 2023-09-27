@@ -35,7 +35,7 @@ jobs:
     - name: Configure CMake GCC
       shell: bash
       working-directory: ${{runner.workspace}}/build-gcc
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_C_COMPILER=$GCC -DCMAKE_CXX_COMPILER=$GXX -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DIS_CI_BUILD=ON
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_C_COMPILER=$GCC -DCMAKE_CXX_COMPILER=$GXX -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TEST=ON -DIS_CI_BUILD=ON
 
     - name: Configure CMake Clang
       shell: bash
