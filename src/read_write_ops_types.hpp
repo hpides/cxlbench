@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstddef>
-#include <utility>
 
 #ifdef HAS_CLWB
 #include <immintrin.h>
@@ -37,9 +36,9 @@ void unroll_impl(Fn fn, std::index_sequence<indices...>) {
   (void(fn(indices)), ...);
 }
 
-template <int N, typename Fn>
+template <int LOOP_COUNT, typename Fn>
 void unroll(Fn fn) {
-  unroll_impl(fn, std::make_index_sequence<N>());
+  unroll_impl(fn, std::make_index_sequence<LOOP_COUNT>());
 }
 
 }  // namespace mema::rw_ops

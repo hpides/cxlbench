@@ -68,6 +68,8 @@ inline CharVec64 read(char* addr, const size_t access_size) {
   auto result = CharVec64{0};
   const char* access_end_addr = addr + access_size;
   for (char* mem_addr = addr; mem_addr < access_end_addr; mem_addr += (1024 * 64)) {
+    // Note that code duplication might be reduced here by calling read_64B_accesses(), but that this requires
+    // inspecting the assembly instructions again so that we do not introduce overhead that we can avoid.
     volatile CharVec64* volatile_addr = reinterpret_cast<CharVec64*>(addr);
     // 1x 64k access (1024x 64B access)
     // clang-format off
@@ -116,8 +118,10 @@ inline void read_64k(const std::vector<char*>& addresses) { read_64B_accesses<10
 inline void read(const std::vector<char*>& addresses, const size_t access_size) {
   for (char* addr : addresses) {
     const char* access_end_addr = addr + access_size;
+    // Note that it might make sense to use a modified version of read_64k() here, but that this requires
+    // inspecting the assembly instructions again so that we do not introduce overhead that we can avoid.
     for (char* mem_addr = addr; mem_addr < access_end_addr; mem_addr += (1024 * 64)) {
-      // Read in 64KiB Byte chunks
+      // Read in 64KiB chunks
       read_64B_accesses<1024>(mem_addr);
     }
   }
@@ -264,6 +268,7 @@ inline void write_64k(const std::vector<char*>& addresses, flush_fn flush, barri
 
 inline void write(const std::vector<char*>& addresses, const size_t access_size, flush_fn flush, barrier_fn barrier) {
   for (auto* addr : addresses) {
+    // Write in 64KiB chunks
     write(addr, access_size, flush, barrier);
   }
 }
@@ -494,6 +499,7 @@ inline void simd_write_nt_64k(const std::vector<char*>& addresses) {
 
 inline void simd_write_nt(const std::vector<char*>& addresses, const size_t access_size) {
   for (auto* addr : addresses) {
+    // Write in 64KiB chunks
     simd_write_nt(addr, access_size);
   }
 }

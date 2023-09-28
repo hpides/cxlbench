@@ -7,7 +7,7 @@ namespace mema::rw_ops {
 #ifdef NT_STORES_AVX_512
 
 #define WRITE_SIMD_NT_512(mem_addr, offset, data) \
-  _mm512_stream_si512(reinterpret_cast<__m512i*>((mem_addr) + ((offset)*mema::rw_ops::CACHE_LINE_SIZE)), data)
+  _mm512_stream_si512(reinterpret_cast<__m512i*>((mem_addr) + ((offset)*64)), data)
 
 /**
  * #####################################################
