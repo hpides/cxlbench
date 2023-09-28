@@ -1,8 +1,5 @@
 #pragma once
 
-#include <immintrin.h>
-#include <xmmintrin.h>
-
 #include <cstdint>
 #include <cstring>
 #include <vector>
@@ -11,7 +8,7 @@
 #include "read_write_ops_avx2.hpp"
 #include "read_write_ops_avx512.hpp"
 
-#ifndef HAS_ANY_AVX
+#if !(defined(NT_STORES_AVX_2) || defined(NT_STORES_AVX_512))
 #include "read_write_ops_types.hpp"
 #endif
 
@@ -27,7 +24,6 @@ inline void flush_clwb(char* addr, const size_t len) {
 }
 #endif
 
-#ifdef HAS_ANY_AVX
 /**
  * #####################################################
  * READ OPERATIONS
@@ -35,7 +31,7 @@ inline void flush_clwb(char* addr, const size_t len) {
  */
 
 template <int LOOP_COUNT>
-inline CharVec64 simd_read_64B_accesses(char* address) {
+inline CharVec64 read_64B_accesses(char* address) {
   volatile CharVec64* volatile_addr = reinterpret_cast<CharVec64*>(address);
   auto result = CharVec64{0};
   // clang-format off
@@ -46,29 +42,29 @@ inline CharVec64 simd_read_64B_accesses(char* address) {
   return result;
 }
 
-inline CharVec64 simd_read_64(char* addr) { return simd_read_64B_accesses<1>(addr); }
+inline CharVec64 read_64(char* addr) { return read_64B_accesses<1>(addr); }
 
-inline CharVec64 simd_read_128(char* addr) { return simd_read_64B_accesses<2>(addr); }
+inline CharVec64 read_128(char* addr) { return read_64B_accesses<2>(addr); }
 
-inline CharVec64 simd_read_256(char* addr) { return simd_read_64B_accesses<4>(addr); }
+inline CharVec64 read_256(char* addr) { return read_64B_accesses<4>(addr); }
 
-inline CharVec64 simd_read_512(char* addr) { return simd_read_64B_accesses<8>(addr); }
+inline CharVec64 read_512(char* addr) { return read_64B_accesses<8>(addr); }
 
-inline CharVec64 simd_read_1k(char* addr) { return simd_read_64B_accesses<16>(addr); }
+inline CharVec64 read_1k(char* addr) { return read_64B_accesses<16>(addr); }
 
-inline CharVec64 simd_read_2k(char* addr) { return simd_read_64B_accesses<32>(addr); }
+inline CharVec64 read_2k(char* addr) { return read_64B_accesses<32>(addr); }
 
-inline CharVec64 simd_read_4k(char* addr) { return simd_read_64B_accesses<64>(addr); }
+inline CharVec64 read_4k(char* addr) { return read_64B_accesses<64>(addr); }
 
-inline CharVec64 simd_read_8k(char* addr) { return simd_read_64B_accesses<128>(addr); }
+inline CharVec64 read_8k(char* addr) { return read_64B_accesses<128>(addr); }
 
-inline CharVec64 simd_read_16k(char* addr) { return simd_read_64B_accesses<256>(addr); }
+inline CharVec64 read_16k(char* addr) { return read_64B_accesses<256>(addr); }
 
-inline CharVec64 simd_read_32k(char* addr) { return simd_read_64B_accesses<512>(addr); }
+inline CharVec64 read_32k(char* addr) { return read_64B_accesses<512>(addr); }
 
-inline CharVec64 simd_read_64k(char* addr) { return simd_read_64B_accesses<1024>(addr); }
+inline CharVec64 read_64k(char* addr) { return read_64B_accesses<1024>(addr); }
 
-inline CharVec64 simd_read(char* addr, const size_t access_size) {
+inline CharVec64 read(char* addr, const size_t access_size) {
   auto result = CharVec64{0};
   const char* access_end_addr = addr + access_size;
   for (char* mem_addr = addr; mem_addr < access_end_addr; mem_addr += (1024 * 64)) {
@@ -84,7 +80,7 @@ inline CharVec64 simd_read(char* addr, const size_t access_size) {
 }
 
 template <int LOOP_COUNT>
-inline void simd_read_64B_accesses(const std::vector<char*>& addresses) {
+inline void read_64B_accesses(const std::vector<char*>& addresses) {
   for (char* addr : addresses) {
     volatile CharVec64* volatile_addr = reinterpret_cast<CharVec64*>(addr);
     // clang-format off
@@ -95,34 +91,34 @@ inline void simd_read_64B_accesses(const std::vector<char*>& addresses) {
   }
 }
 
-inline void simd_read_64(const std::vector<char*>& addresses) { simd_read_64B_accesses<1>(addresses); }
+inline void read_64(const std::vector<char*>& addresses) { read_64B_accesses<1>(addresses); }
 
-inline void simd_read_128(const std::vector<char*>& addresses) { simd_read_64B_accesses<2>(addresses); }
+inline void read_128(const std::vector<char*>& addresses) { read_64B_accesses<2>(addresses); }
 
-inline void simd_read_256(const std::vector<char*>& addresses) { simd_read_64B_accesses<4>(addresses); }
+inline void read_256(const std::vector<char*>& addresses) { read_64B_accesses<4>(addresses); }
 
-inline void simd_read_512(const std::vector<char*>& addresses) { simd_read_64B_accesses<8>(addresses); }
+inline void read_512(const std::vector<char*>& addresses) { read_64B_accesses<8>(addresses); }
 
-inline void simd_read_1k(const std::vector<char*>& addresses) { simd_read_64B_accesses<16>(addresses); }
+inline void read_1k(const std::vector<char*>& addresses) { read_64B_accesses<16>(addresses); }
 
-inline void simd_read_2k(const std::vector<char*>& addresses) { simd_read_64B_accesses<32>(addresses); }
+inline void read_2k(const std::vector<char*>& addresses) { read_64B_accesses<32>(addresses); }
 
-inline void simd_read_4k(const std::vector<char*>& addresses) { simd_read_64B_accesses<64>(addresses); }
+inline void read_4k(const std::vector<char*>& addresses) { read_64B_accesses<64>(addresses); }
 
-inline void simd_read_8k(const std::vector<char*>& addresses) { simd_read_64B_accesses<128>(addresses); }
+inline void read_8k(const std::vector<char*>& addresses) { read_64B_accesses<128>(addresses); }
 
-inline void simd_read_16k(const std::vector<char*>& addresses) { simd_read_64B_accesses<256>(addresses); }
+inline void read_16k(const std::vector<char*>& addresses) { read_64B_accesses<256>(addresses); }
 
-inline void simd_read_32k(const std::vector<char*>& addresses) { simd_read_64B_accesses<512>(addresses); }
+inline void read_32k(const std::vector<char*>& addresses) { read_64B_accesses<512>(addresses); }
 
-inline void simd_read_64k(const std::vector<char*>& addresses) { simd_read_64B_accesses<1024>(addresses); }
+inline void read_64k(const std::vector<char*>& addresses) { read_64B_accesses<1024>(addresses); }
 
-inline void simd_read(const std::vector<char*>& addresses, const size_t access_size) {
+inline void read(const std::vector<char*>& addresses, const size_t access_size) {
   for (char* addr : addresses) {
     const char* access_end_addr = addr + access_size;
     for (char* mem_addr = addr; mem_addr < access_end_addr; mem_addr += (1024 * 64)) {
       // Read in 64KiB Byte chunks
-      simd_read_64B_accesses<1024>(mem_addr);
+      read_64B_accesses<1024>(mem_addr);
     }
   }
 }
@@ -134,7 +130,7 @@ inline void simd_read(const std::vector<char*>& addresses, const size_t access_s
  */
 
 template <int LOOP_COUNT>
-inline void simd_write_64B_accesses(char* address) {
+inline void write_64B_accesses(char* address) {
   const CharVec64* write_data = reinterpret_cast<const CharVec64*>(WRITE_DATA);
   CharVec64* target_address = reinterpret_cast<CharVec64*>(address);
   // clang-format off
@@ -145,66 +141,50 @@ inline void simd_write_64B_accesses(char* address) {
 }
 
 template <int LOOP_COUNT>
-inline void simd_write_64B_accesses(char* address, flush_fn flush, barrier_fn barrier) {
-  simd_write_64B_accesses<LOOP_COUNT>(address);
+inline void write_64B_accesses(char* address, flush_fn flush, barrier_fn barrier) {
+  write_64B_accesses<LOOP_COUNT>(address);
   flush(address, 64 * LOOP_COUNT);
   barrier();
 }
 
-inline void simd_write_data_range(char* start_addr, const char* end_addr) {
+inline void write_data_range(char* start_addr, const char* end_addr) {
   for (char* mem_addr = start_addr; mem_addr < end_addr; mem_addr += 64) {
-    simd_write_64B_accesses<1>(mem_addr);
+    write_64B_accesses<1>(mem_addr);
   }
 }
 
-inline void simd_write_64(char* addr, flush_fn flush, barrier_fn barrier) {
-  simd_write_64B_accesses<1>(addr, flush, barrier);
+inline void write_data(char* start_address, const char* end_address) {
+  return write_data_range(start_address, end_address);
 }
 
-inline void simd_write_128(char* addr, flush_fn flush, barrier_fn barrier) {
-  simd_write_64B_accesses<2>(addr, flush, barrier);
+inline void write_64(char* addr, flush_fn flush, barrier_fn barrier) { write_64B_accesses<1>(addr, flush, barrier); }
+
+inline void write_128(char* addr, flush_fn flush, barrier_fn barrier) { write_64B_accesses<2>(addr, flush, barrier); }
+
+inline void write_256(char* addr, flush_fn flush, barrier_fn barrier) { write_64B_accesses<4>(addr, flush, barrier); }
+
+inline void write_512(char* addr, flush_fn flush, barrier_fn barrier) { write_64B_accesses<8>(addr, flush, barrier); }
+
+inline void write_1k(char* addr, flush_fn flush, barrier_fn barrier) { write_64B_accesses<16>(addr, flush, barrier); }
+
+inline void write_2k(char* addr, flush_fn flush, barrier_fn barrier) { write_64B_accesses<32>(addr, flush, barrier); }
+
+inline void write_4k(char* addr, flush_fn flush, barrier_fn barrier) { write_64B_accesses<64>(addr, flush, barrier); }
+
+inline void write_8k(char* addr, flush_fn flush, barrier_fn barrier) { write_64B_accesses<128>(addr, flush, barrier); }
+
+inline void write_16k(char* addr, flush_fn flush, barrier_fn barrier) { write_64B_accesses<256>(addr, flush, barrier); }
+
+inline void write_32k(char* addr, flush_fn flush, barrier_fn barrier) { write_64B_accesses<512>(addr, flush, barrier); }
+
+inline void write_64k(char* addr, flush_fn flush, barrier_fn barrier) {
+  write_64B_accesses<1024>(addr, flush, barrier);
 }
 
-inline void simd_write_256(char* addr, flush_fn flush, barrier_fn barrier) {
-  simd_write_64B_accesses<4>(addr, flush, barrier);
-}
-
-inline void simd_write_512(char* addr, flush_fn flush, barrier_fn barrier) {
-  simd_write_64B_accesses<8>(addr, flush, barrier);
-}
-
-inline void simd_write_1k(char* addr, flush_fn flush, barrier_fn barrier) {
-  simd_write_64B_accesses<16>(addr, flush, barrier);
-}
-
-inline void simd_write_2k(char* addr, flush_fn flush, barrier_fn barrier) {
-  simd_write_64B_accesses<32>(addr, flush, barrier);
-}
-
-inline void simd_write_4k(char* addr, flush_fn flush, barrier_fn barrier) {
-  simd_write_64B_accesses<64>(addr, flush, barrier);
-}
-
-inline void simd_write_8k(char* addr, flush_fn flush, barrier_fn barrier) {
-  simd_write_64B_accesses<128>(addr, flush, barrier);
-}
-
-inline void simd_write_16k(char* addr, flush_fn flush, barrier_fn barrier) {
-  simd_write_64B_accesses<256>(addr, flush, barrier);
-}
-
-inline void simd_write_32k(char* addr, flush_fn flush, barrier_fn barrier) {
-  simd_write_64B_accesses<512>(addr, flush, barrier);
-}
-
-inline void simd_write_64k(char* addr, flush_fn flush, barrier_fn barrier) {
-  simd_write_64B_accesses<1024>(addr, flush, barrier);
-}
-
-inline void simd_write(char* addr, const size_t access_size, flush_fn flush, barrier_fn barrier) {
+inline void write(char* addr, const size_t access_size, flush_fn flush, barrier_fn barrier) {
   const char* access_end_addr = addr + access_size;
   for (char* mem_addr = addr; mem_addr < access_end_addr; mem_addr += (1024 * 64)) {
-    simd_write_64B_accesses<1024>(mem_addr);
+    write_64B_accesses<1024>(mem_addr);
   }
   flush(addr, access_size);
   barrier();
@@ -216,76 +196,75 @@ inline void simd_write(char* addr, const size_t access_size, flush_fn flush, bar
  * #####################################################
  */
 
-inline void simd_write_64(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
+inline void write_64(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
   for (auto* addr : addresses) {
-    simd_write_64(addr, flush, barrier);
+    write_64(addr, flush, barrier);
   }
 }
 
-inline void simd_write_128(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
+inline void write_128(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
   for (auto* addr : addresses) {
-    simd_write_128(addr, flush, barrier);
+    write_128(addr, flush, barrier);
   }
 }
 
-inline void simd_write_256(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
+inline void write_256(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
   for (auto* addr : addresses) {
-    simd_write_256(addr, flush, barrier);
+    write_256(addr, flush, barrier);
   }
 }
 
-inline void simd_write_512(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
+inline void write_512(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
   for (auto* addr : addresses) {
-    simd_write_512(addr, flush, barrier);
+    write_512(addr, flush, barrier);
   }
 }
 
-inline void simd_write_1k(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
+inline void write_1k(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
   for (auto* addr : addresses) {
-    simd_write_1k(addr, flush, barrier);
+    write_1k(addr, flush, barrier);
   }
 }
 
-inline void simd_write_2k(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
+inline void write_2k(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
   for (auto* addr : addresses) {
-    simd_write_2k(addr, flush, barrier);
+    write_2k(addr, flush, barrier);
   }
 }
 
-inline void simd_write_4k(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
+inline void write_4k(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
   for (auto* addr : addresses) {
-    simd_write_4k(addr, flush, barrier);
+    write_4k(addr, flush, barrier);
   }
 }
 
-inline void simd_write_8k(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
+inline void write_8k(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
   for (auto* addr : addresses) {
-    simd_write_8k(addr, flush, barrier);
+    write_8k(addr, flush, barrier);
   }
 }
 
-inline void simd_write_16k(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
+inline void write_16k(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
   for (auto* addr : addresses) {
-    simd_write_16k(addr, flush, barrier);
+    write_16k(addr, flush, barrier);
   }
 }
 
-inline void simd_write_32k(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
+inline void write_32k(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
   for (auto* addr : addresses) {
-    simd_write_32k(addr, flush, barrier);
+    write_32k(addr, flush, barrier);
   }
 }
 
-inline void simd_write_64k(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
+inline void write_64k(const std::vector<char*>& addresses, flush_fn flush, barrier_fn barrier) {
   for (auto* addr : addresses) {
-    simd_write_64k(addr, flush, barrier);
+    write_64k(addr, flush, barrier);
   }
 }
 
-inline void simd_write(const std::vector<char*>& addresses, const size_t access_size, flush_fn flush,
-                       barrier_fn barrier) {
+inline void write(const std::vector<char*>& addresses, const size_t access_size, flush_fn flush, barrier_fn barrier) {
   for (auto* addr : addresses) {
-    simd_write(addr, access_size, flush, barrier);
+    write(addr, access_size, flush, barrier);
   }
 }
 
@@ -296,78 +275,54 @@ inline void simd_write(const std::vector<char*>& addresses, const size_t access_
  */
 
 #ifdef HAS_CLWB
-inline void simd_write_clwb_64(char* addr) { simd_write_64(addr, flush_clwb, sfence_barrier); }
+inline void write_clwb_64(char* addr) { write_64(addr, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb_128(char* addr) { simd_write_128(addr, flush_clwb, sfence_barrier); }
+inline void write_clwb_128(char* addr) { write_128(addr, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb_256(char* addr) { simd_write_256(addr, flush_clwb, sfence_barrier); }
+inline void write_clwb_256(char* addr) { write_256(addr, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb_512(char* addr) { simd_write_512(addr, flush_clwb, sfence_barrier); }
+inline void write_clwb_512(char* addr) { write_512(addr, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb_1k(char* addr) { simd_write_1k(addr, flush_clwb, sfence_barrier); }
+inline void write_clwb_1k(char* addr) { write_1k(addr, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb_2k(char* addr) { simd_write_2k(addr, flush_clwb, sfence_barrier); }
+inline void write_clwb_2k(char* addr) { write_2k(addr, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb_4k(char* addr) { simd_write_4k(addr, flush_clwb, sfence_barrier); }
+inline void write_clwb_4k(char* addr) { write_4k(addr, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb_8k(char* addr) { simd_write_8k(addr, flush_clwb, sfence_barrier); }
+inline void write_clwb_8k(char* addr) { write_8k(addr, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb_16k(char* addr) { simd_write_16k(addr, flush_clwb, sfence_barrier); }
+inline void write_clwb_16k(char* addr) { write_16k(addr, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb_32k(char* addr) { simd_write_32k(addr, flush_clwb, sfence_barrier); }
+inline void write_clwb_32k(char* addr) { write_32k(addr, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb_64k(char* addr) { simd_write_64k(addr, flush_clwb, sfence_barrier); }
+inline void write_clwb_64k(char* addr) { write_64k(addr, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb(char* addr, const size_t access_size) {
-  simd_write(addr, access_size, flush_clwb, sfence_barrier);
-}
+inline void write_clwb(char* addr, const size_t access_size) { write(addr, access_size, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb_64(const std::vector<char*>& addresses) {
-  simd_write_64(addresses, flush_clwb, sfence_barrier);
-}
+inline void write_clwb_64(const std::vector<char*>& addresses) { write_64(addresses, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb_128(const std::vector<char*>& addresses) {
-  simd_write_128(addresses, flush_clwb, sfence_barrier);
-}
+inline void write_clwb_128(const std::vector<char*>& addresses) { write_128(addresses, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb_256(const std::vector<char*>& addresses) {
-  simd_write_256(addresses, flush_clwb, sfence_barrier);
-}
+inline void write_clwb_256(const std::vector<char*>& addresses) { write_256(addresses, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb_512(const std::vector<char*>& addresses) {
-  simd_write_512(addresses, flush_clwb, sfence_barrier);
-}
+inline void write_clwb_512(const std::vector<char*>& addresses) { write_512(addresses, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb_1k(const std::vector<char*>& addresses) {
-  simd_write_1k(addresses, flush_clwb, sfence_barrier);
-}
+inline void write_clwb_1k(const std::vector<char*>& addresses) { write_1k(addresses, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb_2k(const std::vector<char*>& addresses) {
-  simd_write_2k(addresses, flush_clwb, sfence_barrier);
-}
+inline void write_clwb_2k(const std::vector<char*>& addresses) { write_2k(addresses, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb_4k(const std::vector<char*>& addresses) {
-  simd_write_4k(addresses, flush_clwb, sfence_barrier);
-}
+inline void write_clwb_4k(const std::vector<char*>& addresses) { write_4k(addresses, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb_8k(const std::vector<char*>& addresses) {
-  simd_write_8k(addresses, flush_clwb, sfence_barrier);
-}
+inline void write_clwb_8k(const std::vector<char*>& addresses) { write_8k(addresses, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb_16k(const std::vector<char*>& addresses) {
-  simd_write_16k(addresses, flush_clwb, sfence_barrier);
-}
+inline void write_clwb_16k(const std::vector<char*>& addresses) { write_16k(addresses, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb_32k(const std::vector<char*>& addresses) {
-  simd_write_32k(addresses, flush_clwb, sfence_barrier);
-}
+inline void write_clwb_32k(const std::vector<char*>& addresses) { write_32k(addresses, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb_64k(const std::vector<char*>& addresses) {
-  simd_write_64k(addresses, flush_clwb, sfence_barrier);
-}
+inline void write_clwb_64k(const std::vector<char*>& addresses) { write_64k(addresses, flush_clwb, sfence_barrier); }
 
-inline void simd_write_clwb(const std::vector<char*>& addresses, const size_t access_size) {
-  simd_write(addresses, access_size, flush_clwb, sfence_barrier);
+inline void write_clwb(const std::vector<char*>& addresses, const size_t access_size) {
+  write(addresses, access_size, flush_clwb, sfence_barrier);
 }
 
 #endif  // clwb
@@ -378,70 +333,57 @@ inline void simd_write_clwb(const std::vector<char*>& addresses, const size_t ac
  * #####################################################
  */
 
-inline void simd_write_none_64(char* addr) { simd_write_64(addr, no_flush, no_barrier); }
+inline void write_none_64(char* addr) { write_64(addr, no_flush, no_barrier); }
 
-inline void simd_write_none_128(char* addr) { simd_write_128(addr, no_flush, no_barrier); }
+inline void write_none_128(char* addr) { write_128(addr, no_flush, no_barrier); }
 
-inline void simd_write_none_256(char* addr) { simd_write_256(addr, no_flush, no_barrier); }
+inline void write_none_256(char* addr) { write_256(addr, no_flush, no_barrier); }
 
-inline void simd_write_none_512(char* addr) { simd_write_512(addr, no_flush, no_barrier); }
+inline void write_none_512(char* addr) { write_512(addr, no_flush, no_barrier); }
 
-inline void simd_write_none_1k(char* addr) { simd_write_1k(addr, no_flush, no_barrier); }
+inline void write_none_1k(char* addr) { write_1k(addr, no_flush, no_barrier); }
 
-inline void simd_write_none_2k(char* addr) { simd_write_2k(addr, no_flush, no_barrier); }
+inline void write_none_2k(char* addr) { write_2k(addr, no_flush, no_barrier); }
 
-inline void simd_write_none_4k(char* addr) { simd_write_4k(addr, no_flush, no_barrier); }
+inline void write_none_4k(char* addr) { write_4k(addr, no_flush, no_barrier); }
 
-inline void simd_write_none_8k(char* addr) { simd_write_8k(addr, no_flush, no_barrier); }
+inline void write_none_8k(char* addr) { write_8k(addr, no_flush, no_barrier); }
 
-inline void simd_write_none_16k(char* addr) { simd_write_16k(addr, no_flush, no_barrier); }
+inline void write_none_16k(char* addr) { write_16k(addr, no_flush, no_barrier); }
 
-inline void simd_write_none_32k(char* addr) { simd_write_32k(addr, no_flush, no_barrier); }
+inline void write_none_32k(char* addr) { write_32k(addr, no_flush, no_barrier); }
 
-inline void simd_write_none_64k(char* addr) { simd_write_64k(addr, no_flush, no_barrier); }
+inline void write_none_64k(char* addr) { write_64k(addr, no_flush, no_barrier); }
 
-inline void simd_write_none(char* addr, const size_t access_size) {
-  simd_write(addr, access_size, no_flush, no_barrier);
+inline void write_none(char* addr, const size_t access_size) { write(addr, access_size, no_flush, no_barrier); }
+
+inline void write_none_64(const std::vector<char*>& addresses) { write_64(addresses, no_flush, no_barrier); }
+
+inline void write_none_128(const std::vector<char*>& addresses) { write_128(addresses, no_flush, no_barrier); }
+
+inline void write_none_256(const std::vector<char*>& addresses) { write_256(addresses, no_flush, no_barrier); }
+
+inline void write_none_512(const std::vector<char*>& addresses) { write_512(addresses, no_flush, no_barrier); }
+
+inline void write_none_1k(const std::vector<char*>& addresses) { write_1k(addresses, no_flush, no_barrier); }
+
+inline void write_none_2k(const std::vector<char*>& addresses) { write_2k(addresses, no_flush, no_barrier); }
+
+inline void write_none_4k(const std::vector<char*>& addresses) { write_4k(addresses, no_flush, no_barrier); }
+
+inline void write_none_8k(const std::vector<char*>& addresses) { write_8k(addresses, no_flush, no_barrier); }
+
+inline void write_none_16k(const std::vector<char*>& addresses) { write_16k(addresses, no_flush, no_barrier); }
+
+inline void write_none_32k(const std::vector<char*>& addresses) { write_32k(addresses, no_flush, no_barrier); }
+
+inline void write_none_64k(const std::vector<char*>& addresses) { write_64k(addresses, no_flush, no_barrier); }
+
+inline void write_none(const std::vector<char*>& addresses, const size_t access_size) {
+  write(addresses, access_size, no_flush, no_barrier);
 }
 
-inline void simd_write_none_64(const std::vector<char*>& addresses) { simd_write_64(addresses, no_flush, no_barrier); }
-
-inline void simd_write_none_128(const std::vector<char*>& addresses) {
-  simd_write_128(addresses, no_flush, no_barrier);
-}
-
-inline void simd_write_none_256(const std::vector<char*>& addresses) {
-  simd_write_256(addresses, no_flush, no_barrier);
-}
-
-inline void simd_write_none_512(const std::vector<char*>& addresses) {
-  simd_write_512(addresses, no_flush, no_barrier);
-}
-
-inline void simd_write_none_1k(const std::vector<char*>& addresses) { simd_write_1k(addresses, no_flush, no_barrier); }
-
-inline void simd_write_none_2k(const std::vector<char*>& addresses) { simd_write_2k(addresses, no_flush, no_barrier); }
-
-inline void simd_write_none_4k(const std::vector<char*>& addresses) { simd_write_4k(addresses, no_flush, no_barrier); }
-
-inline void simd_write_none_8k(const std::vector<char*>& addresses) { simd_write_8k(addresses, no_flush, no_barrier); }
-
-inline void simd_write_none_16k(const std::vector<char*>& addresses) {
-  simd_write_16k(addresses, no_flush, no_barrier);
-}
-
-inline void simd_write_none_32k(const std::vector<char*>& addresses) {
-  simd_write_32k(addresses, no_flush, no_barrier);
-}
-
-inline void simd_write_none_64k(const std::vector<char*>& addresses) {
-  simd_write_64k(addresses, no_flush, no_barrier);
-}
-
-inline void simd_write_none(const std::vector<char*>& addresses, const size_t access_size) {
-  simd_write(addresses, access_size, no_flush, no_barrier);
-}
-
+#if defined(NT_STORES_AVX_2) || defined(NT_STORES_AVX_512)
 /**
  * #####################################################
  * NON_TEMPORAL STORE OPERATIONS
@@ -555,12 +497,7 @@ inline void simd_write_nt(const std::vector<char*>& addresses, const size_t acce
     simd_write_nt(addr, access_size);
   }
 }
-#endif  // HAS_ANY_AVX
 
-inline void write_data(char* start_address, const char* end_address) {
-#ifdef HAS_ANY_AVX
-  return simd_write_data_range(start_address, end_address);
-#endif
-}
+#endif  // defined(NT_STORES_AVX_2) || defined(NT_STORES_AVX_512)
 
 }  // namespace mema::rw_ops

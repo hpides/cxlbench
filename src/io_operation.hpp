@@ -50,70 +50,70 @@ class IoOperation {
 
  private:
   void run_read() {
-#ifdef HAS_ANY_AVX
     switch (access_size_) {
       case 64:
-        return rw_ops::simd_read_64(op_addresses_);
+        return rw_ops::read_64(op_addresses_);
       case 128:
-        return rw_ops::simd_read_128(op_addresses_);
+        return rw_ops::read_128(op_addresses_);
       case 256:
-        return rw_ops::simd_read_256(op_addresses_);
+        return rw_ops::read_256(op_addresses_);
       case 512:
-        return rw_ops::simd_read_512(op_addresses_);
+        return rw_ops::read_512(op_addresses_);
       case 1024:
-        return rw_ops::simd_read_1k(op_addresses_);
+        return rw_ops::read_1k(op_addresses_);
       case 2048:
-        return rw_ops::simd_read_2k(op_addresses_);
+        return rw_ops::read_2k(op_addresses_);
       case 4096:
-        return rw_ops::simd_read_4k(op_addresses_);
+        return rw_ops::read_4k(op_addresses_);
       case 8192:
-        return rw_ops::simd_read_8k(op_addresses_);
+        return rw_ops::read_8k(op_addresses_);
       case 16384:
-        return rw_ops::simd_read_16k(op_addresses_);
+        return rw_ops::read_16k(op_addresses_);
       case 32768:
-        return rw_ops::simd_read_32k(op_addresses_);
+        return rw_ops::read_32k(op_addresses_);
       case 65536:
-        return rw_ops::simd_read_64k(op_addresses_);
+        return rw_ops::read_64k(op_addresses_);
       default:
-        return rw_ops::simd_read(op_addresses_, access_size_);
+        return rw_ops::read(op_addresses_, access_size_);
     }
-#endif
   }
 
   void run_write() {
-#ifdef HAS_ANY_AVX
     switch (flush_instruction_) {
-#ifdef HAS_CLWB
       case FlushInstruction::Cache: {
+#ifdef HAS_CLWB
         switch (access_size_) {
           case 64:
-            return rw_ops::simd_write_clwb_64(op_addresses_);
+            return rw_ops::write_clwb_64(op_addresses_);
           case 128:
-            return rw_ops::simd_write_clwb_128(op_addresses_);
+            return rw_ops::write_clwb_128(op_addresses_);
           case 256:
-            return rw_ops::simd_write_clwb_256(op_addresses_);
+            return rw_ops::write_clwb_256(op_addresses_);
           case 512:
-            return rw_ops::simd_write_clwb_512(op_addresses_);
+            return rw_ops::write_clwb_512(op_addresses_);
           case 1024:
-            return rw_ops::simd_write_clwb_1k(op_addresses_);
+            return rw_ops::write_clwb_1k(op_addresses_);
           case 2048:
-            return rw_ops::simd_write_clwb_2k(op_addresses_);
+            return rw_ops::write_clwb_2k(op_addresses_);
           case 4096:
-            return rw_ops::simd_write_clwb_4k(op_addresses_);
+            return rw_ops::write_clwb_4k(op_addresses_);
           case 8192:
-            return rw_ops::simd_write_clwb_8k(op_addresses_);
+            return rw_ops::write_clwb_8k(op_addresses_);
           case 16384:
-            return rw_ops::simd_write_clwb_16k(op_addresses_);
+            return rw_ops::write_clwb_16k(op_addresses_);
           case 32768:
-            return rw_ops::simd_write_clwb_32k(op_addresses_);
+            return rw_ops::write_clwb_32k(op_addresses_);
           case 65536:
-            return rw_ops::simd_write_clwb_64k(op_addresses_);
+            return rw_ops::write_clwb_64k(op_addresses_);
           default:
-            return rw_ops::simd_write_clwb(op_addresses_, access_size_);
+            return rw_ops::write_clwb(op_addresses_, access_size_);
         }
+#else
+        throw std::runtime_error("Compiled without CLWB support.");
+#endif  // HAS_CLWB
       }
-#endif
       case FlushInstruction::NoCache: {
+#if defined(NT_STORES_AVX_2) || defined(NT_STORES_AVX_512)
         switch (access_size_) {
           case 64:
             return rw_ops::simd_write_nt_64(op_addresses_);
@@ -140,37 +140,39 @@ class IoOperation {
           default:
             return rw_ops::simd_write_nt(op_addresses_, access_size_);
         }
+#else
+        throw std::runtime_error("Compiled without NT store support.");
+#endif  // NT stores
       }
       case FlushInstruction::None: {
         switch (access_size_) {
           case 64:
-            return rw_ops::simd_write_none_64(op_addresses_);
+            return rw_ops::write_none_64(op_addresses_);
           case 128:
-            return rw_ops::simd_write_none_128(op_addresses_);
+            return rw_ops::write_none_128(op_addresses_);
           case 256:
-            return rw_ops::simd_write_none_256(op_addresses_);
+            return rw_ops::write_none_256(op_addresses_);
           case 512:
-            return rw_ops::simd_write_none_512(op_addresses_);
+            return rw_ops::write_none_512(op_addresses_);
           case 1024:
-            return rw_ops::simd_write_none_1k(op_addresses_);
+            return rw_ops::write_none_1k(op_addresses_);
           case 2048:
-            return rw_ops::simd_write_none_2k(op_addresses_);
+            return rw_ops::write_none_2k(op_addresses_);
           case 4096:
-            return rw_ops::simd_write_none_4k(op_addresses_);
+            return rw_ops::write_none_4k(op_addresses_);
           case 8192:
-            return rw_ops::simd_write_none_8k(op_addresses_);
+            return rw_ops::write_none_8k(op_addresses_);
           case 16384:
-            return rw_ops::simd_write_none_16k(op_addresses_);
+            return rw_ops::write_none_16k(op_addresses_);
           case 32768:
-            return rw_ops::simd_write_none_32k(op_addresses_);
+            return rw_ops::write_none_32k(op_addresses_);
           case 65536:
-            return rw_ops::simd_write_none_64k(op_addresses_);
+            return rw_ops::write_none_64k(op_addresses_);
           default:
-            return rw_ops::simd_write_none(op_addresses_, access_size_);
+            return rw_ops::write_none(op_addresses_, access_size_);
         }
       }
     }
-#endif
   }
 
   std::vector<char*> op_addresses_;
@@ -216,87 +218,84 @@ class ChainedOperation {
 
  private:
   inline char* run_read(char* addr) {
-#ifdef HAS_ANY_AVX
     mema::rw_ops::CharVec64 read_value{};
     switch (access_size_) {
       case 64:
-        read_value = rw_ops::simd_read_64(addr);
+        read_value = rw_ops::read_64(addr);
         break;
       case 128:
-        read_value = rw_ops::simd_read_128(addr);
+        read_value = rw_ops::read_128(addr);
         break;
       case 256:
-        read_value = rw_ops::simd_read_256(addr);
+        read_value = rw_ops::read_256(addr);
         break;
       case 512:
-        read_value = rw_ops::simd_read_512(addr);
+        read_value = rw_ops::read_512(addr);
         break;
       case 1024:
-        read_value = rw_ops::simd_read_1k(addr);
+        read_value = rw_ops::read_1k(addr);
         break;
       case 2048:
-        read_value = rw_ops::simd_read_2k(addr);
+        read_value = rw_ops::read_2k(addr);
         break;
       case 4096:
-        read_value = rw_ops::simd_read_4k(addr);
+        read_value = rw_ops::read_4k(addr);
         break;
       case 8192:
-        read_value = rw_ops::simd_read_8k(addr);
+        read_value = rw_ops::read_8k(addr);
         break;
       case 16384:
-        read_value = rw_ops::simd_read_16k(addr);
+        read_value = rw_ops::read_16k(addr);
         break;
       case 32768:
-        read_value = rw_ops::simd_read_32k(addr);
+        read_value = rw_ops::read_32k(addr);
         break;
       case 65536:
-        read_value = rw_ops::simd_read_64k(addr);
+        read_value = rw_ops::read_64k(addr);
         break;
       default:
-        read_value = rw_ops::simd_read(addr, access_size_);
+        read_value = rw_ops::read(addr, access_size_);
     }
 
     return reinterpret_cast<char*>(read_value[0]);
-#else
-    // This is only to stop the compiler complaining about a missing return
-    return addr;
-#endif
   }
 
   inline void run_write(char* addr) {
-#ifdef HAS_ANY_AVX
     switch (flush_instruction_) {
-#ifdef HAS_CLWB
       case FlushInstruction::Cache: {
+#ifdef HAS_CLWB
         switch (access_size_) {
           case 64:
-            return rw_ops::simd_write_clwb_64(addr);
+            return rw_ops::write_clwb_64(addr);
           case 128:
-            return rw_ops::simd_write_clwb_128(addr);
+            return rw_ops::write_clwb_128(addr);
           case 256:
-            return rw_ops::simd_write_clwb_256(addr);
+            return rw_ops::write_clwb_256(addr);
           case 512:
-            return rw_ops::simd_write_clwb_512(addr);
+            return rw_ops::write_clwb_512(addr);
           case 1024:
-            return rw_ops::simd_write_clwb_1k(addr);
+            return rw_ops::write_clwb_1k(addr);
           case 2048:
-            return rw_ops::simd_write_clwb_2k(addr);
+            return rw_ops::write_clwb_2k(addr);
           case 4096:
-            return rw_ops::simd_write_clwb_4k(addr);
+            return rw_ops::write_clwb_4k(addr);
           case 8192:
-            return rw_ops::simd_write_clwb_8k(addr);
+            return rw_ops::write_clwb_8k(addr);
           case 16384:
-            return rw_ops::simd_write_clwb_16k(addr);
+            return rw_ops::write_clwb_16k(addr);
           case 32768:
-            return rw_ops::simd_write_clwb_32k(addr);
+            return rw_ops::write_clwb_32k(addr);
           case 65536:
-            return rw_ops::simd_write_clwb_64k(addr);
+            return rw_ops::write_clwb_64k(addr);
           default:
-            return rw_ops::simd_write_clwb(addr, access_size_);
+            return rw_ops::write_clwb(addr, access_size_);
         }
+#else
+        throw std::runtime_error("Compiled without CLWB support.");
+#endif  // HAS_CLWB
       }
-#endif
       case FlushInstruction::NoCache: {
+#if defined(NT_STORES_AVX_2) || defined(NT_STORES_AVX_512)
         switch (access_size_) {
           case 64:
             return rw_ops::simd_write_nt_64(addr);
@@ -323,37 +322,39 @@ class ChainedOperation {
           default:
             return rw_ops::simd_write_nt(addr, access_size_);
         }
+#else
+        throw std::runtime_error("Compiled without NT store support.");
+#endif  // NT stores
       }
       case FlushInstruction::None: {
         switch (access_size_) {
           case 64:
-            return rw_ops::simd_write_none_64(addr);
+            return rw_ops::write_none_64(addr);
           case 128:
-            return rw_ops::simd_write_none_128(addr);
+            return rw_ops::write_none_128(addr);
           case 256:
-            return rw_ops::simd_write_none_256(addr);
+            return rw_ops::write_none_256(addr);
           case 512:
-            return rw_ops::simd_write_none_512(addr);
+            return rw_ops::write_none_512(addr);
           case 1024:
-            return rw_ops::simd_write_none_1k(addr);
+            return rw_ops::write_none_1k(addr);
           case 2048:
-            return rw_ops::simd_write_none_2k(addr);
+            return rw_ops::write_none_2k(addr);
           case 4096:
-            return rw_ops::simd_write_none_4k(addr);
+            return rw_ops::write_none_4k(addr);
           case 8192:
-            return rw_ops::simd_write_none_8k(addr);
+            return rw_ops::write_none_8k(addr);
           case 16384:
-            return rw_ops::simd_write_none_16k(addr);
+            return rw_ops::write_none_16k(addr);
           case 32768:
-            return rw_ops::simd_write_none_32k(addr);
+            return rw_ops::write_none_32k(addr);
           case 65536:
-            return rw_ops::simd_write_none_64k(addr);
+            return rw_ops::write_none_64k(addr);
           default:
-            return rw_ops::simd_write_none(addr, access_size_);
+            return rw_ops::write_none(addr, access_size_);
         }
       }
     }
-#endif
   }
 
  private:

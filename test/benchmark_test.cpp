@@ -41,7 +41,6 @@ TEST_F(BenchmarkTest, CreateParallelBenchmark) {
                                     std::move(base_executions_), std::move(base_results_)));
 }
 
-#ifdef HAS_ANY_AVX
 TEST_F(BenchmarkTest, SetUpSingleThread) {
   base_config_.number_threads = 1;
   base_config_.access_size = 256;
@@ -594,7 +593,5 @@ TEST_F(BenchmarkTest, ResultsParallelSingleThreadMixed) {
   EXPECT_GT(all_sizes_two[0], 0);
   EXPECT_EQ(all_sizes_two[0] % TEST_CHUNK_SIZE, 0);
 }
-
-#endif
 
 }  // namespace mema

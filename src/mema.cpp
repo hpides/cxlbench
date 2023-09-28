@@ -21,15 +21,6 @@ int main(int argc, char** argv) {
   // Delete symlink to last result file if it exists
   std::remove(utils::LAST_RESULTS_FILENAME);
 
-#if defined HAS_AVX_2
-  spdlog::info("Using AVX-2 instructions.");
-#elif defined HAS_AVX_512
-  spdlog::info("Using AVX-512 instructions.");
-#else
-  spdlog::critical("AVX-2 or AVX-512 instructions required.");
-  mema::utils::crash_exit();
-#endif
-
   // Set verbosity
   bool be_verbose;
   app.add_flag("-v,--verbose", be_verbose, "Set true to log additional runtime information.")->default_val(false);

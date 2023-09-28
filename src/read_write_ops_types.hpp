@@ -3,6 +3,10 @@
 #include <cstddef>
 #include <utility>
 
+#ifdef HAS_CLWB
+#include <immintrin.h>
+#endif
+
 namespace mema::rw_ops {
 
 // Exactly 64 characters to write in one cache line.
@@ -17,8 +21,10 @@ using barrier_fn = void();
 /** no explicit cache line flush is used. */
 inline void no_flush(char* addr, const size_t len) {}
 
+#ifdef HAS_CLWB
 /** Use sfence to guarantee memory order on x86. Earlier store operations cannot be reordered beyond this point. */
 inline void sfence_barrier() { _mm_sfence(); }
+#endif
 
 /** no memory order is guaranteed. */
 inline void no_barrier() {}

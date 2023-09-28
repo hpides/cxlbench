@@ -90,7 +90,7 @@ struct BenchmarkConfig {
 
   /** Flush instruction to use after write operations. Only works with `Operation::Write`. See
    * `FlushInstruction` for more details on available options. */
-  FlushInstruction flush_instruction = FlushInstruction::NoCache;
+  FlushInstruction flush_instruction = FlushInstruction::None;
 
   /** Number of disjoint memory regions to partition the `memory_region_size` into. Must be 0 or a divisor of
    * `number_threads` i.e., one or more threads map to one partition. When set to 0, it is equal to the number of

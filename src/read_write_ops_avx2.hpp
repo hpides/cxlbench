@@ -4,7 +4,7 @@
 
 namespace mema::rw_ops {
 
-#ifdef HAS_AVX_2
+#ifdef NT_STORES_AVX_2
 
 #define WRITE_SIMD_NT_256(mem_addr, offset, data) \
   _mm256_stream_si256(reinterpret_cast<__m256i*>((mem_addr) + ((offset)*32)), data)
@@ -21,8 +21,8 @@ inline void simd_write_nt_64B_accesses(char* address) {
   const auto data_chunk_2 = reinterpret_cast<const __m256i*>(WRITE_DATA + 32);
   // clang-format off
   unroll<LOOP_COUNT>([&](size_t loop_index) {
-    WRITE_SIMD_NT_256(addr, loop_index, *data_chunk_1);
-    WRITE_SIMD_NT_256(addr, loop_index + 1, *data_chunk_2);
+    WRITE_SIMD_NT_256(address, loop_index, *data_chunk_1);
+    WRITE_SIMD_NT_256(address, loop_index + 1, *data_chunk_2);
   });
   // clang-format on
 }
@@ -33,5 +33,5 @@ inline void simd_write_nt_64B_accesses_sfence(char* address) {
   sfence_barrier();
 }
 
-#endif  // HAS_AVX_2
+#endif  // NT_STORES_AVX_2
 }  // namespace mema::rw_ops

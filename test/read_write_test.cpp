@@ -46,29 +46,29 @@ class ReadWriteTest : public BaseTest {
   char* addr;
 };
 
-#ifdef HAS_ANY_AVX
-TEST_F(ReadWriteTest, SingleSIMDNoneWrite_64) { run_single_write_test(rw_ops::simd_write_none_64, 64); }
-TEST_F(ReadWriteTest, SingleSIMDNoneWrite_128) { run_single_write_test(rw_ops::simd_write_none_128, 128); }
-TEST_F(ReadWriteTest, SingleSIMDNoneWrite_256) { run_single_write_test(rw_ops::simd_write_none_256, 256); }
-TEST_F(ReadWriteTest, SingleSIMDNoneWrite_512) { run_single_write_test(rw_ops::simd_write_none_512, 512); }
+TEST_F(ReadWriteTest, SingleSIMDNoneWrite_64) { run_single_write_test(rw_ops::write_none_64, 64); }
+TEST_F(ReadWriteTest, SingleSIMDNoneWrite_128) { run_single_write_test(rw_ops::write_none_128, 128); }
+TEST_F(ReadWriteTest, SingleSIMDNoneWrite_256) { run_single_write_test(rw_ops::write_none_256, 256); }
+TEST_F(ReadWriteTest, SingleSIMDNoneWrite_512) { run_single_write_test(rw_ops::write_none_512, 512); }
 
-TEST_F(ReadWriteTest, MultiSIMDNoneWrite_64) { run_multi_write_test(rw_ops::simd_write_none_64, 64); }
-TEST_F(ReadWriteTest, MultiSIMDNoneWrite_128) { run_multi_write_test(rw_ops::simd_write_none_128, 128); }
-TEST_F(ReadWriteTest, MultiSIMDNoneWrite_256) { run_multi_write_test(rw_ops::simd_write_none_256, 256); }
-TEST_F(ReadWriteTest, MultiSIMDNoneWrite_512) { run_multi_write_test(rw_ops::simd_write_none_512, 512); }
+TEST_F(ReadWriteTest, MultiSIMDNoneWrite_64) { run_multi_write_test(rw_ops::write_none_64, 64); }
+TEST_F(ReadWriteTest, MultiSIMDNoneWrite_128) { run_multi_write_test(rw_ops::write_none_128, 128); }
+TEST_F(ReadWriteTest, MultiSIMDNoneWrite_256) { run_multi_write_test(rw_ops::write_none_256, 256); }
+TEST_F(ReadWriteTest, MultiSIMDNoneWrite_512) { run_multi_write_test(rw_ops::write_none_512, 512); }
 
 #ifdef HAS_CLWB
-TEST_F(ReadWriteTest, SingleSIMDClwbWrite_64) { run_single_write_test(rw_ops::simd_write_clwb_64, 64); }
-TEST_F(ReadWriteTest, SingleSIMDClwbWrite_128) { run_single_write_test(rw_ops::simd_write_clwb_128, 128); }
-TEST_F(ReadWriteTest, SingleSIMDClwbWrite_256) { run_single_write_test(rw_ops::simd_write_clwb_256, 256); }
-TEST_F(ReadWriteTest, SingleSIMDClwbWrite_512) { run_single_write_test(rw_ops::simd_write_clwb_512, 512); }
+TEST_F(ReadWriteTest, SingleSIMDClwbWrite_64) { run_single_write_test(rw_ops::write_clwb_64, 64); }
+TEST_F(ReadWriteTest, SingleSIMDClwbWrite_128) { run_single_write_test(rw_ops::write_clwb_128, 128); }
+TEST_F(ReadWriteTest, SingleSIMDClwbWrite_256) { run_single_write_test(rw_ops::write_clwb_256, 256); }
+TEST_F(ReadWriteTest, SingleSIMDClwbWrite_512) { run_single_write_test(rw_ops::write_clwb_512, 512); }
 
-TEST_F(ReadWriteTest, MultiSIMDClwbWrite_64) { run_multi_write_test(rw_ops::simd_write_clwb_64, 64); }
-TEST_F(ReadWriteTest, MultiSIMDClwbWrite_128) { run_multi_write_test(rw_ops::simd_write_clwb_128, 128); }
-TEST_F(ReadWriteTest, MultiSIMDClwbWrite_256) { run_multi_write_test(rw_ops::simd_write_clwb_256, 256); }
-TEST_F(ReadWriteTest, MultiSIMDClwbWrite_512) { run_multi_write_test(rw_ops::simd_write_clwb_512, 512); }
+TEST_F(ReadWriteTest, MultiSIMDClwbWrite_64) { run_multi_write_test(rw_ops::write_clwb_64, 64); }
+TEST_F(ReadWriteTest, MultiSIMDClwbWrite_128) { run_multi_write_test(rw_ops::write_clwb_128, 128); }
+TEST_F(ReadWriteTest, MultiSIMDClwbWrite_256) { run_multi_write_test(rw_ops::write_clwb_256, 256); }
+TEST_F(ReadWriteTest, MultiSIMDClwbWrite_512) { run_multi_write_test(rw_ops::write_clwb_512, 512); }
 #endif
 
+#if defined(NT_STORES_AVX_2) || defined(NT_STORES_AVX_512)
 TEST_F(ReadWriteTest, SingleSIMDNonTemporalWrite_64) { run_single_write_test(rw_ops::simd_write_nt_64, 64); }
 TEST_F(ReadWriteTest, SingleSIMDNonTemporalWrite_128) { run_single_write_test(rw_ops::simd_write_nt_128, 128); }
 TEST_F(ReadWriteTest, SingleSIMDNonTemporalWrite_256) { run_single_write_test(rw_ops::simd_write_nt_256, 256); }

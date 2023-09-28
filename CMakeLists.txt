@@ -11,6 +11,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -pthread")
 # Required for ARM64
 set(CMAKE_THREAD_LIBS_INIT "-pthread")
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  # Clang uses an expression nesting limit of 256. This needs to be increased for the unroll solution (see unroll_impl).
+  string(APPEND CMAKE_CXX_FLAGS " -fbracket-depth=1024")
+endif()
+
 # Set default build type if none was passed on the command line
 if(NOT CMAKE_BUILD_TYPE)
     message("-- No release type specified, defaulting to Release")
@@ -39,9 +44,6 @@ endif ()
 set(INCLUDE_HINTS ${CMAKE_INCLUDE_PATH} "/usr/include" "/usr/local/include")
 set(LIB_HINTS "/usr/local/lib64" "/usr/local/lib" "/usr/lib" "/usr/lib64")
 
-# CI
-option(IS_CI_BUILD "Set true if this is a CI build.")
-
 ##################### AVX ####################
 # Use this short program to check if AVX-512 is supported. For now, we only use AVX-512 or not.
 # This might need to be adapted in the future to support different SSE/AVX instructions.
@@ -49,42 +51,59 @@ include(CheckCSourceRuns)
 set(avx512_prog "int main() { asm volatile(\"vmovdqu64 %zmm0, %zmm1\"); return 0; }")
 set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -mavx512f")
 check_c_source_runs("${avx512_prog}" HAS_AVX_512)
+if (${HAS_AVX_512})
+    message(STATUS "System supports AVX-512.")
+    add_definitions("-DHAS_AVX_512")
+endif()
 
 set(avx_prog "int main() { asm volatile(\"vpsllvq %ymm0, %ymm1, %ymm2\"); return 0; }")
 set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -mavx2")
 check_c_source_runs("${avx_prog}" HAS_AVX_2)
+if (${HAS_AVX_2})
+    message(STATUS "System supports AVX-2.")
+    add_definitions("-DHAS_AVX_2")
+endif()
 
 function(fail_specify_avx)
-  message(FATAL_ERROR "Please specify the instruction set to be used (only one):
-  -DUSE_AVX_2=ON
-  -DUSE_AVX_512=ON")
+    message(FATAL_ERROR "Please specify the instruction set to be used (only one):
+    -DNT_STORES_AVX_2=ON
+    -DNT_STORES_AVX_512=ON")
 endfunction()
 
-# In case of a CI build, we do not use AVX.
-if (${IS_CI_BUILD})
-    message(STATUS "CI build specified. Not using AVX.")
-# Set HAS_AVX_512 or HAS_AVX_2 so we can use it to enable explicit AVX instructions.
-elseif ((${HAS_AVX_512}) AND (${HAS_AVX_2}))
-   if ((${USE_AVX_512}) AND (${USE_AVX_2}))
-        fail_specify_avx()
-   elseif (${USE_AVX_512})
-        add_definitions("-DHAS_AVX_512" "-DHAS_ANY_AVX")
-        message(STATUS "System supports AVX-2 and AVX-512, AVX-512 is used.")
-   elseif (${USE_AVX_2})
-        add_definitions("-DHAS_AVX_2" "-DHAS_ANY_AVX")
-        message(STATUS "System supports AVX-2 and AVX-512, AVX-2 is used.")
-   else()
-        fail_specify_avx()
-   endif()
-elseif (${HAS_AVX_512})
-    add_definitions("-DHAS_AVX_512" "-DHAS_ANY_AVX")
-    message(STATUS "System supports AVX-512.")
-elseif (${HAS_AVX_2})
-    add_definitions("-DHAS_AVX_2" "-DHAS_ANY_AVX")
-    message(STATUS "System supports AVX-2.")
-else() 
-    # No AVX instruction set supported.
-    message(FATAL_ERROR "System does not support AVX-2 or AVX-512.")
+set(NT_STORE OFF)
+
+function(use_avx_2_if_available)
+    if (${HAS_AVX_2})
+        set(NT_STORE "AVX-2" PARENT_SCOPE)
+    endif()
+endfunction()
+
+function(use_avx_512_if_available)
+    if (${HAS_AVX_512})
+        set(NT_STORE "AVX-512" PARENT_SCOPE)
+    endif()
+endfunction()
+
+if ((${NT_STORES_AVX_2}) AND (${NT_STORES_AVX_512}))
+    fail_specify_avx()
+elseif (${NT_STORES_AVX_2})
+    use_avx_2_if_available()
+elseif (${NT_STORES_AVX_512})
+    use_avx_512_if_available()
+else()
+    use_avx_2_if_available()
+    # Order-sensitive: this function call will override the above function call. Thus, we use AVX-512 is available.
+    use_avx_512_if_available()
+endif()
+
+if (${NT_STORE} STREQUAL "AVX-512")
+    add_definitions("-DNT_STORES_AVX_512")
+    message(STATUS "Using AVX-512 non-temporal stores.")
+elseif (${NT_STORE} STREQUAL "AVX-2")
+    add_definitions("-DNT_STORES_AVX_2")
+    message(STATUS "Using AVX-2 non-temporal stores.")
+else ()
+    message(WARNING "Not using any non-temporal store instructions.")
 endif()
 
 # Backup of actual required flags

@@ -14,20 +14,20 @@
 namespace {
 
 nlohmann::json single_results_to_json(const mema::SingleBenchmark& bm, const nlohmann::json& bm_results,
-                                      const std::string& simd_instruction_set, const std::string& git_hash,
+                                      const std::string& nt_stores_instruction_set, const std::string& git_hash,
                                       const std::string& compiler, const std::string& hostname) {
   return {{"bm_name", bm.benchmark_name()},
           {"bm_type", bm.benchmark_type_as_str()},
           {"matrix_args", bm.get_benchmark_configs()[0].matrix_args},
           {"benchmarks", bm_results},
-          {"simd_instruction_set", simd_instruction_set},
+          {"nt_stores_instruction_set", nt_stores_instruction_set},
           {"git_hash", git_hash},
           {"compiler", compiler},
           {"hostname", hostname}};
 }
 
 nlohmann::json parallel_results_to_json(const mema::ParallelBenchmark& bm, const nlohmann::json& bm_results,
-                                        const std::string& simd_instruction_set, const std::string& git_hash,
+                                        const std::string& nt_stores_instruction_set, const std::string& git_hash,
                                         const std::string& compiler, const std::string& hostname) {
   return {{"bm_name", bm.benchmark_name()},
           {"sub_bm_names", {bm.get_benchmark_name_one(), bm.get_benchmark_name_two()}},
@@ -36,20 +36,20 @@ nlohmann::json parallel_results_to_json(const mema::ParallelBenchmark& bm, const
            {{bm.get_benchmark_name_one(), bm.get_benchmark_configs()[0].matrix_args},
             {bm.get_benchmark_name_two(), bm.get_benchmark_configs()[1].matrix_args}}},
           {"benchmarks", bm_results},
-          {"simd_instruction_set", simd_instruction_set},
+          {"nt_stores_instruction_set", nt_stores_instruction_set},
           {"git_hash", git_hash},
           {"compiler", compiler},
           {"hostname", hostname}};
 }
 
 nlohmann::json benchmark_results_to_json(const mema::Benchmark& bm, const nlohmann::json& bm_results) {
-  auto simd_instruction_set = std::string{};
-#ifdef HAS_AVX_512
-  simd_instruction_set = "avx512";
-#elif defined HAS_AVX_2
-  simd_instruction_set = "avx2";
-#elif not defined HAS_ANY_AVX
-  simd_instruction_set = "none";
+  auto nt_stores_instruction_set = std::string{};
+#if defined NT_STORES_AVX_512
+  nt_stores_instruction_set = "avx-512";
+#elif defined NT_STORES_AVX_2
+  nt_stores_instruction_set = "avx-2";
+#else
+  nt_stores_instruction_set = "none";
 #endif
 
   // The following call of git describe will never find a tag because of --match="no-match^". Since --always is set, it
@@ -92,16 +92,16 @@ nlohmann::json benchmark_results_to_json(const mema::Benchmark& bm, const nlohma
   }
 
   if (bm.get_benchmark_type() == mema::BenchmarkType::Single) {
-    return single_results_to_json(dynamic_cast<const mema::SingleBenchmark&>(bm), bm_results, simd_instruction_set,
+    return single_results_to_json(dynamic_cast<const mema::SingleBenchmark&>(bm), bm_results, nt_stores_instruction_set,
                                   git_hash, compiler, hostname);
   } else if (bm.get_benchmark_type() == mema::BenchmarkType::Parallel) {
-    return parallel_results_to_json(dynamic_cast<const mema::ParallelBenchmark&>(bm), bm_results, simd_instruction_set,
-                                    git_hash, compiler, hostname);
+    return parallel_results_to_json(dynamic_cast<const mema::ParallelBenchmark&>(bm), bm_results,
+                                    nt_stores_instruction_set, git_hash, compiler, hostname);
   } else {
     return {{"bm_name", bm.benchmark_name()},
             {"bm_type", bm.benchmark_type_as_str()},
             {"benchmarks", bm_results},
-            {"simd_instruction_set", simd_instruction_set},
+            {"nt_stores_instruction_set", nt_stores_instruction_set},
             {"git_hash", git_hash},
             {"compiler", compiler},
             {"hostname", hostname}};

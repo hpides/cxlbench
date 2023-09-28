@@ -1,4 +1,7 @@
+#if defined(HAS_AVX_2) || defined(HAS_AVX_512)
 #include <immintrin.h>
+#endif
+
 #include <numa.h>
 #include <numaif.h>
 #include <string.h>
@@ -88,7 +91,7 @@ TEST_F(NumaReadWriteTest, AVX2WriteRead) {
     for (auto cache_line_idx = size_t{0}; cache_line_idx < cache_line_count; ++cache_line_idx) {
       const auto addr = base_addr + (cache_line_idx * rw_ops::CACHE_LINE_SIZE);
       // write data to memory region via AVX2 intrinsics
-      rw_ops::simd_write_none_64(addr);
+      rw_ops::write_none_64(addr);
       // read data from memory region via AVX2 intrinsics into SIMD registers
       __m256i read_result[2];
       read_result[0] = READ_SIMD_256(addr, 0);
@@ -124,7 +127,7 @@ TEST_F(NumaReadWriteTest, AVX512WriteRead) {
     for (auto cache_line_idx = size_t{0}; cache_line_idx < cache_line_count; ++cache_line_idx) {
       const auto addr = base_addr + (cache_line_idx * rw_ops::CACHE_LINE_SIZE);
       // write data to memory region via AVX512 intrinsics
-      rw_ops::simd_write_none_64(addr);
+      rw_ops::write_none_64(addr);
       // read data from memory region via AVX512 intrinsics into SIMD registers
       const __m512i read_result = READ_SIMD_512(addr, 0);
       // store data from SIMD registers into local char array
