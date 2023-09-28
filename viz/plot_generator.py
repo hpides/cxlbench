@@ -4,7 +4,9 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import seaborn as sns
+import math
 import matplotlib.ticker as ticker
+import numpy as np
 import sys
 
 KEY_ACCESS_SIZE = "access_size"
@@ -29,8 +31,8 @@ KEY_TAG = "tag"
 KEY_THREAD_COUNT = "number_threads"
 KEY_THREADS = "threads"
 KEY_THREADS_LEVELED = "benchmarks.results.threads"
-KEY_WRITE_INSTRUCTION = "flush_instruction"
-WRITE_INSTR_NONE = "none"
+KEY_FLUSH_INSTRUCTION = "flush_instruction"
+FLUSH_INSTR_NONE = "none"
 
 PLOT_FILE_PREFIX = "plot"
 FILE_TAG_SUBSTRING = "TAG_"
@@ -67,7 +69,7 @@ def assert_config_columns_one_value(df, exclude_columns):
         KEY_ACCESS_SIZE,
         KEY_OPERATION,
         KEY_OPERATION_COUNT,
-        KEY_WRITE_INSTRUCTION,
+        KEY_FLUSH_INSTRUCTION,
         KEY_MEMORY_REGION_SIZE,
         KEY_RUN_TIME,
         KEY_RANDOM_DISTRIBUTION,
@@ -84,11 +86,12 @@ class PlotGenerator:
     This class calls the methods of the plotter classes, according go the given JSON.
     """
 
-    def __init__(self, results, output_dir, no_plots, do_barplots):
+    def __init__(self, results, output_dir, no_plots, do_barplots, memory_nodes):
         self.results = results
         self.output_dir = output_dir
         self.no_plots = no_plots
         self.do_barplots = do_barplots
+        self.memory_nodes = memory_nodes
 
     # mainly used for legacy versions of json files. With newer versions, we want to be able to differentiate between
     # different setups, e.g., even if multiple json fils only contain DRAM measurements, the DRAM memory regions might
@@ -157,12 +160,12 @@ class PlotGenerator:
         df[KEY_ACCESS_SIZE] = df[KEY_ACCESS_SIZE].fillna(-1)
         df[KEY_ACCESS_SIZE] = df[KEY_ACCESS_SIZE].astype(int)
 
-        # For read benchmarks, an additional write instruction will never be performed. As 'none' is also one of the
-        # valid write instructions, we set the corresponding value to 'none'. If only read benchnarks have been
-        # performed, the dataframe does note have a KEY_WRITE_INSTRUCTION column so it must be added.
-        if KEY_WRITE_INSTRUCTION not in df.columns:
-            df[KEY_WRITE_INSTRUCTION] = WRITE_INSTR_NONE
-        df[KEY_WRITE_INSTRUCTION] = df[KEY_WRITE_INSTRUCTION].fillna(WRITE_INSTR_NONE)
+        # For read benchmarks, an additional flush instruction will never be performed. As 'none' is also one of the
+        # valid flush instructions, we set the corresponding value to 'none'. If only read benchnarks have been
+        # performed, the dataframe does note have a KEY_FLUSH_INSTRUCTION column so it must be added.
+        if KEY_FLUSH_INSTRUCTION not in df.columns:
+            df[KEY_FLUSH_INSTRUCTION] = FLUSH_INSTR_NONE
+        df[KEY_FLUSH_INSTRUCTION] = df[KEY_FLUSH_INSTRUCTION].fillna(FLUSH_INSTR_NONE)
         df[KEY_BANDWIDTH_GB] = df[KEY_BANDWIDTH_GiB] * (1024**3 / 1e9)
 
         df.to_csv("{}/flattened_df.csv".format(self.output_dir))
@@ -194,35 +197,37 @@ class PlotGenerator:
 
         bm_groups = df[KEY_BM_GROUP].unique()
         partition_counts = df[KEY_PARTITION_COUNT].unique()
-        write_types = df[KEY_WRITE_INSTRUCTION].unique()
+        flush_types = df[KEY_FLUSH_INSTRUCTION].unique()
         tags = df[KEY_TAG].unique()
 
         for tag in tags:
-            for write_type in write_types:
+            for flush_type in flush_types:
                 for partition_count in partition_counts:
                     for bm_group in bm_groups:
                         # (comment in for debug purposes)
-                        # print(tag, write_type, partition_count, bm_group)
+                        # print(tag, flush_type, partition_count, bm_group)
                         df_sub = df[
                             (df[KEY_BM_GROUP] == bm_group)
                             & (df[KEY_PARTITION_COUNT] == partition_count)
-                            & (df[KEY_WRITE_INSTRUCTION] == write_type)
+                            & (df[KEY_FLUSH_INSTRUCTION] == flush_type)
                             & (df[KEY_TAG] == tag)
                         ]
 
                         # (comment in for debug purposes)
-                        # print("DF for", tag, bm_group, partition_count, write_type, tag)
+                        # print("DF for", tag, bm_group, partition_count, flush_type, tag)
                         # print(df_sub.to_string())
 
-                        # Since we check for certain write instructions, the data frame is empty for read and operation
-                        # latency benchmark results if the write instruction is not `none`.
+                        # Since we check for certain flush instructions, the data frame is empty for read and operation
+                        # latency benchmark results if the flush instruction is not `none`.
+                        if flush_type != FLUSH_INSTR_NONE and (
+                            "read" in bm_group or bm_group == "operation_latency"
+                        ):
+                            assert df_sub.empty, "Flush instruction must be none for read and latency benchmarks."
+
                         if df_sub.empty:
-                            assert write_type is not WRITE_INSTR_NONE and (
-                                "read" in bm_group or bm_group == "operation_latency"
-                            ), "write_type is {} and bm_group is {}".format(write_type, bm_group)
                             continue
 
-                        if tag == "B" and write_type == "nocache" and bm_group == "random_writes":
+                        if tag == "B" and flush_type == "nocache" and bm_group == "random_writes":
                             # Comment in to filter for a specific thread count.
                             # plot_df = df_sub[df_sub[KEY_THREAD_COUNT] == 8]
                             self.create_paper_plot_throughput_for_threadcount(df_sub, "cache_random_write_8threads")
@@ -233,17 +238,17 @@ class PlotGenerator:
     def create_plot(self, df):
         bm_group = get_single_distinct_value(KEY_BM_GROUP, df)
         partition_count = get_single_distinct_value(KEY_PARTITION_COUNT, df)
-        write_type = get_single_distinct_value(KEY_WRITE_INSTRUCTION, df)
+        flush_type = get_single_distinct_value(KEY_FLUSH_INSTRUCTION, df)
         tag = get_single_distinct_value(KEY_TAG, df)
         bandwidth_plot_group = ["sequential_reads", "random_reads", "sequential_writes", "random_writes"]
         latency_plot_group = ["operation_latency"]
-        plot_title_template = "{} [Flush: {}] {}, <custom>".format(tag, write_type, bm_group.replace("_", " ").title())
+        plot_title_template = "{} [Flush: {}] {}, <custom>".format(tag, flush_type, bm_group.replace("_", " ").title())
         legend_title = "Memory Node"
-        pdf_filename_template = "{prefix}_{tag}_part_{partition_count}_{write_type}_{bm_group}_<custom>.pdf".format(
+        pdf_filename_template = "{prefix}_{tag}_part_{partition_count}_{flush_type}_{bm_group}_<custom>.pdf".format(
             prefix=PLOT_FILE_PREFIX,
             partition_count=partition_count,
             bm_group=bm_group,
-            write_type=write_type,
+            flush_type=flush_type,
             tag=tag,
         )
         df.to_csv("{}/{}".format(self.output_dir, pdf_filename_template.replace("_<custom>.pdf", ".csv")))
@@ -251,12 +256,28 @@ class PlotGenerator:
             if self.do_barplots:
                 # Plot 1 (x: thread count, y: throughput, for each access size)
                 access_sizes = df[KEY_ACCESS_SIZE].unique()
-                for access_size in access_sizes:
+                access_sizes_count = len(access_sizes)
+
+                row_count = math.ceil(access_sizes_count / 3)
+                col_count = min(3, access_sizes_count)
+
+                fig, axes = plt.subplots(row_count, col_count)
+                if access_sizes_count <= 3:
+                    axes = np.reshape(axes, (1, access_sizes_count))
+                else:
+                    if access_sizes_count % 3 == 1:
+                        axes[-1, -1].axis("off")
+                        axes[-1, -2].axis("off")
+                    if access_sizes_count % 3 == 2:
+                        axes[-1, -1].axis("off")
+
+                for index in range(access_sizes_count):
+                    access_size = access_sizes[index]
                     plot_df = df[df[KEY_ACCESS_SIZE] == access_size]
                     assert_config_columns_one_value(plot_df, [KEY_THREAD_COUNT])
                     print("Creating barplot (# threads) for BM group {}, {}B".format(bm_group, access_size))
-                    filename = pdf_filename_template.replace("<custom>", "{}B".format(access_size))
                     plot_title = plot_title_template.replace("<custom>", "{}B".format(access_size))
+
                     self.create_barplot(
                         plot_df,
                         KEY_THREAD_COUNT,
@@ -266,16 +287,51 @@ class PlotGenerator:
                         KEY_NUMA_MEMORY_NODES,
                         plot_title,
                         legend_title,
-                        filename,
+                        self.memory_nodes,
+                        axes,
+                        index,
                     )
+
+                fig.set_size_inches(
+                    min(3, len(access_sizes))
+                    * (
+                        len(df[df[KEY_ACCESS_SIZE] == access_sizes[0]][KEY_THREAD_COUNT].unique())
+                        + len(df[df[KEY_ACCESS_SIZE] == access_sizes[0]][KEY_NUMA_MEMORY_NODES].unique())
+                    )
+                    * 0.8,
+                    math.ceil(len(access_sizes) / 3) * 5,
+                )
+                fig.tight_layout()
+
+                filename = pdf_filename_template.replace("<custom>", "access_size")
+                fig.savefig("{}/{}".format(self.output_dir, filename))
+                plt.close('all')
+
                 # Plot 2 (x: access size, y: throughput)
                 thread_counts = df[KEY_THREAD_COUNT].unique()
-                for thread_count in thread_counts:
+                thread_counts_count = len(thread_counts)
+
+                row_count = math.ceil(thread_counts_count / 3)
+                col_count = min(3, thread_counts_count)
+
+                fig, axes = plt.subplots(row_count, col_count)
+                if thread_counts_count <= 3:
+                    axes = np.reshape(axes, (1, thread_counts_count))
+                else:
+                    if thread_counts_count % 3 == 1:
+                        axes[-1, -1].axis("off")
+                        axes[-1, -2].axis("off")
+                    if thread_counts_count % 3 == 2:
+                        axes[-1, -1].axis("off")
+
+                for index in range(thread_counts_count):
+                    thread_count = thread_counts[index]
                     plot_df = df[df[KEY_THREAD_COUNT] == thread_count]
                     assert_config_columns_one_value(plot_df, [KEY_ACCESS_SIZE])
                     print("Creating barplot (access sizes) for BM group {}, {} threads".format(bm_group, thread_count))
                     filename = pdf_filename_template.replace("<custom>", "{}_threads".format(thread_count))
                     plot_title = plot_title_template.replace("<custom>", "{} Threads".format(thread_count))
+
                     self.create_barplot(
                         plot_df,
                         KEY_ACCESS_SIZE,
@@ -285,15 +341,32 @@ class PlotGenerator:
                         KEY_NUMA_MEMORY_NODES,
                         plot_title,
                         legend_title,
-                        filename,
+                        self.memory_nodes,
+                        axes,
+                        index,
                     )
+
+                filename = pdf_filename_template.replace("<custom>", "threads")
+                fig.set_size_inches(
+                    min(3, len(thread_counts))
+                    * (
+                        len(df[df[KEY_THREAD_COUNT] == thread_counts[0]][KEY_ACCESS_SIZE].unique())
+                        + len(df[df[KEY_THREAD_COUNT] == thread_counts[0]][KEY_NUMA_MEMORY_NODES].unique())
+                    )
+                    * 0.8,
+                    math.ceil(len(thread_counts) / 3) * 5,
+                )
+                fig.tight_layout()
+                fig.savefig("{}/{}".format(self.output_dir, filename))
+                plt.close('all')
+
             # Plot 3: heatmap (x: thread count, y: access size)
             numa_memory_nodes = df[KEY_NUMA_MEMORY_NODES].unique()
             for memory_node in numa_memory_nodes:
-                write_type = get_single_distinct_value(KEY_WRITE_INSTRUCTION, df)
+                flush_type = get_single_distinct_value(KEY_FLUSH_INSTRUCTION, df)
                 print(
                     "Creating heatmap for BM group {}, {}, Numa Memory Node {}".format(
-                        bm_group, write_type, memory_node
+                        bm_group, flush_type, memory_node
                     )
                 )
                 df_sub = df[df[KEY_NUMA_MEMORY_NODES] == memory_node]
@@ -303,7 +376,12 @@ class PlotGenerator:
         elif bm_group in latency_plot_group:
             # Todo: per custom instruction, show threads
             thread_counts = df[KEY_THREAD_COUNT].unique()
-            for thread_count in thread_counts:
+            thread_counts_count = len(thread_counts)
+
+            for index in range(thread_counts_count):
+                fig, axes = plt.subplots(1, 1)
+                axes = np.reshape(axes, (1, -1))
+                thread_count = thread_counts[index]
                 print(
                     "Creating barplot (latency per operations) for BM group {} and thread count {}".format(
                         bm_group, thread_count
@@ -317,6 +395,7 @@ class PlotGenerator:
                 plot_title = plot_title_template.replace(
                     "<custom>", "Latency Custom Ops {} Threads".format(thread_count)
                 )
+
                 self.create_barplot(
                     df_thread,
                     KEY_CUSTOM_OPS,
@@ -327,9 +406,24 @@ class PlotGenerator:
                     plot_title,
                     legend_title,
                     filename,
+                    self.memory_nodes,
+                    0,
                     True,
                 )
+
+                fig.set_size_inches(
+                    (
+                        len(df[df[KEY_THREAD_COUNT] == thread_counts[0]][KEY_CUSTOM_OPS].unique())
+                        + len(df[df[KEY_THREAD_COUNT] == thread_counts[0]][KEY_NUMA_MEMORY_NODES].unique())
+                    )
+                    * 0.8,
+                    10,
+                )
+                fig.tight_layout()
+                fig.savefig("{}/{}".format(self.output_dir, filename))
+                plt.close('all')
             print("Generating ploits for latency plot group needs to be implemented.")
+
         else:
             sys.exit("Benchmark group '{}' is not known.".format(bm_group))
 
@@ -390,9 +484,14 @@ class PlotGenerator:
         )
         plt.close(fig)
 
-    def create_barplot(self, data, x, y, x_label, y_label, hue, title, legend_title, filename, rotation_x_labels=False):
+    def create_barplot(
+        self, data, x, y, x_label, y_label, hue, title, legend_title, memory_nodes, axes, index, rotation_x_labels=False
+    ):
         hpi_palette = [(0.9609, 0.6563, 0), (0.8633, 0.3789, 0.0313), (0.6914, 0.0234, 0.2265)]
         palette = [hpi_palette[0], hpi_palette[1], hpi_palette[2]]
+
+        x_index = index % 3
+        y_index = math.floor(index / 3)
 
         x_count = len(data[x].unique())
         hue_count = len(data[hue].unique())
@@ -407,11 +506,15 @@ class PlotGenerator:
             palette=palette,
             linewidth=2,
             edgecolor="k",
-            width=0.8,
+            width=0.4,
+            ax=axes[y_index][x_index],
         )
+        barplot.margins(y=0.16)
         barplot.set_xlabel(x_label)
         barplot.set_ylabel(y_label)
-        barplot.set_title(title, pad=50)
+        barplot.set_title(title, pad=50, fontsize=6)
+
+        barplot.grid(axis="y", color="k", linestyle=":")
 
         # Set hatches
         x_distinct_val_count = len(data[x].unique())
@@ -420,8 +523,18 @@ class PlotGenerator:
             # Set a different hatch for each bar
             hatch_idx = int(patch_idx / x_distinct_val_count)
             bar.set_hatch(hatches[hatch_idx])
+
         # Update legend so that hatches are also visible
         barplot.legend(title=legend_title)
+
+        if len(memory_nodes) > 0:
+            assert len(memory_nodes) == len(
+                data[hue].unique()
+            ), "{} memory nodes given but {} memory nodes in the data frame.".format(
+                len(memory_nodes), len(data[hue].unique())
+            )
+            barplot.legend(labels=memory_nodes)
+
         sns.move_legend(
             barplot,
             "lower center",
@@ -436,12 +549,6 @@ class PlotGenerator:
 
         if rotation_x_labels:
             plt.xticks(rotation=90)
-
-        plt.tight_layout()
-        plt.grid(axis="y", color="k", linestyle=":")
-        fig = barplot.get_figure()
-        fig.savefig("{}/{}".format(self.output_dir, filename))
-        plt.close(fig)
 
     def create_heatmap(self, df, title, filename):
         df_heatmap = pd.pivot_table(df, index=KEY_ACCESS_SIZE, columns=KEY_THREAD_COUNT, values=KEY_BANDWIDTH_GB)

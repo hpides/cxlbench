@@ -31,9 +31,13 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--output_dir", help="path to the output directory")
     parser.add_argument("--noplots", action="store_true")
     parser.add_argument("--bars", action="store_true")
+    parser.add_argument("--memory_nodes", nargs="+", help="names of the memory nodes")
     args = parser.parse_args()
 
     results_path = args.results
+    if not results_path.startswith("./") and not results_path.startswith("/"):
+        results_path = "./" + results_path
+
     output_dir_string = None
 
     # get the output directory paths
@@ -55,9 +59,13 @@ if __name__ == "__main__":
     results = args.results
     no_plots = args.noplots
     do_barplots = args.bars
+    if args.memory_nodes is not None:
+        memory_nodes = args.memory_nodes
+    else:
+        memory_nodes = []
 
     os.makedirs(output_dir, exist_ok=True)
 
     # create plots
-    plotter = PlotGenerator(results, output_dir, no_plots, do_barplots)
+    plotter = PlotGenerator(results, output_dir, no_plots, do_barplots, memory_nodes)
     plotter.process_matrix_jsons()
