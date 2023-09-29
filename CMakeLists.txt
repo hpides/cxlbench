@@ -45,8 +45,8 @@ set(INCLUDE_HINTS ${CMAKE_INCLUDE_PATH} "/usr/include" "/usr/local/include")
 set(LIB_HINTS "/usr/local/lib64" "/usr/local/lib" "/usr/lib" "/usr/lib64")
 
 ##################### AVX ####################
-# Use this short program to check if AVX-512 is supported. For now, we only use AVX-512 or not.
-# This might need to be adapted in the future to support different SSE/AVX instructions.
+# We use this short programs to check for AVX-512 and AVX-2 support.
+# If neither is supported, non-temporal stores are disabled.
 include(CheckCSourceRuns)
 set(avx512_prog "int main() { asm volatile(\"vmovdqu64 %zmm0, %zmm1\"); return 0; }")
 set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -mavx512f")
