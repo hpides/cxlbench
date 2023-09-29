@@ -219,9 +219,7 @@ class PlotGenerator:
 
                         # Since we check for certain flush instructions, the data frame is empty for read and operation
                         # latency benchmark results if the flush instruction is not `none`.
-                        if flush_type != FLUSH_INSTR_NONE and (
-                            "read" in bm_group or bm_group == "operation_latency"
-                        ):
+                        if flush_type != FLUSH_INSTR_NONE and ("read" in bm_group or bm_group == "operation_latency"):
                             assert df_sub.empty, "Flush instruction must be none for read and latency benchmarks."
 
                         if df_sub.empty:
@@ -305,7 +303,7 @@ class PlotGenerator:
 
                 filename = pdf_filename_template.replace("<custom>", "access_size")
                 fig.savefig("{}/{}".format(self.output_dir, filename))
-                plt.close('all')
+                plt.close("all")
 
                 # Plot 2 (x: access size, y: throughput)
                 thread_counts = df[KEY_THREAD_COUNT].unique()
@@ -358,7 +356,7 @@ class PlotGenerator:
                 )
                 fig.tight_layout()
                 fig.savefig("{}/{}".format(self.output_dir, filename))
-                plt.close('all')
+                plt.close("all")
 
             # Plot 3: heatmap (x: thread count, y: access size)
             numa_memory_nodes = df[KEY_NUMA_MEMORY_NODES].unique()
@@ -421,7 +419,7 @@ class PlotGenerator:
                 )
                 fig.tight_layout()
                 fig.savefig("{}/{}".format(self.output_dir, filename))
-                plt.close('all')
+                plt.close("all")
             print("Generating ploits for latency plot group needs to be implemented.")
 
         else:
@@ -550,10 +548,20 @@ class PlotGenerator:
         if rotation_x_labels:
             plt.xticks(rotation=90)
 
+        plt.close()
+
     def create_heatmap(self, df, title, filename):
         df_heatmap = pd.pivot_table(df, index=KEY_ACCESS_SIZE, columns=KEY_THREAD_COUNT, values=KEY_BANDWIDTH_GB)
+        thread_count = len(df[KEY_THREAD_COUNT].unique())
+        access_size_count = len(df[KEY_ACCESS_SIZE].unique())
+        plt.figure(figsize=(max(thread_count * 0.5, 4), max(access_size_count * 0.4, 2)))
         heatmap = sns.heatmap(
-            df_heatmap, annot=True, annot_kws={"fontsize": 6, "va": "center_baseline"}, fmt=".1f", cmap="magma"
+            df_heatmap,
+            annot=True,
+            annot_kws={"fontsize": 6, "va": "center_baseline"},
+            fmt=".1f",
+            cmap="magma",
+            cbar_kws={"label": "Throughput in GB/s"},
         )
         heatmap.set_xlabel("Thread Count")
         heatmap.set_ylabel("Access size (Byte)")
