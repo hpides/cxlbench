@@ -5,6 +5,5 @@ find "$DIR/../src" -iname '*.hpp' -o -iname '*.cpp' | xargs clang-format -i -sty
 find "$DIR/../test" -iname '*.hpp' -o -iname '*.cpp' | xargs clang-format -i -style=file
 
 # Python formatting
-black --line-length 120 viz -q
 black --line-length 120 scripts -q
 

@@ -6,8 +6,7 @@ build-*/
 cmake-build-*
 results*/
 venv/
-viz/__pycache__/
-viz/html/*.html
+scripts/__pycache__/
 *.json
 output/
 test.yaml

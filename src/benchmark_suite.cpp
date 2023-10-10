@@ -217,7 +217,7 @@ void BenchmarkSuite::run_benchmarks(const MemaOptions& options) {
     char hostname[1024] = "";
     gethostname(hostname, sizeof(hostname));
     auto ss = std::stringstream{};
-    ss << "scp " << hostname << ":" << result_file << " .";
+    ss << "./scripts/scplot.sh " << hostname << " " << result_file;
     std::cout << ss.str() << std::endl;
   }
 
