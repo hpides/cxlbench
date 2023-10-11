@@ -141,52 +141,6 @@ with:
  `<flush_instruction>` is the instruction to use after the write (none, cache, noache),
  (optional) `<offset>` is the offset to the previously accessed address (can be negative, default is 0)
 
-## Used AVX-512 Intrinsics
+## System Configuration
 
-Read: `_mm512_load_si512`
-```
-extern __m512i __cdecl _mm512_load_si512(void const* mem_addr);
-```
-
->Load 512-bits of integer data from memory into destination.
->
->mem_addr must be aligned on a 64-byte boundary or a general-protection exception will be generated.
-
-Write Non-Temporal: `_mm512_stream_si512`
-```
-extern void __cdecl _mm512_stream_si512(void* mem_addr, __m512i a);
-```
->Store 512-bits of integer data from a into memory using a non-temporal memory hint.
-
-Write: `_mm512_store_si512`
-```
-extern void __cdecl _mm512_store_si512(void* mem_addr, __m512i a);
-```
->Store 512-bits of integer data from a into memory.
->
->mem_addr must be aligned on a 64-byte boundary or a general-protection exception will be generated.
-
-Based on Intel's documentation [Intrinsics for Integer Load and Store Operations](https://www.intel.com/content/www/us/en/docs/cpp-compiler/developer-guide-reference/2021-8/intrinsics-for-integer-load-and-store-operations.html)
-
-## Used AVX-2 Intrinsics
-
-Read: `_mm256_load_si256`
-```
-extern __m256i _mm256_load_si256(__m256i const *a);
-```
-
->Loads integer values from the 256-bit aligned memory location pointed to by *a, into a destination integer vector, which is returned by the intrinsic.
-
-Write Non-Temporal: `_mm256_stream_si256`
-```
-extern void _mm256_stream_si256(__m256i *p, __m256i a);
-```
->Performs a store operation by moving scalar integer values from an integer vector a, to a 256-bit aligned memory location, pointed to by p, using a non-temporal hint to prevent caching of the data during the write to memory.
-
-Write: `_mm256_store_si256`
-```
-extern void _mm256_store_si256(__m256i *a, __m256i b);
-```
->Performs a store operation by moving integer values from a 256-bit integer vector, b, to a 256-bit aligned memory location, pointed to by a.
-
-Based on Intel's documentation [Intrinsics for Load and Store Operations](https://www.intel.com/content/www/us/en/docs/cpp-compiler/developer-guide-reference/2021-10/intrinsics-for-load-and-store-operations-001.html)
+For configuring your system for benchmark runs, you might want to use the `./scripts/system_setup.sh` script.
