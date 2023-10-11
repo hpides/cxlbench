@@ -240,7 +240,7 @@ class PlotGenerator:
         tag = get_single_distinct_value(KEY_TAG, df)
         bandwidth_plot_group = ["sequential_reads", "random_reads", "sequential_writes", "random_writes"]
         latency_plot_group = ["operation_latency"]
-        plot_title_template = "{} [Flush: {}] {}, <custom>".format(tag, flush_type, bm_group.replace("_", " ").title())
+        plot_title_template = "{} [Flush: {}] {}\n <custom>".format(tag, flush_type, bm_group.replace("_", " ").title())
         legend_title = "Memory Node"
         pdf_filename_template = "{prefix}_{tag}_part_{partition_count}_{flush_type}_{bm_group}_<custom>.pdf".format(
             prefix=PLOT_FILE_PREFIX,
@@ -554,7 +554,7 @@ class PlotGenerator:
         df_heatmap = pd.pivot_table(df, index=KEY_ACCESS_SIZE, columns=KEY_THREAD_COUNT, values=KEY_BANDWIDTH_GB)
         thread_count = len(df[KEY_THREAD_COUNT].unique())
         access_size_count = len(df[KEY_ACCESS_SIZE].unique())
-        plt.figure(figsize=(max(thread_count * 0.5, 4), max(access_size_count * 0.4, 2)))
+        plt.figure(figsize=(max(thread_count * 0.6, 4), max(access_size_count * 0.4, 4)))
         heatmap = sns.heatmap(
             df_heatmap,
             annot=True,
