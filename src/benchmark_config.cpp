@@ -250,7 +250,22 @@ void BenchmarkConfig::validate() const {
 
   const bool numa_task_nodes_present = numa_task_nodes.size() > 0;
   CHECK_ARGUMENT(numa_task_nodes_present, "NUMA task nodes must be specified.");
+
+#ifdef HAS_CLWB
+  const bool clwb_supported_or_not_used = true;
+#else
+  const bool clwb_supported_or_not_used = flush_instruction != FlushInstruction::Cache;
+#endif
+  CHECK_ARGUMENT(clwb_supported_or_not_used, "MemA must be compiled with support for clwb to use clwb flushes.");
+
+#if defined(NT_STORES_AVX_2) || defined(NT_STORES_AVX_512)
+  const bool nt_stores_supported_or_not_used = true;
+#else
+  const bool nt_stores_supported_or_not_used = flush_instruction != FlushInstruction::NoCache;
+#endif
+  CHECK_ARGUMENT(nt_stores_supported_or_not_used, "MemA must be compiled with support for NT stores to use NT stores.");
 }
+
 bool BenchmarkConfig::contains_read_op() const { return operation == Operation::Read || exec_mode == Mode::Custom; }
 
 bool BenchmarkConfig::contains_write_op() const {
