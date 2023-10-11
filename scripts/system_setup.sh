@@ -15,5 +15,11 @@ echo -e "\n### Disabling SMT\n" &&
 echo Writing to /sys/devices/system/cpu/smt/control: &&
 echo off | sudo tee /sys/devices/system/cpu/smt/control &&
 echo cat /sys/devices/system/cpu/smt/control: &&
-cat /sys/devices/system/cpu/smt/control
+cat /sys/devices/system/cpu/smt/control &&
+
+echo -e "\n### Allocating huge pages\n" &&
+echo Writing to /proc/sys/vm/nr_hugepages: &&
+echo 4000 | sudo tee /proc/sys/vm/nr_hugepages &&
+echo cat /proc/sys/vm/nr_hugepages: &&
+cat /proc/sys/vm/nr_hugepages
 
