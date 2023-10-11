@@ -35,12 +35,12 @@ jobs:
     - name: Configure CMake GCC
       shell: bash
       working-directory: ${{runner.workspace}}/build-gcc
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_C_COMPILER=$GCC -DCMAKE_CXX_COMPILER=$GXX -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TEST=ON -DIS_CI_BUILD=ON
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_C_COMPILER=$GCC -DCMAKE_CXX_COMPILER=$GXX -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TEST=ON
 
     - name: Configure CMake Clang
       shell: bash
       working-directory: ${{runner.workspace}}/build-clang
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_C_COMPILER=$CLANG -DCMAKE_CXX_COMPILER=$CLANGXX -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TEST=ON -DIS_CI_BUILD=ON
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_C_COMPILER=$CLANG -DCMAKE_CXX_COMPILER=$CLANGXX -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TEST=ON
 
     - name: Build GCC
       working-directory: ${{runner.workspace}}/build-gcc

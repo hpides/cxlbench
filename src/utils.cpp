@@ -69,36 +69,24 @@ char* map(const size_t expected_length, const bool use_huge_pages, const NumaNod
   return static_cast<char*>(addr);
 }
 
+// Returns the lowest node node ID on which the current thread is allowed to run on. Assuming a thread is limited to a
+// single node, this function returns the node it runs on.
 NumaNodeID get_numa_task_node() {
-  // get the CPU affinity mask of the calling thread
-  cpu_set_t cpu_set;
-  if (sched_getaffinity(0, sizeof(cpu_set), &cpu_set) != 0) {
-    spdlog::critical("Error: sched_getaffinity() failed");
-    crash_exit();
-  }
+  // TODO(anyone) modify to return vector of nodes.
+  auto max_node_id = numa_max_node();
 
-  // get the number of NUMA nodes
-  int node_count = numa_max_node() + 1;
+  // Check which NUMA node the calling thread runs on.
+  const auto* const run_node_mask = numa_get_run_node_mask();
 
-  // check which NUMA node the calling thread runs on
-  for (auto node_id = NumaNodeID{0}; node_id < node_count; ++node_id) {
-    auto node_cpu_mask = numa_allocate_cpumask();
-    numa_node_to_cpus(node_id, node_cpu_mask);
-    bool is_on_node = true;
-    for (auto cpu_bit = uint16_t{0}; cpu_bit < CPU_SETSIZE; ++cpu_bit) {
-      if (CPU_ISSET(cpu_bit, &cpu_set) && !numa_bitmask_isbitset(node_cpu_mask, cpu_bit)) {
-        is_on_node = false;
-        break;
-      }
-    }
-    numa_free_cpumask(node_cpu_mask);
-    if (is_on_node) {
+  for (auto node_id = NumaNodeID{0}; node_id <= max_node_id; ++node_id) {
+    if (numa_bitmask_isbitset(run_node_mask, node_id)) {
       return node_id;
     }
   }
 
   spdlog::critical("Could not determine NUMA node of calling thread");
   crash_exit();
+
   return 0;
 }
 

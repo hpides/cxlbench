@@ -105,10 +105,14 @@ TEST_F(UtilsTest, AddToResultFile) {
 }
 
 TEST_F(UtilsTest, RetrieveCorrectNumaTaskNode) {
-  const auto numa_node_count = numa_num_configured_nodes();
-  for (auto index = NumaNodeID{0}; index < numa_node_count; ++index) {
-    set_task_on_numa_nodes({index});
-    EXPECT_EQ(get_numa_task_node(), index);
+  const auto numa_max_node_id = numa_max_node();
+  const auto* const cpu_nodes_mask = numa_get_run_node_mask();
+  for (auto node_id = NumaNodeID{0}; node_id < numa_max_node_id; ++node_id) {
+    if (!numa_bitmask_isbitset(cpu_nodes_mask, node_id)) {
+      continue;
+    }
+    set_task_on_numa_nodes({node_id});
+    EXPECT_EQ(get_numa_task_node(), node_id);
   }
 }
 

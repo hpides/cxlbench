@@ -6,7 +6,21 @@ include(FetchContent)
 include(CheckCXXSourceCompiles)
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -pthread")
+
+message(STATUS "CPU architecture: ${CMAKE_SYSTEM_PROCESSOR}")
+
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(powerpc|ppc)64le$")
+  # Since -march is not supported by power (e.g., ppc64le) systems, we use -mtune here, which tunes the generated code
+  # for the specified cpu type. See https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html for further information.
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mtune=native")
+  message(STATUS "Set -mtune=native")
+else()
+  # Selects the CPU to generate code for at compilation time by determining the processor type of the compiling machine.
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+  message(STATUS "Set -march=native")
+endif()
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
 # Required for ARM64
 set(CMAKE_THREAD_LIBS_INIT "-pthread")

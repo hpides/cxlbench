@@ -40,9 +40,13 @@ class NumaReadWriteTest : public BaseTest {
 
 TEST_F(NumaReadWriteTest, SimpleWriteRead) {
   const auto memory_region_size = 100 * MIB_IN_BYTES;
-  const auto numa_node_count = numa_num_configured_nodes();
-  for (auto numa_idx = NumaNodeID{0}; numa_idx < numa_node_count; ++numa_idx) {
+  const auto max_node_id = numa_max_node();
+  const auto* const memory_nodes_mask = numa_get_mems_allowed();
+  for (auto numa_idx = NumaNodeID{0}; numa_idx <= max_node_id; ++numa_idx) {
     SCOPED_TRACE("NUMA node index: " + std::to_string(numa_idx));
+    if (!numa_bitmask_isbitset(memory_nodes_mask, numa_idx)) {
+      continue;
+    }
     char* base_addr =
         static_cast<char*>(mmap(nullptr, memory_region_size, PROT_READ | PROT_WRITE, utils::MAP_FLAGS, -1, 0));
     ASSERT_NE(base_addr, MAP_FAILED);
@@ -73,9 +77,14 @@ TEST_F(NumaReadWriteTest, SimpleWriteRead) {
 
 TEST_F(NumaReadWriteTest, IntrinsicsWriteRead) {
   const auto memory_region_size = 100 * MIB_IN_BYTES;
-  const auto numa_node_count = numa_num_configured_nodes();
-  for (auto numa_idx = NumaNodeID{0}; numa_idx < numa_node_count; ++numa_idx) {
+  const auto max_node_id = numa_max_node();
+  const auto* const memory_nodes_mask = numa_get_mems_allowed();
+  for (auto numa_idx = NumaNodeID{0}; numa_idx <= max_node_id; ++numa_idx) {
     SCOPED_TRACE("NUMA node index: " + std::to_string(numa_idx));
+    if (!numa_bitmask_isbitset(memory_nodes_mask, numa_idx)) {
+      continue;
+    }
+
     char* base_addr =
         static_cast<char*>(mmap(nullptr, memory_region_size, PROT_READ | PROT_WRITE, utils::MAP_FLAGS, -1, 0));
     ASSERT_NE(base_addr, MAP_FAILED);

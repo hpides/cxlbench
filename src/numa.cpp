@@ -20,6 +20,7 @@ void log_numa_nodes(const NumaNodeIDs& nodes) {
 
 void set_task_on_numa_nodes(const NumaNodeIDs& node_ids) {
   const size_t numa_node_count = numa_num_configured_nodes();
+  const size_t max_node_id = numa_max_node();
 
   if (node_ids.empty()) {
     spdlog::warn("No NUMA task nodes specified, task was not pinned to a NUMA node.");
@@ -40,10 +41,11 @@ void set_task_on_numa_nodes(const NumaNodeIDs& node_ids) {
     return;
   }
 
-  auto numa_nodemask = numa_bitmask_alloc(numa_node_count);
+  const auto* const run_node_mask = numa_get_run_node_mask();
+  auto* const numa_nodemask = numa_bitmask_alloc(max_node_id + 1);
   for (const auto node_id : node_ids) {
-    if (node_id >= numa_node_count) {
-      spdlog::critical("Given numa task node id too large! (given: {}, max: {})", node_id, numa_node_count - 1);
+    if (node_id > max_node_id || !numa_bitmask_isbitset(run_node_mask, node_id)) {
+      spdlog::critical("Thread is not allowed to run on given node id (given: {}).", node_id);
       utils::crash_exit();
     }
     numa_bitmask_setbit(numa_nodemask, node_id);
@@ -65,12 +67,13 @@ void set_memory_on_numa_nodes(void* addr, const size_t memory_size, const NumaNo
   if (node_ids.empty()) {
     spdlog::critical("Cannot set memory on numa nodes with an empty set of nodes.");
   }
-  const auto num_memory_nodes = numa_num_configured_nodes();
-  auto numa_nodemask = numa_bitmask_alloc(num_memory_nodes);
+  const auto max_node_id = numa_max_node();
   auto numa_nodes_ss = std::stringstream{};
+  const auto* const allowed_memory_nodes_mask = numa_get_mems_allowed();
+  auto* const numa_nodemask = numa_bitmask_alloc(max_node_id + 1);
   for (const auto node_id : node_ids) {
-    if (node_id >= num_memory_nodes) {
-      spdlog::critical("Given numa memory node id too large! (given: {}, max: {})", node_id, num_memory_nodes - 1);
+    if (node_id > max_node_id || !numa_bitmask_isbitset(allowed_memory_nodes_mask, node_id)) {
+      spdlog::critical("Memory allocation on numa node id not allowed (given: {}).", node_id);
       utils::crash_exit();
     }
     numa_bitmask_setbit(numa_nodemask, node_id);
