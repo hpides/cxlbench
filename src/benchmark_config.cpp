@@ -284,6 +284,12 @@ std::string BenchmarkConfig::to_string(const std::string sep) const {
     stream << delim << node;
     delim = ", ";
   }
+  stream << "]" << sep << "task numa nodes: [";
+  delim = "";
+  for (const auto& node : numa_task_nodes) {
+    stream << delim << node;
+    delim = ", ";
+  }
   stream << "]" << sep << "partition count: " << number_partitions;
   stream << sep << "thread count: " << number_threads;
   stream << sep << "min io chunk size: " << min_io_chunk_size;
