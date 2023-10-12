@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#ifdef HAS_CLWB
+#if defined(HAS_CLWB) || defined(NT_STORES_AVX_2) || defined(NT_STORES_AVX_512)
 #include <immintrin.h>
 #endif
 
@@ -20,7 +20,7 @@ using barrier_fn = void();
 /** no explicit cache line flush is used. */
 inline void no_flush(char* addr, const size_t len) {}
 
-#ifdef HAS_CLWB
+#if defined(HAS_CLWB) || defined(NT_STORES_AVX_2) || defined(NT_STORES_AVX_512)
 /** Use sfence to guarantee memory order on x86. Earlier store operations cannot be reordered beyond this point. */
 inline void sfence_barrier() { _mm_sfence(); }
 #endif

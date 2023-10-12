@@ -126,7 +126,7 @@ set(BASE_CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 ##################### CLWB ####################
 set(clwb_prog "#include <immintrin.h>\n int main() { _mm_clwb((void*)0); return 0; }")
 set(CMAKE_REQUIRED_FLAGS "${BASE_CMAKE_REQUIRED_FLAGS} -mclwb")
-check_cxx_source_compiles("${clwb_prog}" HAS_CLWB)
+check_c_source_runs("${clwb_prog}" HAS_CLWB)
 if (${HAS_CLWB})
     # Set HAS_CLWB so we can use it to enable all explicit CLWB instructions.
     add_definitions("-DHAS_CLWB")
