@@ -10,6 +10,7 @@ jobs:
       GXX: g++-${{matrix.gcc}}
       CLANG: clang-${{matrix.clang}}
       CLANGXX: clang++-${{matrix.clang}}
+      BUILD_TYPE: ${{ matrix.build-type }}
 
     strategy:
       matrix:
@@ -45,12 +46,12 @@ jobs:
     - name: Build GCC
       working-directory: ${{runner.workspace}}/build-gcc
       shell: bash
-      run: cmake --build . --config ${{ matrix.build-type }} -- -j
+      run: make -j
 
     - name: Build Clang
       working-directory: ${{runner.workspace}}/build-clang
       shell: bash
-      run: cmake --build . --config ${{ matrix.build-type }} -- -j
+      run: make -j
 
     - name: Test GCC
       working-directory: ${{runner.workspace}}/build-gcc
