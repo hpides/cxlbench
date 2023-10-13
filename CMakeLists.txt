@@ -124,7 +124,7 @@ endif()
 set(BASE_CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 
 ##################### CLWB ####################
-set(clwb_prog "#include <immintrin.h>\n int main() { _mm_clwb((void*)0); return 0; }")
+set(clwb_prog "#include <immintrin.h>\n int main() { int i = 1; _mm_clwb(&i); return 0; }")
 set(CMAKE_REQUIRED_FLAGS "${BASE_CMAKE_REQUIRED_FLAGS} -mclwb")
 check_c_source_runs("${clwb_prog}" HAS_CLWB)
 if (${HAS_CLWB})
@@ -133,7 +133,7 @@ if (${HAS_CLWB})
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mclwb")
     message(STATUS "System supports CLWB.")
 else ()
-    message(STATUS "System does not support CLWB.")
+    message(WARNING "System does not support CLWB.")
 endif ()
 
 ################### NUMA ####################
