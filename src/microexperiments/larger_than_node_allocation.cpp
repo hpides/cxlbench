@@ -27,7 +27,7 @@ namespace {
   }                               \
   static_assert(true, "End call of macro with a semicolon")
 
-constexpr auto KiB = uint32_t{1024u};
+constexpr auto KiB = uint64_t{1024u};
 constexpr auto MiB = 1024 * KiB;
 constexpr auto GiB = 1024 * MiB;
 
@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
   const auto size_in_gb = std::stoi(argv[1]);
   Assert(size_in_gb > 0, "Size must be greater than 0.");
 
-  const auto value_count = static_cast<uint32_t>(((size_in_gb * GiB) / sizeof(uint64_t)) + 1);
+  const auto value_count = ((static_cast<uint64_t>(size_in_gb) * GiB) / sizeof(uint64_t)) + 1;
   const auto value_count_per_thread = (value_count / thread_count) + 1;
   std::cout << "Total required uint64_t values: " << value_count << std::endl;
   std::cout << "Total required uint64_t values per thread: " << value_count_per_thread << std::endl;
