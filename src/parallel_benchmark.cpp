@@ -17,9 +17,6 @@ bool ParallelBenchmark::run() {
   signal(SIGSEGV, thread_error_handler);
 
   for (size_t bm_num = 0; bm_num < configs_.size(); ++bm_num) {
-    // Pin thread to the configured numa node.
-    mema::set_task_on_numa_nodes(configs_[bm_num].numa_task_nodes);
-
     for (size_t thread_index = 0; thread_index < configs_[bm_num].number_threads; thread_index++) {
       pools_[bm_num].emplace_back(&run_in_thread, &thread_configs_[bm_num][thread_index], std::ref(configs_[bm_num]));
     }

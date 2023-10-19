@@ -215,10 +215,14 @@ void Benchmark::run_custom_ops_in_thread(ThreadRunConfig* thread_config, const B
 }
 
 void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkConfig& config) {
+  // Pin thread to the configured numa nodes.
+  set_task_on_numa_nodes(config.numa_task_nodes);
+  log_permissions_for_numa_nodes(spdlog::level::debug, thread_config->thread_idx);
+
   // Check if thread is pinned to a configured NUMA node.
   if (!config.numa_task_nodes.empty() && std::find(config.numa_task_nodes.begin(), config.numa_task_nodes.end(),
                                                    utils::get_numa_task_node()) == config.numa_task_nodes.end()) {
-    spdlog::error("Thread #{}: Thread not pinned to a configured NUMA node.", thread_config->thread_idx);
+    spdlog::error("Thread {}: Thread not pinned to a configured NUMA node.", thread_config->thread_idx);
     utils::crash_exit();
   }
 
@@ -233,7 +237,7 @@ void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkCon
 
   auto access_distribution = [&]() { return lehmer64() % access_count_in_range; };
 
-  spdlog::debug("Thread #{}: Starting address generation", thread_config->thread_idx);
+  spdlog::debug("Thread {}: Starting address generation", thread_config->thread_idx);
   const auto generation_begin_ts = std::chrono::steady_clock::now();
 
   // Create all chunks before executing.
@@ -311,7 +315,7 @@ void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkCon
   const auto generation_end_ts = std::chrono::steady_clock::now();
   const uint64_t generation_duration_us =
       std::chrono::duration_cast<std::chrono::milliseconds>(generation_end_ts - generation_begin_ts).count();
-  spdlog::debug("Thread #{}: Finished address generation in {} ms", thread_config->thread_idx, generation_duration_us);
+  spdlog::debug("Thread {}: Finished address generation in {} ms", thread_config->thread_idx, generation_duration_us);
 
   auto is_last = bool{false};
   uint16_t& threads_remaining = thread_config->execution->threads_remaining;
@@ -344,7 +348,7 @@ void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkCon
   const auto execution_end_ts = std::chrono::steady_clock::now();
   const auto execution_duration =
       std::chrono::duration_cast<std::chrono::milliseconds>(execution_end_ts - execution_begin_ts);
-  spdlog::debug("Thread #{}: Finished execution in {} ms", thread_config->thread_idx, execution_duration.count());
+  spdlog::debug("Thread {}: Finished execution in {} ms", thread_config->thread_idx, execution_duration.count());
 
   const uint64_t chunk_size = config.access_size * thread_config->ops_count_per_chunk;
   *(thread_config->total_operation_size) = executed_op_count * chunk_size;
@@ -463,7 +467,7 @@ nlohmann::json BenchmarkResult::get_result_as_json() const {
     const double thread_bandwidth = get_bandwidth(thread_op_size, thread_duration);
     per_thread_bandwidth[thread_idx] = thread_bandwidth;
 
-    spdlog::debug("Thread #{}: Per-Thread Information", thread_idx);
+    spdlog::debug("Thread {}: Per-Thread Information", thread_idx);
     spdlog::debug(" ├─ Bandwidth (GiB/s): {:.5f}", thread_bandwidth);
     spdlog::debug(" ├─ Total Access Size (MiB): {}", thread_op_size / MEBIBYTES_IN_BYTES);
     spdlog::debug(" └─ Duration (s): {:.5f}", thread_duration_s);

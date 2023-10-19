@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
         const auto ret = move_pages(0, 1, &value_ptr, NULL, &identified_node_idx, 0);
         Assert(ret == 0, "Failed to determine the NUMA node for a given address.");
 
-        std::cout << "Thread #" << thread_idx << ": " << value_idx << " written on node " << identified_node_idx
+        std::cout << "Thread " << thread_idx << ": " << value_idx << " written on node " << identified_node_idx
                   << std::endl;
 
         if (last_node != identified_node_idx && last_node != -1) {

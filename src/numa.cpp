@@ -5,6 +5,7 @@
 #include <spdlog/spdlog.h>
 
 #include <sstream>
+#include <string>
 
 #include "benchmark.hpp"
 #include "utils.hpp"
@@ -32,7 +33,6 @@ void set_task_on_numa_nodes(const NumaNodeIDs& node_ids) {
     spdlog::critical("More NUMA nodes specified than detected on server.");
     utils::crash_exit();
   }
-  spdlog::debug("Setting NUMA task nodes according to config arguments.");
   log_numa_nodes(node_ids);
 
   if (numa_node_count < 2) {
@@ -81,7 +81,7 @@ void set_memory_on_numa_nodes(void* addr, const size_t memory_size, const NumaNo
   }
   numa_tonodemask_memory(addr, memory_size, numa_nodemask);
   numa_free_nodemask(numa_nodemask);
-  spdlog::debug("Bound memory region {} to memory NUMA nodes{}.", addr, numa_nodes_ss.str());
+  spdlog::debug("Bound memory region {} to memory NUMA nodes {}.", addr, numa_nodes_ss.str());
 }
 
 uint8_t init_numa() {
@@ -91,7 +91,38 @@ uint8_t init_numa() {
 
   // Use a strict numa policy. Fail if memory cannot be allocated on a target node.
   numa_set_strict(1);
+  log_permissions_for_numa_nodes(spdlog::level::info, "Main");
+
   return numa_num_configured_nodes();
+}
+
+void log_permissions_for_numa_nodes(spdlog::level::level_enum log_level, uint64_t thread_id) {
+  log_permissions_for_numa_nodes(log_level, std::to_string(thread_id));
+}
+
+void log_permissions_for_numa_nodes(spdlog::level::level_enum log_level, const std::string thread_description) {
+  const size_t max_node_id = numa_max_node();
+
+  auto log_numa = [&](auto mask, std::string_view description) {
+    auto allowed_ids_stream = std::stringstream{};
+    auto allowed_delim = "";
+    auto forbidden_ids_stream = std::stringstream{};
+    auto forbidden_delim = "";
+    for (auto node_id = size_t{0}; node_id <= max_node_id; ++node_id) {
+      if (numa_bitmask_isbitset(mask, node_id)) {
+        allowed_ids_stream << allowed_delim << node_id;
+        allowed_delim = ", ";
+      } else {
+        forbidden_ids_stream << forbidden_delim << node_id;
+        forbidden_delim = ", ";
+      }
+    }
+    spdlog::log(log_level, "Thread {}: {}: allowed nodes [{}], forbidden nodes: [{}].", thread_description, description,
+                allowed_ids_stream.str(), forbidden_ids_stream.str());
+  };
+
+  log_numa(numa_get_run_node_mask(), "task binding");
+  log_numa(numa_get_mems_allowed(), "memory allocation");
 }
 
 }  // namespace mema
