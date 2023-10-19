@@ -79,6 +79,14 @@ int main(int argc, char** argv) {
   const auto numa_node_count = init_numa();
   spdlog::info("Number of NUMA nodes in system: {}", numa_node_count);
 
+  // Lock the whole memory associated with the calling process. This prevents the OS from swapping even if it's
+  // activated. Swapping out memory would invalidate the results of the benchmarks.
+  const auto ret = mlockall(MCL_CURRENT | MCL_FUTURE);
+  if (ret != 0) {
+    spdlog::critical("Failed to lock memory.");
+    throw std::runtime_error{"Failed to lock memory."};
+  }
+
   BenchmarkSuite::run_benchmarks({config_file, result_path});
   return 0;
 }
