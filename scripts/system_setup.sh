@@ -19,7 +19,7 @@ cat /sys/devices/system/cpu/smt/control &&
 
 echo -e "\n### Allocating huge pages\n" &&
 echo Writing to /proc/sys/vm/nr_hugepages: &&
-echo 4000 | sudo tee /proc/sys/vm/nr_hugepages &&
+echo 8000 | sudo tee /proc/sys/vm/nr_hugepages &&
 echo cat /proc/sys/vm/nr_hugepages: &&
 cat /proc/sys/vm/nr_hugepages
 
