@@ -69,25 +69,27 @@ char* map(const size_t expected_length, const bool use_huge_pages, const NumaNod
   return static_cast<char*>(addr);
 }
 
-// Returns the lowest node node ID on which the current thread is allowed to run on. Assuming a thread is limited to a
-// single node, this function returns the node it runs on.
-NumaNodeID get_numa_task_node() {
-  // TODO(anyone) modify to return vector of nodes.
+// Returns node IDs on which the current thread is allowed to run on.
+NumaNodeIDs get_numa_task_nodes() {
   auto max_node_id = numa_max_node();
+  auto run_nodes = NumaNodeIDs{};
 
-  // Check which NUMA node the calling thread runs on.
+  // Check which NUMA node the calling thread is allowed to run on.
+
   const auto* const run_node_mask = numa_get_run_node_mask();
 
   for (auto node_id = NumaNodeID{0}; node_id <= max_node_id; ++node_id) {
     if (numa_bitmask_isbitset(run_node_mask, node_id)) {
-      return node_id;
+      run_nodes.emplace_back(node_id);
     }
   }
 
-  spdlog::critical("Could not determine NUMA node of calling thread");
-  crash_exit();
+  if (!run_nodes.empty()) {
+    return run_nodes;
+  }
 
-  return 0;
+  spdlog::critical("Could not determine NUMA task nodes of calling thread.");
+  crash_exit();
 }
 
 void generate_read_data(char* addr, const uint64_t memory_size) {

@@ -32,7 +32,7 @@ static constexpr auto LAST_RESULTS_FILENAME = "last_results.json";
 // Maps an anonymous memory region. No data is mapped if `expected_length` is 0.
 char* map(const size_t expected_length, const bool use_huge_pages, const NumaNodeIDs& numa_memory_nodes);
 
-NumaNodeID get_numa_task_node();
+NumaNodeIDs get_numa_task_nodes();
 
 void generate_read_data(char* addr, const uint64_t memory_size);
 

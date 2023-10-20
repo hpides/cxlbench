@@ -111,8 +111,8 @@ TEST_F(UtilsTest, RetrieveCorrectNumaTaskNode) {
     if (!numa_bitmask_isbitset(cpu_nodes_mask, node_id)) {
       continue;
     }
-    set_task_on_numa_nodes({node_id});
-    EXPECT_EQ(get_numa_task_node(), node_id);
+    set_task_on_numa_nodes(NumaNodeIDs{node_id});
+    EXPECT_EQ(get_numa_task_nodes(), NumaNodeIDs{node_id});
   }
 }
 

@@ -220,9 +220,10 @@ void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkCon
   log_permissions_for_numa_nodes(spdlog::level::debug, thread_config->thread_idx);
 
   // Check if thread is pinned to a configured NUMA node.
-  if (!config.numa_task_nodes.empty() && std::find(config.numa_task_nodes.begin(), config.numa_task_nodes.end(),
-                                                   utils::get_numa_task_node()) == config.numa_task_nodes.end()) {
-    spdlog::error("Thread {}: Thread not pinned to a configured NUMA node.", thread_config->thread_idx);
+  const auto thread_numa_task_nodes = utils::get_numa_task_nodes();
+  if (!config.numa_task_nodes.empty() && !std::equal(config.numa_task_nodes.begin(), config.numa_task_nodes.end(),
+                                                     thread_numa_task_nodes.begin(), thread_numa_task_nodes.end())) {
+    spdlog::error("Thread #{}: Thread not pinned to a configured NUMA node.", thread_config->thread_idx);
     utils::crash_exit();
   }
 
