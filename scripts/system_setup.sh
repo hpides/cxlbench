@@ -2,8 +2,7 @@
 
 echo -e "\n### Configure cores to use performance govenor\n" &&
 sudo cpupower frequency-set --governor performance &&
-# Verify
-# cpupower frequency-info -o proc
+sudo cpupower frequency-info
 
 echo -e "\n### Disabling frequency boosting\n" &&
 echo Writing to /sys/devices/system/cpu/cpufreq/boost: &&
