@@ -90,6 +90,10 @@ NumaNodeIDs get_numa_task_nodes() {
 
   spdlog::critical("Could not determine NUMA task nodes of calling thread.");
   crash_exit();
+
+  // This is only here to silence the "control reaches end of non-void function"
+  // compiler warning. They were observed on GCC 12 and Clang 15.
+  return {};
 }
 
 void generate_read_data(char* addr, const uint64_t memory_size) {
@@ -218,7 +222,7 @@ double rand_val() {
   return (static_cast<double>(x) / m);
 }
 
-void crash_exit() { throw MemaException(); }
+void crash_exit() { throw MemaException{}; }
 
 std::string get_time_string() {
   auto now = std::chrono::system_clock::now();

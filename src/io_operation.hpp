@@ -109,7 +109,8 @@ class IoOperation {
             return rw_ops::write_clwb(op_addresses_, access_size_);
         }
 #else
-        throw std::runtime_error("Compiled without CLWB support.");
+        spdlog::critical("Compiled without CLWB support.");
+        utils::crash_exit();
 #endif  // HAS_CLWB
       }
       case FlushInstruction::NoCache: {
@@ -141,7 +142,8 @@ class IoOperation {
             return rw_ops::simd_write_nt(op_addresses_, access_size_);
         }
 #else
-        throw std::runtime_error("Compiled without NT store support.");
+        spdlog::critical("Compiled without NT store support.");
+        utils::crash_exit();
 #endif  // NT stores
       }
       case FlushInstruction::None: {
@@ -291,7 +293,8 @@ class ChainedOperation {
             return rw_ops::write_clwb(addr, access_size_);
         }
 #else
-        throw std::runtime_error("Compiled without CLWB support.");
+        spdlog::critical("Compiled without CLWB support.");
+        utils::crash_exit();
 #endif  // HAS_CLWB
       }
       case FlushInstruction::NoCache: {
@@ -323,7 +326,8 @@ class ChainedOperation {
             return rw_ops::simd_write_nt(addr, access_size_);
         }
 #else
-        throw std::runtime_error("Compiled without NT store support.");
+        spdlog::critical("Compiled without NT store support.");
+        utils::crash_exit();
 #endif  // NT stores
       }
       case FlushInstruction::None: {

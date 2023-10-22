@@ -86,7 +86,8 @@ void set_memory_on_numa_nodes(void* addr, const size_t memory_size, const NumaNo
 
 uint8_t init_numa() {
   if (numa_available() < 0) {
-    throw std::runtime_error("NUMA supported but could not be found!");
+    spdlog::critical("NUMA supported but could not be found!");
+    utils::crash_exit();
   }
 
   // Use a strict numa policy. Fail if memory cannot be allocated on a target node.

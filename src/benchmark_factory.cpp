@@ -22,7 +22,8 @@ std::vector<SingleBenchmark> BenchmarkFactory::create_single_benchmarks(std::vec
 
       YAML::Node bm_args = raw_bm_args["args"];
       if (!bm_args && raw_bm_args) {
-        throw std::invalid_argument{"Benchmark config must contain 'args' if it is not empty."};
+        spdlog::critical("Benchmark config must contain 'args' if it is not empty.");
+        utils::crash_exit();
       }
 
       YAML::Node bm_matrix = raw_bm_args["matrix"];
@@ -67,7 +68,8 @@ std::vector<ParallelBenchmark> BenchmarkFactory::create_parallel_benchmarks(std:
       }
 
       if (parallel_bm.size() != 2) {
-        throw std::invalid_argument{"Number of parallel benchmarks should be two."};
+        spdlog::critical("Number of parallel benchmarks should be two.");
+        utils::crash_exit();
       }
 
       std::vector<BenchmarkConfig> bm_one_configs{};
@@ -117,7 +119,8 @@ void BenchmarkFactory::parse_yaml_node(std::vector<BenchmarkConfig>& bm_configs,
   YAML::Node bm_args = raw_bm_args["args"];
 
   if (!bm_args) {
-    throw std::invalid_argument{"Benchmark config must contain 'args' if it is not empty."};
+    spdlog::critical("Benchmark config must contain 'args' if it is not empty.");
+    utils::crash_exit();
   }
   YAML::Node bm_matrix = raw_bm_args["matrix"];
   if (bm_matrix) {
@@ -132,7 +135,8 @@ void BenchmarkFactory::parse_yaml_node(std::vector<BenchmarkConfig>& bm_configs,
 std::vector<BenchmarkConfig> BenchmarkFactory::create_benchmark_matrix(YAML::Node& config_args,
                                                                        YAML::Node& matrix_args) {
   if (!matrix_args.IsMap()) {
-    throw std::invalid_argument("'matrix' must be a YAML map.");
+    spdlog::critical("'matrix' must be a YAML map.");
+    utils::crash_exit();
   }
 
   auto matrix = std::vector<BenchmarkConfig>{};
@@ -155,7 +159,8 @@ std::vector<BenchmarkConfig> BenchmarkFactory::create_benchmark_matrix(YAML::Nod
     }
 
     if (!current_values.IsSequence()) {
-      throw std::invalid_argument("Matrix entries must be a YAML sequence, i.e., [a, b, c].");
+      spdlog::critical("Matrix entries must be a YAML sequence, i.e., [a, b, c].");
+      utils::crash_exit();
     }
 
     const auto arg_name = node_iterator->first.as<std::string>();
@@ -186,8 +191,8 @@ std::vector<YAML::Node> BenchmarkFactory::get_config_files(const std::filesystem
   }
 
   if (config_files.empty()) {
-    throw std::invalid_argument{"Benchmark config path " + config_file_path.string() +
-                                " must contain at least one config file."};
+    spdlog::critical("Benchmark config path {} must contain at least one config file.", config_file_path.string());
+    utils::crash_exit();
   }
   std::vector<YAML::Node> yaml_configs{};
   try {
@@ -217,9 +222,11 @@ std::vector<YAML::Node> BenchmarkFactory::get_config_files(const std::filesystem
       yaml_configs.emplace_back(config);
     }
   } catch (const YAML::ParserException& e1) {
-    throw std::runtime_error{"Exception during config parsing: " + e1.msg};
+    spdlog::critical("Exception during config parsing: {}", e1.msg);
+    utils::crash_exit();
   } catch (const YAML::BadFile& e2) {
-    throw std::runtime_error{"Exception during config parsing: " + e2.msg};
+    spdlog::critical("Exception during config parsing: {}", e2.msg);
+    utils::crash_exit();
   }
   return yaml_configs;
 }

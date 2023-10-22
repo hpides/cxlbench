@@ -31,7 +31,8 @@ class NumaReadWriteTest : public BaseTest {
     auto ret = move_pages(0, 1, &addr_ptr, NULL, &node, 0);
 
     if (ret != 0) {
-      throw std::runtime_error("move_pages() failed to determine NUMA node for address.");
+      spdlog::critical("move_pages() failed to determine NUMA node for address.");
+      utils::crash_exit();
     }
 
     return static_cast<NumaNodeID>(node);

@@ -354,12 +354,12 @@ TEST_F(ConfigTest, ParallelDecodeMatrix) {
 
 TEST_F(ConfigTest, SingleDecodeInvalidNumaMemoryNodes) {
   // Throw since the `numa_memory_node` YAML field is not a sequence, i.e., [a, b, c], but a single value.
-  EXPECT_THROW(BenchmarkFactory::create_single_benchmarks(config_invalid_numa_memory_nodes), std::invalid_argument);
+  EXPECT_THROW(BenchmarkFactory::create_single_benchmarks(config_invalid_numa_memory_nodes), mema::MemaException);
 }
 
 TEST_F(ConfigTest, SingleDecodeInvalidNumaTaskNodes) {
   // Throw since the `numa_task_node` YAML field is not a sequence, i.e., [ a ], but a single value.
-  EXPECT_THROW(BenchmarkFactory::create_single_benchmarks(config_invalid_numa_task_nodes), std::invalid_argument);
+  EXPECT_THROW(BenchmarkFactory::create_single_benchmarks(config_invalid_numa_task_nodes), mema::MemaException);
 }
 
 TEST_F(ConfigTest, InvalidSmallAccessSize) {

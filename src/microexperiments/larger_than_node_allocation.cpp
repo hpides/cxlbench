@@ -23,7 +23,7 @@ namespace {
 
 #define Assert(expr, msg)         \
   if (!static_cast<bool>(expr)) { \
-    throw std::logic_error(msg);  \
+    throw std::logic_error{msg};  \
   }                               \
   static_assert(true, "End call of macro with a semicolon")
 
@@ -35,7 +35,7 @@ constexpr auto GiB = 1024 * MiB;
 
 int main(int argc, char** argv) {
   if (argc != 4) {
-    throw std::invalid_argument("Need to specify <GiB size to allocate> <thread count> <use mlock (1 or 0)> ");
+    throw std::invalid_argument{"Need to specify <GiB size to allocate> <thread count> <use mlock (1 or 0)> "};
   }
 
   const auto thread_count = std::stoi(argv[2]);

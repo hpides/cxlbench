@@ -2,6 +2,7 @@
 
 #include <asm-generic/mman-common.h>
 #include <asm-generic/mman.h>
+#include <spdlog/spdlog.h>
 #include <sys/mman.h>
 
 #include <filesystem>
@@ -66,7 +67,12 @@ std::string get_enum_as_string(const std::unordered_map<std::string, T>& enum_ma
       }
     }
   }
-  throw std::invalid_argument("Unknown enum value for " + std::string(typeid(T).name()));
+  spdlog::critical("Unknown enum value for {}", typeid(T).name());
+  crash_exit();
+
+  // This is only here to silence the "control reaches end of non-void function"
+  // compiler warning. They were observed on GCC 12 and Clang 15.
+  return "";
 }
 
 }  // namespace utils

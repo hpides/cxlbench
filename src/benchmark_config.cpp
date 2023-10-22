@@ -24,7 +24,8 @@ constexpr auto VISITED_TAG = "visited";
 void ensure_unique_key(const YAML::Node& entry, const std::string& name) {
   if (entry.Tag() == VISITED_TAG) {
     const YAML::Mark& mark = entry.Mark();
-    throw std::invalid_argument("Duplicate entry: '" + name + "' (in line: " + std::to_string(mark.line) + ")");
+    spdlog::critical("Duplicate entry: '{}' (in line: {})", mark.line, name);
+    mema::utils::crash_exit();
   }
 }
 
@@ -53,7 +54,8 @@ bool get_enum_if_present(YAML::Node& data, const std::string& name, const std::u
   const auto enum_key = entry.as<std::string>();
   auto it = enum_map.find(enum_key);
   if (it == enum_map.end()) {
-    throw std::invalid_argument("Unknown '" + name + "': " + enum_key);
+    spdlog::critical("Unknown '{}': {}", name, enum_key);
+    mema::utils::crash_exit();
   }
 
   *attribute = it->second;
@@ -80,7 +82,8 @@ bool get_size_if_present(YAML::Node& data, const std::string& name, const std::u
     factor = it->second;
     size_end -= 1;
   } else if (isalpha(size_suffix)) {
-    throw std::invalid_argument(std::string("Unknown size suffix: ") + size_suffix);
+    spdlog::critical("Unknown size suffix: {}", size_suffix);
+    mema::utils::crash_exit();
   }
 
   char* end;
@@ -100,7 +103,8 @@ bool get_uints_if_present(YAML::Node& data, const std::string& name, std::vector
   }
 
   if (!entry.IsSequence()) {
-    throw std::invalid_argument("Value of key " + name + " must be a YAML sequence, i.e., [0, 2, 3].");
+    spdlog::critical("Value of key {} must be a YAML sequence, i.e., [0, 2, 3].", name);
+    mema::utils::crash_exit();
   }
 
   values.reserve(entry.size());
@@ -156,13 +160,15 @@ BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
     if (found_count != node.size()) {
       for (YAML::const_iterator entry = node.begin(); entry != node.end(); ++entry) {
         if (entry->second.Tag() != VISITED_TAG) {
-          throw std::invalid_argument("Unknown config entry '" + entry->first.as<std::string>() +
-                                      "' in line: " + std::to_string(entry->second.Mark().line));
+          spdlog::critical("Unknown config entry '{}' in line: {}", entry->first.as<std::string>(),
+                           std::to_string(entry->second.Mark().line));
+          utils::crash_exit();
         }
       }
     }
   } catch (const YAML::InvalidNode& e) {
-    throw std::invalid_argument("Exception during config parsing: " + e.msg);
+    spdlog::critical("Exception during config parsing: {}", e.msg);
+    utils::crash_exit();
   }
 
   bm_config.validate();

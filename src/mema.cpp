@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
   const auto ret = mlockall(MCL_CURRENT | MCL_FUTURE);
   if (ret != 0) {
     spdlog::critical("Failed to lock memory.");
-    throw std::runtime_error{"Failed to lock memory."};
+    utils::crash_exit();
   }
 
   BenchmarkSuite::run_benchmarks({config_file, result_path});

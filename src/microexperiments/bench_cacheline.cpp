@@ -18,7 +18,7 @@ namespace {
 
 #define Assert(expr, msg)         \
   if (!static_cast<bool>(expr)) { \
-    throw std::logic_error(msg);  \
+    throw std::logic_error{msg};  \
   }                               \
   static_assert(true, "End call of macro with a semicolon")
 
@@ -58,7 +58,7 @@ std::vector<std::byte> generate_random_data(size_t length) {
 
 int main(int argc, char** argv) {
   if (argc != 2) {
-    throw std::invalid_argument("Need to specify <numa node index>");
+    throw std::invalid_argument{"Need to specify <numa node index>"};
   }
 
   const uint32_t numa_node_idx = std::stoi(argv[1]);
