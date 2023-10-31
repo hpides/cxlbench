@@ -9,7 +9,6 @@ else
   TAG="$1" 
 fi
 
-
 ROOT_DIR="$(dirname "$0")"/../
 BUILD_DIR_NAME=exp-"$TAG"-rel-gcc-12
 BUILD_DIR="$ROOT_DIR""$BUILD_DIR_NAME"
@@ -19,6 +18,13 @@ echo CMake setup...
 cmake -S "$ROOT_DIR" -B "$BUILD_DIR" -GNinja -DBUILD_TEST=ON -DCMAKE_C_COMPILER=gcc-12 -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_BUILD_TYPE=Release &&
 cd "$BUILD_DIR" &&
 ninja &&
-../scripts/setup_system.sh &&
-./mema-bench
 
+if [ "$2" == "-s" ]; then
+  echo "Setting up the system."
+  ../scripts/setup_system.sh
+else
+  echo "Not execution the system setup. If you want to run the system, add -s as the second option."
+fi
+
+# Run benchmarks
+./mema-bench
