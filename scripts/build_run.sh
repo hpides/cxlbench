@@ -19,5 +19,6 @@ echo CMake setup...
 cmake -S "$ROOT_DIR" -B "$BUILD_DIR" -GNinja -DBUILD_TEST=ON -DCMAKE_C_COMPILER=gcc-12 -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_BUILD_TYPE=Release &&
 cd "$BUILD_DIR" &&
 ninja &&
+./scripts/setup_system.sh &&
 ./mema-bench
 
