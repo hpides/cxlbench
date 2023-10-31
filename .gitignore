@@ -4,6 +4,7 @@ build/
 build_*/
 build-*/
 cmake-build-*
+exp-*/
 results*/
 venv/
 scripts/__pycache__/
