@@ -5,4 +5,4 @@ saprap-i
 icelake
 casclake
 ivytown
-lagrange
+power9
