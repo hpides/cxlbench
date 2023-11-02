@@ -178,7 +178,7 @@ TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
   EXPECT_EQ(bm_config.memory_region_size, 10737418240);
   EXPECT_EQ(bm_config.access_size, 256);
   EXPECT_EQ(bm_config.exec_mode, Mode::Sequential);
-  EXPECT_EQ(bm_config.flush_instruction, FlushInstruction::NoCache);
+  EXPECT_EQ(bm_config.flush_instruction, FlushInstruction::None);
 
   EXPECT_EQ(bm_config.number_threads, 16);
 
@@ -337,7 +337,7 @@ TEST_F(ConfigTest, ParallelDecodeMatrix) {
     EXPECT_EQ(config_two.exec_mode, Mode::Sequential);
     EXPECT_EQ(config_two.operation, Operation::Write);
     EXPECT_EQ(config_two.number_threads, 16);
-    EXPECT_EQ(config_two.flush_instruction, FlushInstruction::NoCache);
+    EXPECT_EQ(config_two.flush_instruction, FlushInstruction::None);
 
     EXPECT_EQ(config_two.number_operations, bm_config_default.number_operations);
     EXPECT_EQ(config_two.random_distribution, bm_config_default.random_distribution);
