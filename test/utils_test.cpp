@@ -117,4 +117,52 @@ TEST_F(UtilsTest, RetrieveCorrectNumaTaskNode) {
   }
 }
 
+TEST_F(UtilsTest, MmapValidPageSizeMask) {
+  const auto page_size = 2097152;
+  const auto expected_mask = 21 << MAP_HUGE_SHIFT;
+  const auto actual_mask = utils::mmap_page_size_mask(page_size);
+  EXPECT_EQ(actual_mask, expected_mask);
+}
+
+TEST_F(UtilsTest, MmapInvalidPageSizeMask) {
+  const auto page_size = 2000000;
+  const auto expected_mask = 21 << MAP_HUGE_SHIFT;
+  EXPECT_THROW(utils::mmap_page_size_mask(page_size), MemaException);
+}
+
+#ifdef HUGE_PAGE_TESTS
+
+TEST_F(UtilsTest, Map2MiBPageSize) {
+  // 2 MiB page size
+  const auto page_size = size_t{1} << 21;
+  // 16 MiB allocation size
+  const auto mmap_length = size_t{1} << 24;
+  void* addr = nullptr;
+  EXPECT_NO_THROW(addr = utils::map(mmap_length, true, page_size, {0}));
+  EXPECT_NE(addr, nullptr);
+  munmap(addr, mmap_length);
+}
+
+TEST_F(UtilsTest, Map1GiBPageSize) {
+  // 1 Gib page size
+  const auto page_size = size_t{1} << 30;
+  // 4 GiB allocation size
+  const auto mmap_length = size_t{1} << 32;
+  void* addr = nullptr;
+  EXPECT_NO_THROW(addr = utils::map(mmap_length, true, page_size, {0}));
+  EXPECT_NE(addr, nullptr);
+  munmap(addr, mmap_length);
+}
+
+#endif
+
+TEST_F(UtilsTest, MapInvalidPageSize) {
+  const auto page_size = 2000000;
+  const auto mmap_length = 1 << 24;
+  void* addr = nullptr;
+  EXPECT_THROW(auto addr = utils::map(mmap_length, true, page_size, {0}), MemaException);
+  EXPECT_EQ(addr, nullptr);
+  munmap(addr, mmap_length);
+}
+
 }  // namespace mema::utils

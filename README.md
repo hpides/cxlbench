@@ -62,65 +62,7 @@ random_reads:
     exec_mode: random
 ```
 
-We currently support the following options (with default values).
-This code is taken from [src/benchmark_config.hpp](src/benchmark_config.hpp).
-```cpp
-/** Represents the size of an individual memory access in Byte. Must be a power of two. */
-uint32_t access_size = 256;
-
-/** Represents the total memory range to use for the benchmark. Must be a multiple of `access_size`.  */
-uint64_t memory_region_size = 10 * BYTES_IN_GIGABYTE;  // 10 GiB
-
-/** Represents the number of random access / custom operations to perform. Can *not* be set for sequential access. */
-uint64_t number_operations = 100'000'000;
-
-/** Number of threads to run the benchmark with. Must be a power of two. */
-uint16_t number_threads = 1;
-
-/** Alternative measure to end a benchmark by letting is run for `run_time` seconds. */
-uint64_t run_time = 0;
-
-/** Type of memory access operation to perform, i.e., read or write. */
-Operation operation = Operation::Read;
-
-/** Mode of execution, i.e., sequential, random, or custom. See `Mode` for all options. */
-Mode exec_mode = Mode::Sequential;
-
-/** Flush instruction to use after write operations. Only works with `Operation::Write`. See
- * `FlushInstruction` for more details on available options. */
-FlushInstruction flush_instruction = FlushInstruction::NoCache;
-
-/** Number of disjoint memory regions to partition the `memory_region_size` into. Must be 0 or a divisor of
- * `number_threads` i.e., one or more threads map to one partition. When set to 0, it is equal to the number of
- * threads, i.e., each thread has its own partition. Default is set to 1.  */
-uint16_t number_partitions = 1;
-
-/** Specifies the set of memory NUMA nodes on which benchmark data is to be allocated. */
-NumaNodeIDs numa_memory_nodes;
-
-/** Distribution to use for `Mode::Random`, i.e., uniform of zipfian. */
-RandomDistribution random_distribution = RandomDistribution::Uniform;
-
-/** Zipf skew factor for `Mode::Random` and `RandomDistribution::Zipf`. */
-double zipf_alpha = 0.9;
-
-/** List of custom operations to use in `Mode::Custom`. See `CustomOp` for more details on string representation.  */
-std::vector<CustomOp> custom_operations;
-
-/** Frequency in which to sample latency of custom operations. Only works in combination with `Mode::Custom`. */
-uint64_t latency_sample_frequency = 0;
-
-/** Whether or not to prefault the memory region before writing to it. If set to false, the benchmark will include the
- * time caused by page faults on first access to the allocated memory region. */
-bool prefault_memory = true;
-
-/** Whether or not to use transparent huge pages, i.e., 2 MiB instead of regular 4 KiB pages. */
-bool huge_pages = true;
-
-/** Represents the minimum size of an atomic work package. A chunk contains chunk_size / access_size number of
- * operations. Assuming the lowest bandwidth of 1 GiB/s operations per thread, 64 MiB is a ~60 ms execution unit. */
-uint64_t min_io_chunk_size = 64 * BYTES_IN_MEGABYTE;
-```
+Please check `src/benchmark_config.hpp` to see the supported benchmark configuration options.
 
 ## Running Custom Memory Access Patterns
 Beside the standard workloads (sequential/random read/write), you can also specify more complex access pattern.

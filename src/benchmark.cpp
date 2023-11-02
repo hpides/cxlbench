@@ -127,7 +127,8 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, char* data, Benchma
 }
 
 char* Benchmark::prepare_data(const BenchmarkConfig& config, const size_t memory_region_size) {
-  char* data = utils::map(memory_region_size, config.huge_pages, config.numa_memory_nodes);
+  char* data = utils::map(memory_region_size, config.transparent_huge_pages, config.explicit_hugepages_size,
+                          config.numa_memory_nodes);
   spdlog::debug("Finished mapping memory range.");
 
   if (config.contains_read_op()) {

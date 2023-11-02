@@ -28,3 +28,10 @@ add_executable(mema-test mema_test.cpp ${MEMA_TEST_SOURCES})
 add_dependencies(mema-test copy_test_resources)
 target_link_libraries(mema-test gtest gmock mema ${NUMS_LIBRARIES})
 add_test(mema-test mema-test)
+
+############# Explicit Huge Pages #############
+# This flag enables tests with 2 MiB and 1 GiB huge page tables. Note that free pages of these sizes need to be
+# available. IF the OS does not support these page sizes or not enough page sizes are allocated, the test cases fail.
+if (${ENABLE_HUGE_PAGE_TESTS})
+    target_compile_definitions(mema-test PRIVATE HUGE_PAGE_TESTS)
+endif ()

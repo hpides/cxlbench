@@ -449,8 +449,10 @@ TEST_F(ConfigTest, AsJsonReadSequential) {
   EXPECT_EQ(json["prefault_memory"].get<bool>(), bm_config.prefault_memory);
   ASSERT_JSON_TRUE(json, contains("min_io_chunk_size"));
   EXPECT_EQ(json["min_io_chunk_size"].get<uint64_t>(), bm_config.min_io_chunk_size);
-  ASSERT_JSON_TRUE(json, contains("huge_pages"));
-  EXPECT_EQ(json["huge_pages"].get<bool>(), bm_config.huge_pages);
+  ASSERT_JSON_TRUE(json, contains("transparent_huge_pages"));
+  EXPECT_EQ(json["transparent_huge_pages"].get<bool>(), bm_config.transparent_huge_pages);
+  ASSERT_JSON_TRUE(json, contains("explicit_hugepages_size"));
+  EXPECT_EQ(json["explicit_hugepages_size"].get<uint64_t>(), bm_config.explicit_hugepages_size);
   // Relevant for non-custom operations
   ASSERT_JSON_TRUE(json, contains("access_size"));
   EXPECT_EQ(json["access_size"].get<uint32_t>(), bm_config.access_size);
@@ -490,8 +492,10 @@ TEST_F(ConfigTest, AsJsonWriteCustom) {
   EXPECT_EQ(json["prefault_memory"].get<bool>(), bm_config.prefault_memory);
   ASSERT_JSON_TRUE(json, contains("min_io_chunk_size"));
   EXPECT_EQ(json["min_io_chunk_size"].get<uint64_t>(), bm_config.min_io_chunk_size);
-  ASSERT_JSON_TRUE(json, contains("huge_pages"));
-  EXPECT_EQ(json["huge_pages"].get<bool>(), bm_config.huge_pages);
+  ASSERT_JSON_TRUE(json, contains("transparent_huge_pages"));
+  EXPECT_EQ(json["transparent_huge_pages"].get<bool>(), bm_config.transparent_huge_pages);
+  ASSERT_JSON_TRUE(json, contains("explicit_hugepages_size"));
+  EXPECT_EQ(json["explicit_hugepages_size"].get<uint64_t>(), bm_config.explicit_hugepages_size);
   // Relevant for non-custom operations
   ASSERT_JSON_FALSE(json, contains("access_size"));
   ASSERT_JSON_FALSE(json, contains("operation"));

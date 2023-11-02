@@ -139,7 +139,9 @@ BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
     found_count += get_if_present(node, "zipf_alpha", &bm_config.zipf_alpha);
     found_count += get_if_present(node, "prefault_memory", &bm_config.prefault_memory);
     found_count += get_if_present(node, "latency_sample_frequency", &bm_config.latency_sample_frequency);
-    found_count += get_if_present(node, "huge_pages", &bm_config.huge_pages);
+    found_count += get_if_present(node, "transparent_huge_pages", &bm_config.transparent_huge_pages);
+    found_count += get_size_if_present(node, "explicit_hugepages_size", ConfigEnums::scale_suffix_to_factor,
+                                       &bm_config.explicit_hugepages_size);
 
     found_count += get_enum_if_present(node, "exec_mode", ConfigEnums::str_to_mode, &bm_config.exec_mode);
     found_count += get_enum_if_present(node, "operation", ConfigEnums::str_to_operation, &bm_config.operation);
@@ -341,7 +343,8 @@ nlohmann::json BenchmarkConfig::as_json() const {
   config["number_threads"] = number_threads;
   config["prefault_memory"] = prefault_memory;
   config["min_io_chunk_size"] = min_io_chunk_size;
-  config["huge_pages"] = huge_pages;
+  config["transparent_huge_pages"] = transparent_huge_pages;
+  config["explicit_hugepages_size"] = explicit_hugepages_size;
 
   if (exec_mode != Mode::Custom) {
     config["access_size"] = access_size;

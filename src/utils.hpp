@@ -27,11 +27,17 @@ static constexpr auto ONE_GB = size_t{1024ul * 1024 * 1024};
 static constexpr auto SHORT_STRING_SIZE = size_t{1};
 
 static int MAP_FLAGS = MAP_PRIVATE | MAP_ANONYMOUS;
+static int MAP_FLAGS_HUGETLB = MAP_FLAGS | MAP_HUGETLB;
 
 static constexpr auto LAST_RESULTS_FILENAME = "last_results.json";
 
 // Maps an anonymous memory region. No data is mapped if `expected_length` is 0.
-char* map(const size_t expected_length, const bool use_huge_pages, const NumaNodeIDs& numa_memory_nodes);
+char* map(const uint64_t expected_length, const bool use_transparent_huge_pages, const uint64_t explicit_hugepages_size,
+          const NumaNodeIDs& numa_memory_nodes);
+
+// Calculates and returns the mmap page size flag for the given page size. Similar to MAP_HUGE_2MB and MAP_HUGE_1GB but
+// dynamic for every given page size.
+int mmap_page_size_mask(const uint32_t page_size);
 
 NumaNodeIDs get_numa_task_nodes();
 

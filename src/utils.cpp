@@ -4,9 +4,12 @@
 #include <numa.h>
 #include <sched.h>
 #include <spdlog/spdlog.h>
+#include <sys/mman.h>
 #include <unistd.h>
 
 #include <algorithm>
+#include <bit>
+#include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <random>
@@ -18,16 +21,46 @@
 
 namespace mema::utils {
 
-char* map(const size_t expected_length, const bool use_huge_pages, const NumaNodeIDs& numa_memory_nodes) {
+char* map(const uint64_t expected_length, const bool use_transparent_huge_pages, const uint64_t explicit_hugepages_size,
+          const NumaNodeIDs& numa_memory_nodes) {
   // Do not mmap any data if length is 0
   if (expected_length == 0) {
     return nullptr;
   }
 
-  void* addr = mmap(nullptr, expected_length, PROT_READ | PROT_WRITE, MAP_FLAGS, -1, 0);
+  void* addr = nullptr;
+  if (explicit_hugepages_size > 0) {
+    const auto page_size_mask = mmap_page_size_mask(explicit_hugepages_size);
+    addr = mmap(nullptr, expected_length, PROT_READ | PROT_WRITE, MAP_FLAGS_HUGETLB | page_size_mask, -1, 0);
+    spdlog::debug("Mapped memory region with explicit page size of {}.", explicit_hugepages_size);
+  } else {
+    addr = mmap(nullptr, expected_length, PROT_READ | PROT_WRITE, MAP_FLAGS, -1, 0);
+    spdlog::debug("Mapped memory region without explicit page size.");
+  }
+
   if (addr == MAP_FAILED || addr == nullptr) {
-    spdlog::critical("Could not map anonymous memory region. Error: {}", std::strerror(errno));
+    spdlog::critical(
+        "Could not map anonymous memory region. Error: {}. If using explicit hugepages, ensure that you have enough "
+        "pages allocated.",
+        std::strerror(errno));
     crash_exit();
+  }
+
+  if (!use_transparent_huge_pages) {
+    // Explicitly don't use transparent huge pages.
+    if (madvise(addr, expected_length, MADV_NOHUGEPAGE) == -1) {
+      spdlog::critical("madavise for no huge pages failed. Error: {}", std::strerror(errno));
+      crash_exit();
+    } else {
+      spdlog::debug("Prohibited Transparent Huge Pages for the given memory region.");
+    }
+  } else {
+    if (madvise(addr, expected_length, MADV_HUGEPAGE) == -1) {
+      spdlog::critical("madavise for huge pages failed. Error: {}", std::strerror(errno));
+      crash_exit();
+    } else {
+      spdlog::debug("Enabled Transparent Huge Pages for the given memory region.");
+    }
   }
 
   // If no memory nodes are specified, the system will use the 'local allocation' policy, see
@@ -49,24 +82,17 @@ char* map(const size_t expected_length, const bool use_huge_pages, const NumaNod
     spdlog::debug("Did not bind memory to NUMA nodes: no NUMA nodes given.");
   }
 
-  if (use_huge_pages) {
-    if (madvise(addr, expected_length, MADV_HUGEPAGE) == -1) {
-      spdlog::critical("madavise for huge pages failed. Error: {}", std::strerror(errno));
-      crash_exit();
-    } else {
-      spdlog::debug("Enabled Transparent Huge Pages for the given memory region.");
-    }
-  } else {
-    // Explicitly don't use huge pages.
-    if (madvise(addr, expected_length, MADV_NOHUGEPAGE) == -1) {
-      spdlog::critical("madavise for no huge pages failed. Error: {}", std::strerror(errno));
-      crash_exit();
-    } else {
-      spdlog::debug("Prohibited Transparent Huge Pages for the given memory region.");
-    }
-  }
-
   return static_cast<char*>(addr);
+}
+
+int mmap_page_size_mask(const uint32_t page_size) {
+  if (((page_size) & (page_size - 1)) != 0) {
+    spdlog::critical("Given page size {} is not a power of 2.", page_size);
+    utils::crash_exit();
+  }
+  const auto required_bits = std::bit_width(page_size) - 1;
+  spdlog::debug("Calculating mmap page size mask: {} bits required for {}", required_bits, page_size);
+  return required_bits << MAP_HUGE_SHIFT;
 }
 
 // Returns node IDs on which the current thread is allowed to run on.

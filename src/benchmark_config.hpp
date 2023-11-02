@@ -119,8 +119,13 @@ struct BenchmarkConfig {
    * time caused by page faults on first access to the allocated memory region. */
   bool prefault_memory = true;
 
-  /** Whether or not to use transparent huge pages, i.e. 2 MiB instead of regular 4 KiB pages. */
-  bool huge_pages = true;
+  /** Sepecify the use of huge pages in combination with `explicit_hugepages_size`. */
+  bool transparent_huge_pages = true;
+
+  /** Specify the used huge page size. Relevant when the OS supports multiple huge page sizes. Requires
+   * `transparent_huge_pages` being set to true. When set to 0 while `transparent_huge_pages` is true, transparent huge
+   * pages is enabled via madvise. */
+  uint64_t explicit_hugepages_size = 0;
 
   /** Represents the minimum size of an atomic work package. A chunk contains chunk_size / access_size number of
    * operations. The default value is 64 MiB (67108864B), a ~60 ms execution unit assuming the lowest bandwidth of
