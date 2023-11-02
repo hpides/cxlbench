@@ -21,6 +21,7 @@ KEY_EXPLODED_NUMA_TASK_NODES = "benchmarks.config.numa_task_nodes"
 KEY_LAT_AVG = "latency.avg"
 KEY_MATRIX_ARGS = "matrix_args"
 KEY_MEMORY_REGION_SIZE = "memory_region_size"
+KEY_NUMA_TASK_NODES = "numa_task_nodes"
 KEY_NUMA_MEMORY_NODES = "numa_memory_nodes"
 KEY_OPERATION = "operation"
 KEY_OPERATION_COUNT = "number_operations"
@@ -34,7 +35,8 @@ KEY_THREADS_LEVELED = "benchmarks.results.threads"
 KEY_FLUSH_INSTRUCTION = "flush_instruction"
 FLUSH_INSTR_NONE = "none"
 
-PLOT_FILE_PREFIX = "plot"
+DATA_FILE_PREFIX = "data_"
+PLOT_FILE_PREFIX = "plot_"
 FILE_TAG_SUBSTRING = "TAG_"
 
 
@@ -190,6 +192,8 @@ class PlotGenerator:
         # For now, we assume that memory was allocated on a single numa node.
         assert (df[KEY_NUMA_MEMORY_NODES].str.len() == 1).all()
         df[KEY_NUMA_MEMORY_NODES] = df[KEY_NUMA_MEMORY_NODES].transform(lambda x: x[0])
+        assert (df[KEY_NUMA_TASK_NODES].str.len() == 1).all()
+        df[KEY_NUMA_TASK_NODES] = df[KEY_NUMA_TASK_NODES].transform(lambda x: x[0])
         df = df.drop(columns=drop_columns, errors="ignore")
         df.to_csv("{}/flattened_reduced_df.csv".format(self.output_dir))
         if self.no_plots:
@@ -199,57 +203,67 @@ class PlotGenerator:
         partition_counts = df[KEY_PARTITION_COUNT].unique()
         flush_types = df[KEY_FLUSH_INSTRUCTION].unique()
         tags = df[KEY_TAG].unique()
+        numa_task_nodes = df[KEY_NUMA_TASK_NODES].unique()
 
         for tag in tags:
             for flush_type in flush_types:
                 for partition_count in partition_counts:
                     for bm_group in bm_groups:
-                        # (comment in for debug purposes)
-                        # print(tag, flush_type, partition_count, bm_group)
-                        df_sub = df[
-                            (df[KEY_BM_GROUP] == bm_group)
-                            & (df[KEY_PARTITION_COUNT] == partition_count)
-                            & (df[KEY_FLUSH_INSTRUCTION] == flush_type)
-                            & (df[KEY_TAG] == tag)
-                        ]
+                        for numa_task_node in numa_task_nodes:
+                            # (comment in for debug purposes)
+                            # print(tag, flush_type, partition_count, bm_group)
+                            df_sub = df[
+                                (df[KEY_BM_GROUP] == bm_group)
+                                & (df[KEY_PARTITION_COUNT] == partition_count)
+                                & (df[KEY_FLUSH_INSTRUCTION] == flush_type)
+                                & (df[KEY_TAG] == tag)
+                                & (df[KEY_NUMA_TASK_NODES] == numa_task_node)
+                            ]
 
-                        # (comment in for debug purposes)
-                        # print("DF for", tag, bm_group, partition_count, flush_type, tag)
-                        # print(df_sub.to_string())
+                            # (comment in for debug purposes)
+                            # print("DF for", tag, bm_group, partition_count, flush_type, tag)
+                            # print(df_sub.to_string())
 
-                        # Since we check for certain flush instructions, the data frame is empty for read and operation
-                        # latency benchmark results if the flush instruction is not `none`.
-                        if flush_type != FLUSH_INSTR_NONE and ("read" in bm_group or bm_group == "operation_latency"):
-                            assert df_sub.empty, "Flush instruction must be none for read and latency benchmarks."
+                            # Since we check for certain flush instructions, the data frame is empty for read and
+                            # operation latency benchmark results if the flush instruction is not `none`.
+                            if flush_type != FLUSH_INSTR_NONE and (
+                                "read" in bm_group or bm_group == "operation_latency"
+                            ):
+                                assert df_sub.empty, "Flush instruction must be none for read and latency benchmarks."
 
-                        if df_sub.empty:
-                            continue
+                            if df_sub.empty:
+                                continue
 
-                        if tag == "B" and flush_type == "nocache" and bm_group == "random_writes":
-                            # Comment in to filter for a specific thread count.
-                            # plot_df = df_sub[df_sub[KEY_THREAD_COUNT] == 8]
-                            self.create_paper_plot_throughput_for_threadcount(df_sub, "cache_random_write_8threads")
-                        self.create_plot(df_sub)
+                            if tag == "B" and flush_type == "nocache" and bm_group == "random_writes":
+                                # Comment in to filter for a specific thread count.
+                                # plot_df = df_sub[df_sub[KEY_THREAD_COUNT] == 8]
+                                self.create_paper_plot_throughput_for_threadcount(df_sub, "cache_random_write_8threads")
+                            self.create_plot(df_sub)
 
         sys.exit("Exit")
 
     def create_plot(self, df):
         bm_group = get_single_distinct_value(KEY_BM_GROUP, df)
-        partition_count = get_single_distinct_value(KEY_PARTITION_COUNT, df)
+        # Assert that only one partition is used.
+        get_single_distinct_value(KEY_PARTITION_COUNT, df)
         flush_type = get_single_distinct_value(KEY_FLUSH_INSTRUCTION, df)
         tag = get_single_distinct_value(KEY_TAG, df)
+        numa_task_node = get_single_distinct_value(KEY_NUMA_TASK_NODES, df)
         bandwidth_plot_group = ["sequential_reads", "random_reads", "sequential_writes", "random_writes"]
         latency_plot_group = ["operation_latency"]
         plot_title_template = "{} [Flush: {}] {}\n <custom>".format(tag, flush_type, bm_group.replace("_", " ").title())
         legend_title = "Memory Node"
-        pdf_filename_template = "{prefix}_{tag}_part_{partition_count}_{flush_type}_{bm_group}_<custom>.pdf".format(
-            prefix=PLOT_FILE_PREFIX,
-            partition_count=partition_count,
+        filename_tag = ""
+        if tag != "":
+            filename_tag = "{}_".format(tag)
+        filename_template = "{tag}{flush_type}_{bm_group}_task_node_{task_node}_<custom>".format(
             bm_group=bm_group,
             flush_type=flush_type,
-            tag=tag,
+            tag=filename_tag,
+            task_node=numa_task_node,
         )
-        df.to_csv("{}/{}".format(self.output_dir, pdf_filename_template.replace("_<custom>.pdf", ".csv")))
+        filename = filename_template.replace("_<custom>", "")
+        df.to_csv("{}/{}{}.csv".format(self.output_dir, DATA_FILE_PREFIX, filename))
         if bm_group in bandwidth_plot_group:
             if self.do_barplots:
                 # Plot 1 (x: thread count, y: throughput, for each access size)
@@ -301,8 +315,8 @@ class PlotGenerator:
                 )
                 fig.tight_layout()
 
-                filename = pdf_filename_template.replace("<custom>", "access_size")
-                fig.savefig("{}/{}".format(self.output_dir, filename))
+                filename = "{}".format(filename_template.replace("<custom>", "access_size"))
+                fig.savefig("{}/{}{}.pdf".format(self.output_dir, PLOT_FILE_PREFIX, filename))
                 plt.close("all")
 
                 # Plot 2 (x: access size, y: throughput)
@@ -327,7 +341,7 @@ class PlotGenerator:
                     plot_df = df[df[KEY_THREAD_COUNT] == thread_count]
                     assert_config_columns_one_value(plot_df, [KEY_ACCESS_SIZE])
                     print("Creating barplot (access sizes) for BM group {}, {} threads".format(bm_group, thread_count))
-                    filename = pdf_filename_template.replace("<custom>", "{}_threads".format(thread_count))
+                    filename = filename_template.replace("<custom>", "{}_threads".format(thread_count))
                     plot_title = plot_title_template.replace("<custom>", "{} Threads".format(thread_count))
 
                     self.create_barplot(
@@ -344,7 +358,7 @@ class PlotGenerator:
                         index,
                     )
 
-                filename = pdf_filename_template.replace("<custom>", "threads")
+                filename = filename_template.replace("<custom>", "threads")
                 fig.set_size_inches(
                     min(3, len(thread_counts))
                     * (
@@ -355,7 +369,7 @@ class PlotGenerator:
                     math.ceil(len(thread_counts) / 3) * 5,
                 )
                 fig.tight_layout()
-                fig.savefig("{}/{}".format(self.output_dir, filename))
+                fig.savefig("{}/{}{}.pdf".format(self.output_dir, PLOT_FILE_PREFIX, filename))
                 plt.close("all")
 
             # Plot 3: heatmap (x: thread count, y: access size)
@@ -363,13 +377,18 @@ class PlotGenerator:
             for memory_node in numa_memory_nodes:
                 flush_type = get_single_distinct_value(KEY_FLUSH_INSTRUCTION, df)
                 print(
-                    "Creating heatmap for BM group {}, {}, Numa Memory Node {}".format(
-                        bm_group, flush_type, memory_node
+                    "Creating heatmap for BM group {}, {}, Mem Node {}, Task Node {}".format(
+                        bm_group, flush_type, memory_node, numa_task_node
                     )
                 )
                 df_sub = df[df[KEY_NUMA_MEMORY_NODES] == memory_node]
-                plot_title = plot_title_template.replace("<custom>", "Numa memory node: {}".format(memory_node))
-                filename = pdf_filename_template.replace("<custom>", "heatmap_memory_node_{}".format(memory_node))
+                plot_title = plot_title_template.replace(
+                    "<custom>", "task node: {} mem node: {}".format(numa_task_node, memory_node)
+                )
+
+                filename = filename_template.replace("<custom>", "heatmap_memory_node_{}".format(memory_node))
+                df_sub.to_csv("{}/{}{}.csv".format(self.output_dir, DATA_FILE_PREFIX, filename))
+
                 self.create_heatmap(df_sub, plot_title, filename)
         elif bm_group in latency_plot_group:
             # Todo: per custom instruction, show threads
@@ -387,9 +406,7 @@ class PlotGenerator:
                 )
                 df_thread = df[df[KEY_THREAD_COUNT] == thread_count]
                 assert_config_columns_one_value(df_thread, [])
-                filename = pdf_filename_template.replace(
-                    "<custom>", "latency_custom_ops_{}_threads".format(thread_count)
-                )
+                filename = filename_template.replace("<custom>", "latency_custom_ops_{}_threads".format(thread_count))
                 plot_title = plot_title_template.replace(
                     "<custom>", "Latency Custom Ops {} Threads".format(thread_count)
                 )
@@ -418,7 +435,7 @@ class PlotGenerator:
                     10,
                 )
                 fig.tight_layout()
-                fig.savefig("{}/{}".format(self.output_dir, filename))
+                fig.savefig("{}/{}{}.pdf".format(self.output_dir, PLOT_FILE_PREFIX, filename))
                 plt.close("all")
             print("Generating ploits for latency plot group needs to be implemented.")
 
@@ -476,7 +493,7 @@ class PlotGenerator:
         plt.grid(axis="y", color="k", linestyle=":")
         fig = barplot.get_figure()
         fig.savefig(
-            "{}/{}_paper_{}".format(self.output_dir, PLOT_FILE_PREFIX, filename),
+            "{}/{}_paper_{}.pdf".format(self.output_dir, PLOT_FILE_PREFIX, filename),
             bbox_inches="tight",
             pad_inches=0.015,
         )
@@ -569,5 +586,5 @@ class PlotGenerator:
         heatmap.set_title(title)
         heatmap.set_yticklabels(heatmap.get_yticklabels(), rotation=0)
         fig = heatmap.get_figure()
-        fig.savefig("{}/{}".format(self.output_dir, filename))
+        fig.savefig("{}/{}{}.pdf".format(self.output_dir, PLOT_FILE_PREFIX, filename))
         plt.close(fig)
