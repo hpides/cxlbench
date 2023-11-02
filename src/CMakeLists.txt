@@ -29,7 +29,6 @@ set(
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPILE_FLAGS}")
 
 add_library(mema STATIC ${SOURCES})
-add_dependencies(mema copy_directory)
 target_link_libraries(mema benchmark::benchmark hdr_histogram_static spdlog stdc++fs yaml-cpp)
 
 target_link_libraries(mema ${NUMA_LIBRARIES})

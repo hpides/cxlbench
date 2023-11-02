@@ -212,12 +212,6 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googlebenchmark)
 
 ##################### MemA ####################
-add_custom_target(copy_directory
-        COMMAND ${CMAKE_COMMAND}
-        -Dsource_dir=${CMAKE_SOURCE_DIR}/workloads
-        -Ddestination_dir=${CMAKE_CURRENT_BINARY_DIR}/workloads
-        -P ${CMAKE_SOURCE_DIR}/copy_directory.cmake
-)
 include_directories(src)
 add_subdirectory(src)
 

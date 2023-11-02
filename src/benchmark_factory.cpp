@@ -191,7 +191,9 @@ std::vector<YAML::Node> BenchmarkFactory::get_config_files(const std::filesystem
   }
 
   if (config_files.empty()) {
-    spdlog::critical("Benchmark config path {} must contain at least one config file.", config_file_path.string());
+    spdlog::critical(
+        "Benchmark config path {} must contain at least one config file. Feel free to use ../scripts/reset_workload.sh",
+        config_file_path.string());
     utils::crash_exit();
   }
   std::vector<YAML::Node> yaml_configs{};

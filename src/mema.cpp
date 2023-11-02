@@ -8,6 +8,7 @@
 #include "CLI11.hpp"
 #include "benchmark_suite.hpp"
 #include "numa.hpp"
+#include "utils.hpp"
 
 using namespace mema;  // NOLINT - [build/namespaces] Linter doesn't like using-directives
 
@@ -28,8 +29,7 @@ int main(int argc, char** argv) {
   // Define command line args
   std::filesystem::path config_file = std::filesystem::current_path() / DEFAULT_WORKLOAD_PATH;
   app.add_option("-c,--config", config_file,
-                 "Path to the benchmark config YAML file(s) (default: " + std::string{DEFAULT_WORKLOAD_PATH} + ")")
-      ->check(CLI::ExistingPath);
+                 "Path to the benchmark config YAML file(s) (default: " + std::string{DEFAULT_WORKLOAD_PATH} + ")");
 
   // Define result directory
   std::filesystem::path result_path = std::filesystem::current_path() / DEFAULT_RESULT_PATH;
@@ -74,6 +74,13 @@ int main(int argc, char** argv) {
 
   // Run the actual benchmarks after parsing and validating them.
   spdlog::info("Running benchmarks with config(s) from '{}'.", config_file.string());
+  if (!std::filesystem::exists(config_file)) {
+    spdlog::critical(
+        "Config path {} does not exist. Make sure you set up the benchmark configurations correctly. Feel free to use "
+        "../scripts/reset_workload.sh",
+        config_file.string());
+    utils::crash_exit();
+  }
   spdlog::info("Writing results to '{}'.", result_path.string());
 
   const auto numa_node_count = init_numa();
