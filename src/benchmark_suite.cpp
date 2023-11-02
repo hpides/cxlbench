@@ -123,6 +123,116 @@ void print_bm_information(const mema::Benchmark& bm) {
   }
 }
 
+void print_summary(nlohmann::json result, const std::string& bm_name, const bool parallel = false) {
+  if (result["benchmarks"].size() == 0) {
+    spdlog::critical("No results found for benchmark '{}'.", bm_name);
+    mema::utils::crash_exit();
+  }
+
+  auto prefix = std::string{};
+
+  if (parallel) {
+    prefix = "\t";
+
+    for (auto& bm_result : result["benchmarks"]) {
+      bm_result["config"] = bm_result["config"][bm_name];
+      bm_result["results"] = bm_result["results"][bm_name]["results"];
+    }
+  }
+
+  if (result["benchmarks"][0]["config"]["exec_mode"] == "custom") {
+    auto avg_latency = double{0};
+    auto min_latency = double{std::numeric_limits<double>::max()};
+    auto min_config = nlohmann::json{};
+    auto max_latency = double{std::numeric_limits<double>::min()};
+    auto max_config = nlohmann::json{};
+
+    for (const auto& bm_result : result["benchmarks"]) {
+      if (bm_result["config"]["exec_mode"] != "custom") {
+        spdlog::critical("A single benchmark can not contain mixed execution modes.");
+        mema::utils::crash_exit();
+      }
+
+      const auto latency = bm_result["results"]["latency"]["avg"].get<double>();
+      avg_latency += latency;
+      if (latency < min_latency) {
+        min_latency = latency;
+        min_config = bm_result["config"];
+      }
+      if (latency > max_latency) {
+        max_latency = latency;
+        max_config = bm_result["config"];
+      }
+    }
+
+    avg_latency /= result["benchmarks"].size();
+    spdlog::info("{}:\tavg_latency (ns): {}\tmin_latency (ns): {}\tmax_latency (ns): {}", bm_name, avg_latency,
+                 min_latency, max_latency);
+    spdlog::info("{}min_latency config: {}", prefix, min_config.dump());
+    spdlog::info("{}max_latency config: {}", prefix, max_config.dump());
+  } else if (result["benchmarks"][0]["config"]["exec_mode"] == "sequential" ||
+             result["benchmarks"][0]["config"]["exec_mode"] == "random") {
+    auto avg_bandwidth = double{0};
+    auto min_bandwidth = double{std::numeric_limits<double>::max()};
+    auto min_config = nlohmann::json{};
+    auto max_bandwidth = double{std::numeric_limits<double>::min()};
+    auto max_config = nlohmann::json{};
+
+    for (const auto& bm_result : result["benchmarks"]) {
+      if (!(result["benchmarks"][0]["config"]["exec_mode"] == "sequential" ||
+            result["benchmarks"][0]["config"]["exec_mode"] == "random")) {
+        spdlog::critical("A single benchmark can not contain mixed execution modes.");
+        mema::utils::crash_exit();
+      }
+
+      const auto bandwidth = bm_result["results"]["bandwidth"].get<double>();
+      avg_bandwidth += bandwidth;
+      if (bandwidth < min_bandwidth) {
+        min_bandwidth = bandwidth;
+        min_config = bm_result["config"];
+      }
+      if (bandwidth > max_bandwidth) {
+        max_bandwidth = bandwidth;
+        max_config = bm_result["config"];
+      }
+    }
+
+    // TODO(anyone): use 1 GB for bandwidth measurements in the code base.
+    // 1 GiB / 1 GB
+    min_bandwidth *= mema::utils::ONE_GB / 1e9;
+    max_bandwidth *= mema::utils::ONE_GB / 1e9;
+    avg_bandwidth *= mema::utils::ONE_GB / 1e9;
+    avg_bandwidth /= result["benchmarks"].size();
+
+    spdlog::info("{}{}:\tavg_bandwidth (GB/s): {}\tmin_bandwidth (GB/s): {}\tmax_bandwidth (GB/s): {}", prefix, bm_name,
+                 avg_bandwidth, min_bandwidth, max_bandwidth);
+    spdlog::info("{}min_bandwidth config: {}", prefix, min_config.dump());
+    spdlog::info("{}max_bandwidth config: {}", prefix, max_config.dump());
+  } else {
+    spdlog::critical("Unknown execution mode: {}", result["benchmarks"][0]["config"]["exec_mode"]);
+    mema::utils::crash_exit();
+  }
+}
+
+void print_summarys(const nlohmann::json& all_results) {
+  spdlog::info("Summary:");
+  for (const auto& result : all_results) {
+    const auto& bm_name = result["bm_name"].get<std::string>();
+    if (result["bm_type"] == "single") {
+      print_summary(result, bm_name);
+    } else if (result["bm_type"] == "parallel") {
+      spdlog::info("{}:", bm_name);
+      const auto& sub_bm_names = result["sub_bm_names"].get<std::vector<std::string>>();
+      for (const auto& sub_bm_name : sub_bm_names) {
+        print_summary(result, sub_bm_name, true);
+      }
+    } else {
+      spdlog::critical("Unknown benchmark type: {}", result["bm_type"]);
+      mema::utils::crash_exit();
+    }
+  }
+}
+
 }  // namespace
 
 namespace mema {
@@ -225,10 +335,18 @@ void BenchmarkSuite::run_benchmarks(const MemaOptions& options) {
     utils::crash_exit();
   }
 
-  std::stringstream buffer;
-  std::ifstream file_stream{result_file};
-  buffer << file_stream.rdbuf();
-  spdlog::debug("Results:\n{}", buffer.str());
+  auto all_results = nlohmann::json{};
+  auto previous_result_file = std::ifstream{result_file};
+  previous_result_file >> all_results;
+
+  if (!all_results.is_array()) {
+    previous_result_file.close();
+    spdlog::critical("Result file '{}' is corrupted! Content must be a valid JSON array.", result_file.string());
+    utils::crash_exit();
+  }
+
+  print_summarys(all_results);
+  spdlog::debug("Results:\n{}", all_results.dump(2));
 
   spdlog::info("Finished all benchmarks successfully.");
 }
