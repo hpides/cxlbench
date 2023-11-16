@@ -7,7 +7,7 @@ sequential_reads:
   args:
     exec_mode: sequential
     memory_region_size: 7G
-    numa_memory_nodes: [ 0 ]
+    numa_memory_nodes: [ 1 ]
     numa_task_nodes: [ 0 ]
     number_partitions: 1
     operation: read
