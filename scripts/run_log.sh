@@ -12,4 +12,4 @@ fi
 SCRIPT_DIR="$(dirname "$0")"
 ROOT_DIR="$(cd "$(dirname "$0")/../" && pwd)"
 START_TIME=$(eval date "+%FT%H-%M-%S-%N")
-eval "$SCRIPT_DIR/build_run.sh $1 $2" 2>&1 | tee "$ROOT_DIR"/"$1"-"$2"-"$START_TIME".log
+eval "$SCRIPT_DIR/run.sh $1 $2" 2>&1 | tee "$ROOT_DIR"/"$1"-"$2"-"$START_TIME".log

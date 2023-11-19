@@ -13,7 +13,8 @@ TAG="$1"
 WORKLOAD="$2"
 
 # Get the absolute path here.
-ROOT_DIR="$(cd "$(dirname "$0")/../" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$SCRIPT_DIR"/../ && pwd
 BUILD_DIR_NAME=exp-"$TAG"-rel-gcc-12
 BUILD_DIR="$ROOT_DIR"/"$BUILD_DIR_NAME"
 mkdir -p "$BUILD_DIR"
@@ -44,9 +45,12 @@ else
   echo "Not execution the system setup. If you want to run the system, add -s as the second option."
 fi
 
-RESULT_DIR=../results/"$WORKLOAD"/"$TAG"
+START_TIME=$(eval date "+%FT%H-%M-%S-%N")
+RESULT_DIR="$ROOT_DIR"/results/"$WORKLOAD"/"$TAG"/"$START_TIME"
 mkdir -p "$RESULT_DIR"
 
 # Run benchmarks
 ./mema-bench -r "$RESULT_DIR"
+"$SCRIPT_DIR"/plot.sh "$RESULT_DIR"
+
 exit 0
