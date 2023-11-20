@@ -168,7 +168,8 @@ class PlotGenerator:
         if KEY_FLUSH_INSTRUCTION not in df.columns:
             df[KEY_FLUSH_INSTRUCTION] = FLUSH_INSTR_NONE
         df[KEY_FLUSH_INSTRUCTION] = df[KEY_FLUSH_INSTRUCTION].fillna(FLUSH_INSTR_NONE)
-        df[KEY_BANDWIDTH_GB] = df[KEY_BANDWIDTH_GiB] * (1024**3 / 1e9)
+        if KEY_BANDWIDTH_GB in df.columns:
+          df[KEY_BANDWIDTH_GB] = df[KEY_BANDWIDTH_GiB] * (1024**3 / 1e9)
 
         df.to_csv("{}/flattened_df.csv".format(self.output_dir))
 
@@ -189,11 +190,8 @@ class PlotGenerator:
         #     print("{}: {}".format(column, df[column].explode().unique()))
         # print("columns to be dropped: {}".format(drop_columns))
 
-        # For now, we assume that memory was allocated on a single numa node.
-        assert (df[KEY_NUMA_MEMORY_NODES].str.len() == 1).all()
-        df[KEY_NUMA_MEMORY_NODES] = df[KEY_NUMA_MEMORY_NODES].transform(lambda x: x[0])
-        assert (df[KEY_NUMA_TASK_NODES].str.len() == 1).all()
-        df[KEY_NUMA_TASK_NODES] = df[KEY_NUMA_TASK_NODES].transform(lambda x: x[0])
+        df[KEY_NUMA_MEMORY_NODES] = df[KEY_NUMA_MEMORY_NODES].transform(lambda x: ",".join(str(i) for i in x))
+        df[KEY_NUMA_TASK_NODES] = df[KEY_NUMA_TASK_NODES].transform(lambda x: ",".join(str(i) for i in x))
         df = df.drop(columns=drop_columns, errors="ignore")
         df.to_csv("{}/flattened_reduced_df.csv".format(self.output_dir))
         if self.no_plots:
@@ -264,7 +262,7 @@ class PlotGenerator:
         )
         filename = filename_template.replace("_<custom>", "")
         df.to_csv("{}/{}{}.csv".format(self.output_dir, DATA_FILE_PREFIX, filename))
-        if bm_group in bandwidth_plot_group:
+        if KEY_BANDWIDTH_GB in df.columns:
             if self.do_barplots:
                 # Plot 1 (x: thread count, y: throughput, for each access size)
                 access_sizes = df[KEY_ACCESS_SIZE].unique()
@@ -390,7 +388,7 @@ class PlotGenerator:
                 df_sub.to_csv("{}/{}{}.csv".format(self.output_dir, DATA_FILE_PREFIX, filename))
 
                 self.create_heatmap(df_sub, plot_title, filename)
-        elif bm_group in latency_plot_group:
+        elif KEY_LAT_AVG in df.columns:
             # Todo: per custom instruction, show threads
             thread_counts = df[KEY_THREAD_COUNT].unique()
             thread_counts_count = len(thread_counts)
@@ -420,10 +418,10 @@ class PlotGenerator:
                     KEY_NUMA_MEMORY_NODES,
                     plot_title,
                     legend_title,
-                    filename,
                     self.memory_nodes,
+                    axes,
                     0,
-                    True,
+                    True
                 )
 
                 fig.set_size_inches(
@@ -563,7 +561,7 @@ class PlotGenerator:
             barplot.bar_label(container_id, rotation=90, padding=4, fmt="%.1f")
 
         if rotation_x_labels:
-            plt.xticks(rotation=90)
+            barplot.tick_params(axis='x', labelrotation=90)
 
         plt.close()
 
