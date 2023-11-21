@@ -1,7 +1,7 @@
 sequential_writes:
   matrix:
-    number_threads: [ 16, 32, 48, 60 ]
-    access_size: [ 4096, 8192, 16384, 32768, 65536 ]
+    number_threads: [ 40 ]
+    access_size: [ 16384 ]
     flush_instruction: [ none ]
 
   args:
