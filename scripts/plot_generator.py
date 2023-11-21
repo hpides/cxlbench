@@ -169,7 +169,7 @@ class PlotGenerator:
             df[KEY_FLUSH_INSTRUCTION] = FLUSH_INSTR_NONE
         df[KEY_FLUSH_INSTRUCTION] = df[KEY_FLUSH_INSTRUCTION].fillna(FLUSH_INSTR_NONE)
         if KEY_BANDWIDTH_GB in df.columns:
-          df[KEY_BANDWIDTH_GB] = df[KEY_BANDWIDTH_GiB] * (1024**3 / 1e9)
+            df[KEY_BANDWIDTH_GB] = df[KEY_BANDWIDTH_GiB] * (1024**3 / 1e9)
 
         df.to_csv("{}/flattened_df.csv".format(self.output_dir))
 
@@ -247,8 +247,6 @@ class PlotGenerator:
         flush_type = get_single_distinct_value(KEY_FLUSH_INSTRUCTION, df)
         tag = get_single_distinct_value(KEY_TAG, df)
         numa_task_node = get_single_distinct_value(KEY_NUMA_TASK_NODES, df)
-        bandwidth_plot_group = ["sequential_reads", "random_reads", "sequential_writes", "random_writes"]
-        latency_plot_group = ["operation_latency"]
         plot_title_template = "{} [Flush: {}] {}\n <custom>".format(tag, flush_type, bm_group.replace("_", " ").title())
         legend_title = "Memory Node"
         filename_tag = ""
@@ -561,7 +559,7 @@ class PlotGenerator:
             barplot.bar_label(container_id, rotation=90, padding=4, fmt="%.1f")
 
         if rotation_x_labels:
-            barplot.tick_params(axis='x', labelrotation=90)
+            barplot.tick_params(axis="x", labelrotation=90)
 
         plt.close()
 
