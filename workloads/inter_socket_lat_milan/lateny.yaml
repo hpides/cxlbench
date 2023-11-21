@@ -4,7 +4,7 @@
 # - IceLake   0, 1
 # - CascLake  0, 1
 # - Power     0, 1
-random_reads:
+operation_latency:
   matrix:
     access_size: [ 64 ]
     number_threads: [ 1 ]
