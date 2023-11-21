@@ -168,7 +168,7 @@ class PlotGenerator:
         if KEY_FLUSH_INSTRUCTION not in df.columns:
             df[KEY_FLUSH_INSTRUCTION] = FLUSH_INSTR_NONE
         df[KEY_FLUSH_INSTRUCTION] = df[KEY_FLUSH_INSTRUCTION].fillna(FLUSH_INSTR_NONE)
-        if KEY_BANDWIDTH_GB in df.columns:
+        if KEY_BANDWIDTH_GiB in df.columns:
             df[KEY_BANDWIDTH_GB] = df[KEY_BANDWIDTH_GiB] * (1024**3 / 1e9)
 
         df.to_csv("{}/flattened_df.csv".format(self.output_dir))
