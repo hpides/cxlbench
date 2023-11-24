@@ -419,7 +419,7 @@ class PlotGenerator:
                     self.memory_nodes,
                     axes,
                     0,
-                    True
+                    True,
                 )
 
                 fig.set_size_inches(

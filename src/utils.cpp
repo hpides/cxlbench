@@ -258,6 +258,23 @@ std::string get_time_string() {
   return ss.str();
 }
 
+std::string get_file_name_from_path(const std::filesystem::path& config_path, const std::string& file_extension) {
+  auto stream = std::stringstream{};
+  stream << "-" << get_time_string() << "." << file_extension;
+  if (std::filesystem::is_regular_file(config_path)) {
+    return config_path.stem().concat(stream.str());
+  }
+
+  if (std::filesystem::is_directory(config_path)) {
+    std::filesystem::path config_dir_name = *(--config_path.end());
+    return config_dir_name.concat(stream.str());
+  }
+
+  spdlog::critical("Unexpected config file type for '{}'.", config_path.string());
+  utils::crash_exit();
+  return "GCC thinks this is reachable.";
+}
+
 std::filesystem::path create_result_file(const std::filesystem::path& result_dir,
                                          const std::filesystem::path& config_path) {
   std::error_code ec;
@@ -267,18 +284,7 @@ std::filesystem::path create_result_file(const std::filesystem::path& result_dir
     utils::crash_exit();
   }
 
-  std::string file_name;
-  const std::string result_suffix = "-results-" + get_time_string() + ".json";
-  if (std::filesystem::is_regular_file(config_path)) {
-    file_name = config_path.stem().concat(result_suffix);
-  } else if (std::filesystem::is_directory(config_path)) {
-    std::filesystem::path config_dir_name = *(--config_path.end());
-    file_name = config_dir_name.concat(result_suffix);
-  } else {
-    spdlog::critical("Unexpected config file type for '{}'.", config_path.string());
-    utils::crash_exit();
-  }
-
+  auto file_name = get_file_name_from_path(config_path, "json");
   std::filesystem::path result_path = result_dir / file_name;
   std::ofstream result_file(result_path);
   result_file << nlohmann::json::array() << std::endl;

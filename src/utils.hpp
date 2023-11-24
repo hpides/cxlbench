@@ -55,6 +55,7 @@ void crash_exit();
 void print_segfault_error();
 
 std::string get_time_string();
+std::string get_file_name_from_path(const std::filesystem::path& config_path, const std::string& file_extension);
 std::filesystem::path create_result_file(const std::filesystem::path& result_dir,
                                          const std::filesystem::path& config_path);
 void write_benchmark_results(const std::filesystem::path& result_path, const nlohmann::json& results);

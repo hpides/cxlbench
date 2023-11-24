@@ -36,7 +36,7 @@ TEST_F(UtilsTest, CreateResultFileFromConfigFile) {
   const fs::path result_dir = fs::temp_directory_path();
   const fs::path result_file = create_result_file(result_dir, config_path);
   ASSERT_TRUE(fs::is_regular_file(result_file));
-  EXPECT_THAT(result_file.filename(), testing::StartsWith("test-results-"));
+  EXPECT_THAT(result_file.filename(), testing::StartsWith("test-"));
   EXPECT_EQ(result_file.extension().string(), ".json");
 
   nlohmann::json content;
@@ -55,7 +55,7 @@ TEST_F(UtilsTest, CreateResultFileFromConfigDir) {
   const fs::path result_dir = fs::temp_directory_path();
   const fs::path result_file = create_result_file(result_dir, config_path);
   ASSERT_TRUE(fs::is_regular_file(result_file));
-  EXPECT_THAT(result_file.filename(), testing::StartsWith("test-configs-results-"));
+  EXPECT_THAT(result_file.filename(), testing::StartsWith("test-configs-"));
   EXPECT_EQ(result_file.extension().string(), ".json");
 
   nlohmann::json content;

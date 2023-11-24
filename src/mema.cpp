@@ -14,7 +14,6 @@ using namespace mema;  // NOLINT - [build/namespaces] Linter doesn't like using-
 
 constexpr auto DEFAULT_WORKLOAD_PATH = "workloads";
 constexpr auto DEFAULT_RESULT_PATH = "results";
-constexpr auto LOG_PATH = "logs";
 
 int main(int argc, char** argv) {
   CLI::App app{"MemA-Bench: Benchmark your Memory"};
@@ -27,8 +26,8 @@ int main(int argc, char** argv) {
   app.add_flag("-v,--verbose", be_verbose, "Set true to log additional runtime information.")->default_val(false);
 
   // Define command line args
-  std::filesystem::path config_file = std::filesystem::current_path() / DEFAULT_WORKLOAD_PATH;
-  app.add_option("-c,--config", config_file,
+  std::filesystem::path config_path = std::filesystem::current_path() / DEFAULT_WORKLOAD_PATH;
+  app.add_option("-c,--config", config_path,
                  "Path to the benchmark config YAML file(s) (default: " + std::string{DEFAULT_WORKLOAD_PATH} + ")");
 
   // Define result directory
@@ -51,7 +50,8 @@ int main(int argc, char** argv) {
   console_sink->set_level(spdlog::level::trace);
 
   // file logger
-  auto file_path = std::filesystem::path(LOG_PATH) / (utils::get_time_string() + ".log");
+  auto file_name = utils::get_file_name_from_path(config_path, "log");
+  auto file_path = std::filesystem::path(result_path) / file_name;
   auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(file_path, false);
   // Logs with level >= trace are shown in this sink
   file_sink->set_level(spdlog::level::trace);
@@ -73,12 +73,12 @@ int main(int argc, char** argv) {
   }
 
   // Run the actual benchmarks after parsing and validating them.
-  spdlog::info("Running benchmarks with config(s) from '{}'.", config_file.string());
-  if (!std::filesystem::exists(config_file)) {
+  spdlog::info("Running benchmarks with config(s) from '{}'.", config_path.string());
+  if (!std::filesystem::exists(config_path)) {
     spdlog::critical(
         "Config path {} does not exist. Make sure you set up the benchmark configurations correctly. Feel free to use "
         "../scripts/reset_workload.sh",
-        config_file.string());
+        config_path.string());
     utils::crash_exit();
   }
   spdlog::info("Writing results to '{}'.", result_path.string());
@@ -94,6 +94,6 @@ int main(int argc, char** argv) {
     utils::crash_exit();
   }
 
-  BenchmarkSuite::run_benchmarks({config_file, result_path});
+  BenchmarkSuite::run_benchmarks({config_path, result_path});
   return 0;
 }
