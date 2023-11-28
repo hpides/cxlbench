@@ -9,7 +9,13 @@ if [ -z "$1" ] || [ -z "$2" ] ; then
   exit 1
 fi
 
-SCRIPT_DIR="$(dirname "$0")"
-ROOT_DIR="$(cd "$(dirname "$0")/../" && pwd)"
+TAG="$1"
+WORKLOAD="$2"
 START_TIME=$(eval date "+%FT%H-%M-%S-%N")
-eval "$SCRIPT_DIR/run.sh $1 $2" 2>&1 | tee "$ROOT_DIR"/"$1"-"$2"-"$START_TIME".log
+
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+RESULT_DIR="$ROOT_DIR"/results/"$WORKLOAD"/"$TAG"/"$START_TIME"
+mkdir -p "$RESULT_DIR"
+
+SCRIPT_DIR="$(dirname "$0")"
+eval "$SCRIPT_DIR/run.sh $1 $2 $START_TIME" 2>&1 | tee "$RESULT_DIR"/all-steps-"$START_TIME".log

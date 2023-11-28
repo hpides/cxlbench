@@ -324,11 +324,6 @@ void BenchmarkSuite::run_benchmarks(const MemaOptions& options) {
     utils::write_benchmark_results(result_file, bm_results);
     std::filesystem::create_symlink(result_file, utils::LAST_RESULTS_FILENAME);
     previous_bm->tear_down(/*force=*/true);
-    char hostname[1024] = "";
-    gethostname(hostname, sizeof(hostname));
-    auto ss = std::stringstream{};
-    ss << "./scripts/scplot.sh " << hostname << " " << result_file;
-    std::cout << ss.str() << std::endl;
   }
 
   if (had_error) {
