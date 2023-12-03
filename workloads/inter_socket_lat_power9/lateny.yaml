@@ -1,0 +1,23 @@
+# Nodes:
+# - Milan     (0-3), (4-7)
+# - Rome      0, 1
+# - IceLake   0, 1
+# - CascLake  0, 1
+# - Power     0, 1
+operation_latency:
+  matrix:
+    access_size: [ 64 ]
+    number_threads: [ 1 ]
+    custom_operations:
+      - "r_64"
+      - "r_64,w_64_none"
+
+  args:
+    exec_mode: custom
+    memory_region_size: 7G
+    number_partitions: 1
+    numa_memory_nodes: [8]
+    numa_task_nodes: [0]
+    number_operations: 110000000
+    latency_sample_frequency: 110000
+    run_time: 10
