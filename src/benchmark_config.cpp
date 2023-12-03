@@ -120,7 +120,7 @@ bool get_uints_if_present(YAML::Node& data, const std::string& name, std::vector
 namespace mema {
 
 BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
-  spdlog::info("Decoding benchmark config from file: {}", node["config_file"].as<std::string>());
+  spdlog::debug("Decoding benchmark config from file: {}", node["config_file"].as<std::string>());
   node.remove("config_file");
   BenchmarkConfig bm_config{};
   size_t found_count = 0;
