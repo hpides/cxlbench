@@ -104,19 +104,6 @@ TEST_F(UtilsTest, AddToResultFile) {
   fs::remove(config_path);
 }
 
-TEST_F(UtilsTest, RetrieveCorrectNumaTaskNode) {
-  const auto numa_max_node_id = numa_max_node();
-  auto* const run_node_mask = numa_get_run_node_mask();
-  for (auto node_id = NumaNodeID{0}; node_id <= numa_max_node_id; ++node_id) {
-    if (!numa_bitmask_isbitset(run_node_mask, node_id)) {
-      continue;
-    }
-    set_task_on_numa_nodes(NumaNodeIDs{node_id});
-    EXPECT_EQ(get_numa_task_nodes(), NumaNodeIDs{node_id});
-    numa_run_on_node_mask(run_node_mask);
-  }
-}
-
 TEST_F(UtilsTest, MmapValidPageSizeMask) {
   const auto page_size = 2097152;
   const auto expected_mask = 21 << MAP_HUGE_SHIFT;
@@ -138,7 +125,7 @@ TEST_F(UtilsTest, Map2MiBPageSize) {
   // 16 MiB allocation size
   const auto mmap_length = size_t{1} << 24;
   void* addr = nullptr;
-  EXPECT_NO_THROW(addr = utils::map(mmap_length, true, page_size, {0}));
+  EXPECT_NO_THROW(addr = utils::map(mmap_length, true, page_size));
   EXPECT_NE(addr, nullptr);
   munmap(addr, mmap_length);
 }
@@ -149,7 +136,7 @@ TEST_F(UtilsTest, Map1GiBPageSize) {
   // 4 GiB allocation size
   const auto mmap_length = size_t{1} << 32;
   void* addr = nullptr;
-  EXPECT_NO_THROW(addr = utils::map(mmap_length, true, page_size, {0}));
+  EXPECT_NO_THROW(addr = utils::map(mmap_length, true, page_size));
   EXPECT_NE(addr, nullptr);
   munmap(addr, mmap_length);
 }
@@ -160,7 +147,7 @@ TEST_F(UtilsTest, MapInvalidPageSize) {
   const auto page_size = 2000000;
   const auto mmap_length = 1 << 24;
   void* addr = nullptr;
-  EXPECT_THROW(auto addr = utils::map(mmap_length, true, page_size, {0}), MemaException);
+  EXPECT_THROW(auto addr = utils::map(mmap_length, true, page_size), MemaException);
   EXPECT_EQ(addr, nullptr);
   munmap(addr, mmap_length);
 }

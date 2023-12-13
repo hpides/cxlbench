@@ -1,7 +1,6 @@
 #include "utils.hpp"
 
 #include <fcntl.h>
-#include <numa.h>
 #include <sched.h>
 #include <spdlog/spdlog.h>
 #include <sys/mman.h>
@@ -21,8 +20,8 @@
 
 namespace mema::utils {
 
-char* map(const uint64_t expected_length, const bool use_transparent_huge_pages, const uint64_t explicit_hugepages_size,
-          const NumaNodeIDs& numa_memory_nodes) {
+char* map(const uint64_t expected_length, const bool use_transparent_huge_pages,
+          const uint64_t explicit_hugepages_size) {
   // Do not mmap any data if length is 0
   if (expected_length == 0) {
     return nullptr;
@@ -63,26 +62,40 @@ char* map(const uint64_t expected_length, const bool use_transparent_huge_pages,
     }
   }
 
-  // If no memory nodes are specified, the system will use the 'local allocation' policy, see
-  // https://docs.kernel.org/admin-guide/mm/numa_memory_policy.html
-  if (!numa_memory_nodes.empty()) {
-    set_memory_on_numa_nodes(addr, expected_length, numa_memory_nodes);
+  return static_cast<char*>(addr);
+}
 
-    auto nodes_to_string = [](const auto nodes) {
-      auto ss = std::stringstream{};
-      if (!nodes.empty()) {
-        std::copy(nodes.begin(), nodes.end() - 1, std::ostream_iterator<NumaNodeID>(ss, ", "));
-        ss << nodes.back();
-      }
-      return ss.str();
-    };
-    spdlog::debug("Finished binding memory region of size {} to NUMA nodes {}.", expected_length,
-                  nodes_to_string(numa_memory_nodes));
-  } else {
-    spdlog::debug("Did not bind memory to NUMA nodes: no NUMA nodes given.");
+void populate_memory(char* addr, const uint64_t memory_size) {
+  MemaAssert(memory_size % utils::PAGE_SIZE == 0, "Memory region needs to be a multiple of the page size.");
+  if (memory_size == 0) {
+    spdlog::warn("Did not populate/pre-fault the memory region as the memory size was 0.");
+    return;
   }
 
-  return static_cast<char*>(addr);
+  spdlog::debug("Populating/pre-faulting data.");
+  const auto page_count = memory_size / utils::PAGE_SIZE;
+  for (auto page_id = uint64_t{0}; page_id < page_count; ++page_id) {
+    addr[page_id * utils::PAGE_SIZE] = '\0';
+  }
+}
+
+void verify_memory_location(char* const start_addr, size_t memory_region_size, const NumaNodeIDs& expected_node_ids) {
+  if (expected_node_ids.empty()) {
+    spdlog::warn("Skipped memory location verification since no expected NUMA node ID was given.");
+    return;
+  }
+
+  const auto region_page_count = memory_region_size / utils::PAGE_SIZE;
+  for (auto page_idx = uint64_t{0}; page_idx < region_page_count; ++page_idx) {
+    auto* const addr = start_addr + page_idx * utils::PAGE_SIZE;
+    const auto page_node_id = get_numa_node_index_by_address(addr);
+    if (std::find(expected_node_ids.begin(), expected_node_ids.end(), page_node_id) == expected_node_ids.end()) {
+      spdlog::critical(
+          "Page of memory region at address {} is located on NUMA node {}, which is not a configured NUMA node.",
+          static_cast<void*>(addr), page_node_id);
+      utils::crash_exit();
+    }
+  }
 }
 
 int mmap_page_size_mask(const uint32_t page_size) {
@@ -93,33 +106,6 @@ int mmap_page_size_mask(const uint32_t page_size) {
   const auto required_bits = std::bit_width(page_size) - 1;
   spdlog::debug("Calculating mmap page size mask: {} bits required for {}", required_bits, page_size);
   return required_bits << MAP_HUGE_SHIFT;
-}
-
-// Returns node IDs on which the current thread is allowed to run on.
-NumaNodeIDs get_numa_task_nodes() {
-  auto max_node_id = numa_max_node();
-  auto run_nodes = NumaNodeIDs{};
-
-  // Check which NUMA node the calling thread is allowed to run on.
-
-  const auto* const run_node_mask = numa_get_run_node_mask();
-
-  for (auto node_id = NumaNodeID{0}; node_id <= max_node_id; ++node_id) {
-    if (numa_bitmask_isbitset(run_node_mask, node_id)) {
-      run_nodes.emplace_back(node_id);
-    }
-  }
-
-  if (!run_nodes.empty()) {
-    return run_nodes;
-  }
-
-  spdlog::critical("Could not determine NUMA task nodes of calling thread.");
-  crash_exit();
-
-  // This is only here to silence the "control reaches end of non-void function"
-  // compiler warning. They were observed on GCC 12 and Clang 15.
-  return {};
 }
 
 void generate_read_data(char* addr, const uint64_t memory_size) {
@@ -147,19 +133,6 @@ void generate_read_data(char* addr, const uint64_t memory_size) {
     thread.join();
   }
   spdlog::debug("Finished generating data.");
-}
-
-void prefault_memory(char* addr, const uint64_t memory_size, const uint64_t page_size) {
-  if (memory_size == 0) {
-    spdlog::debug("Did not prefault the memory region as the memory size was 0.");
-    return;
-  }
-
-  spdlog::debug("Pre-faulting data.");
-  const size_t num_prefault_pages = memory_size / page_size;
-  for (size_t prefault_offset = 0; prefault_offset < num_prefault_pages; ++prefault_offset) {
-    addr[prefault_offset * page_size] = '\0';
-  }
 }
 
 uint64_t duration_to_nanoseconds(const std::chrono::steady_clock::duration duration) {
@@ -265,14 +238,13 @@ std::string get_file_name_from_path(const std::filesystem::path& config_path, co
     return config_path.stem().concat(stream.str());
   }
 
-  if (std::filesystem::is_directory(config_path)) {
-    std::filesystem::path config_dir_name = *(--config_path.end());
-    return config_dir_name.concat(stream.str());
+  if (!std::filesystem::is_directory(config_path)) {
+    spdlog::critical("Unexpected config file type for '{}'.", config_path.string());
+    utils::crash_exit();
   }
 
-  spdlog::critical("Unexpected config file type for '{}'.", config_path.string());
-  utils::crash_exit();
-  return "GCC thinks this is reachable.";
+  std::filesystem::path config_dir_name = *(--config_path.end());
+  return config_dir_name.concat(stream.str());
 }
 
 std::filesystem::path create_result_file(const std::filesystem::path& result_dir,

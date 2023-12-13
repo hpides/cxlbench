@@ -137,7 +137,6 @@ BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
     found_count += get_if_present(node, "number_partitions", &bm_config.number_partitions);
     found_count += get_if_present(node, "number_threads", &bm_config.number_threads);
     found_count += get_if_present(node, "zipf_alpha", &bm_config.zipf_alpha);
-    found_count += get_if_present(node, "prefault_memory", &bm_config.prefault_memory);
     found_count += get_if_present(node, "latency_sample_frequency", &bm_config.latency_sample_frequency);
     found_count += get_if_present(node, "transparent_huge_pages", &bm_config.transparent_huge_pages);
     found_count += get_size_if_present(node, "explicit_hugepages_size", ConfigEnums::scale_suffix_to_factor,
@@ -341,7 +340,6 @@ nlohmann::json BenchmarkConfig::as_json() const {
   config["numa_task_nodes"] = numa_task_nodes;
   config["number_partitions"] = number_partitions;
   config["number_threads"] = number_threads;
-  config["prefault_memory"] = prefault_memory;
   config["min_io_chunk_size"] = min_io_chunk_size;
   config["transparent_huge_pages"] = transparent_huge_pages;
   config["explicit_hugepages_size"] = explicit_hugepages_size;
@@ -378,7 +376,7 @@ nlohmann::json BenchmarkConfig::as_json() const {
 
 CustomOp CustomOp::from_string(const std::string& str) {
   if (str.empty()) {
-    spdlog::error("Custom operation cannot be empty!");
+    spdlog::critical("Custom operation cannot be empty!");
     utils::crash_exit();
   }
 
@@ -392,7 +390,7 @@ CustomOp CustomOp::from_string(const std::string& str) {
 
   const size_t op_str_part_count = op_str_parts.size();
   if (op_str_part_count < 2) {
-    spdlog::error("Custom operation is too short: '{}'. Expected at least <operation>_<size>", str);
+    spdlog::critical("Custom operation is too short: '{}'. Expected at least <operation>_<size>", str);
     utils::crash_exit();
   }
 
@@ -403,7 +401,7 @@ CustomOp CustomOp::from_string(const std::string& str) {
   const std::string& operation_str = op_str_parts[0];
   auto op_location_it = ConfigEnums::str_to_operation.find(operation_str);
   if (op_location_it == ConfigEnums::str_to_operation.end()) {
-    spdlog::error("Unknown operation: {}", operation_str);
+    spdlog::critical("Unknown operation: {}", operation_str);
     utils::crash_exit();
   }
   custom_op.type = op_location_it->second;
@@ -412,12 +410,12 @@ CustomOp CustomOp::from_string(const std::string& str) {
   const std::string& size_str = op_str_parts[1];
   auto size_result = std::from_chars(size_str.data(), size_str.data() + size_str.size(), custom_op.size);
   if (size_result.ec != std::errc()) {
-    spdlog::error("Could not parse operation size: {}", size_str);
+    spdlog::critical("Could not parse operation size: {}", size_str);
     utils::crash_exit();
   }
 
   if ((custom_op.size & (custom_op.size - 1)) != 0) {
-    spdlog::error("Access size of custom operation must be power of 2. Got: {}", custom_op.size);
+    spdlog::critical("Access size of custom operation must be power of 2. Got: {}", custom_op.size);
     utils::crash_exit();
   }
 
@@ -425,7 +423,7 @@ CustomOp CustomOp::from_string(const std::string& str) {
 
   if (!is_write) {
     if (op_str_part_count > 2) {
-      spdlog::error("Custom read op must not have further information. Got: '{}'", op_str_part_count);
+      spdlog::critical("Custom read op must not have further information. Got: '{}'", op_str_part_count);
       utils::crash_exit();
     }
     // Read op has no further information.
@@ -433,14 +431,14 @@ CustomOp CustomOp::from_string(const std::string& str) {
   }
 
   if (op_str_part_count < 3) {
-    spdlog::error("Custom write op must have '_<flush_instruction>' after size, e.g., w64_cache. Got: '{}'", str);
+    spdlog::critical("Custom write op must have '_<flush_instruction>' after size, e.g., w64_cache. Got: '{}'", str);
     utils::crash_exit();
   }
 
   const std::string& flush_str = op_str_parts[2];
   auto flush_it = ConfigEnums::str_to_flush_instruction.find(flush_str);
   if (flush_it == ConfigEnums::str_to_flush_instruction.end()) {
-    spdlog::error("Could not parse the flush instruction in write op: '{}'", flush_str);
+    spdlog::critical("Could not parse the flush instruction in write op: '{}'", flush_str);
     utils::crash_exit();
   }
 
@@ -451,13 +449,13 @@ CustomOp CustomOp::from_string(const std::string& str) {
     const std::string& offset_str = op_str_parts[3];
     auto offset_result = std::from_chars(offset_str.data(), offset_str.data() + offset_str.size(), custom_op.offset);
     if (offset_result.ec != std::errc()) {
-      spdlog::error("Could not parse operation offset: {}", offset_str);
+      spdlog::critical("Could not parse operation offset: {}", offset_str);
       utils::crash_exit();
     }
 
     const uint64_t absolute_offset = std::abs(custom_op.offset);
     if ((absolute_offset % 64) != 0) {
-      spdlog::error("Offset of custom write operation must be multiple of 64. Got: {}", custom_op.offset);
+      spdlog::critical("Offset of custom write operation must be multiple of 64. Got: {}", custom_op.offset);
       utils::crash_exit();
     }
   }
@@ -467,23 +465,19 @@ CustomOp CustomOp::from_string(const std::string& str) {
 
 std::vector<CustomOp> CustomOp::all_from_string(const std::string& str) {
   if (str.empty()) {
-    spdlog::error("Custom operations cannot be empty!");
+    spdlog::critical("Custom operations cannot be empty!");
     utils::crash_exit();
   }
 
-  std::vector<CustomOp> ops;
-  std::stringstream stream{str};
-  std::string op_str;
+  auto ops = std::vector<CustomOp>{};
+  auto stream = std::stringstream{str};
+  auto op_str = std::string{};
   while (std::getline(stream, op_str, ',')) {
     ops.emplace_back(from_string(op_str));
   }
 
   // Check if operation chain is valid
-  const bool is_valid = validate(ops);
-  if (!is_valid) {
-    spdlog::error("Got invalid custom operations: {}", str);
-    utils::crash_exit();
-  }
+  validate(ops);
 
   return ops;
 }
@@ -516,13 +510,11 @@ std::string CustomOp::all_to_string(const std::vector<CustomOp>& ops) {
   return out.str();
 }
 
-bool CustomOp::validate(const std::vector<CustomOp>& operations) {
+void CustomOp::validate(const std::vector<CustomOp>& operations) {
   if (operations[0].type != Operation::Read) {
-    spdlog::error("First custom operation must be a read");
-    return false;
+    spdlog::critical("First custom operation must be a read");
+    utils::crash_exit();
   }
-
-  return true;
 }
 
 bool CustomOp::operator==(const CustomOp& rhs) const {

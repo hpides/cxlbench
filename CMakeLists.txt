@@ -117,7 +117,7 @@ elseif (${NT_STORE} STREQUAL "AVX-2")
     add_definitions("-DNT_STORES_AVX_2")
     message(STATUS "Using AVX-2 non-temporal stores.")
 else ()
-    message(WARNING "Not using any non-temporal store instructions.")
+    message(WARNING "System does not support any non-temporal store instructions.")
 endif()
 
 # Backup of actual required flags

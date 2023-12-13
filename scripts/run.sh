@@ -50,7 +50,7 @@ if [ "$3" == "-s" ]; then
   echo "Setting up the system."
   ../scripts/setup_system.sh
 else
-  echo "Not execution the system setup. If you want to run the system, add -s as the second option."
+  echo "Not executing the system setup. If you want to run the system, add -s as the second option."
 fi
 
 RESULT_DIR="$ROOT_DIR"/results/"$WORKLOAD"/"$TAG"/"$START_TIME"
@@ -60,7 +60,7 @@ mkdir -p "$RESULT_DIR"
 ./mema-bench -r "$RESULT_DIR"
 echo "All results are written to $RESULT_DIR."
 echo "If you want to copy the data to your dev machine, the following command might help:"
-echo "./scripts/scp.sh $(hostname) $RESULT_DIR ./results/$WORKLOAD/$TAG/$START_TIME"
+echo "./scripts/scp.sh $(hostname) $RESULT_DIR ./results/$WORKLOAD/$TAG"
 "$SCRIPT_DIR"/plot.sh "$RESULT_DIR"
 
 exit 0

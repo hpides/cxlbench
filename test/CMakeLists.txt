@@ -19,6 +19,7 @@ set(MEMA_TEST_SOURCES
         config_test.cpp
         custom_operations_test.cpp
         numa_read_write_test.cpp
+        numa_test.cpp
         test_utils.cpp
         test_utils.hpp
         utils_test.cpp

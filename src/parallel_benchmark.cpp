@@ -43,6 +43,8 @@ void ParallelBenchmark::generate_data() {
   }
   data_.push_back(prepare_data(configs_[0], configs_[0].memory_region_size));
   data_.push_back(prepare_data(configs_[1], configs_[1].memory_region_size));
+  utils::verify_memory_location(data_[0], configs_[0].memory_region_size, configs_[0].numa_memory_nodes);
+  utils::verify_memory_location(data_[1], configs_[1].memory_region_size, configs_[1].numa_memory_nodes);
 }
 
 void ParallelBenchmark::set_up() {

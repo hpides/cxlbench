@@ -1,11 +1,13 @@
 #include "benchmark.hpp"
 
 #include <fcntl.h>
+#include <numa.h>
 
 #include <fstream>
 
 #include "gmock/gmock-matchers.h"
 #include "gtest/gtest.h"
+#include "numa.hpp"
 #include "parallel_benchmark.hpp"
 #include "single_benchmark.hpp"
 #include "test_utils.hpp"
@@ -592,6 +594,32 @@ TEST_F(BenchmarkTest, ResultsParallelSingleThreadMixed) {
   ASSERT_EQ(all_sizes_two.size(), 1);
   EXPECT_GT(all_sizes_two[0], 0);
   EXPECT_EQ(all_sizes_two[0] % TEST_CHUNK_SIZE, 0);
+}
+
+TEST_F(BenchmarkTest, PrepareDataMemoryNumaLocation) {
+  const auto numa_max_node_id = numa_max_node();
+  auto* const allowed_memory_nodes_mask = numa_get_mems_allowed();
+
+  for (auto node_id = NumaNodeID{0}; node_id <= numa_max_node_id; ++node_id) {
+    if (!numa_bitmask_isbitset(allowed_memory_nodes_mask, node_id)) {
+      continue;
+    }
+
+    auto config = base_config_;
+    config.memory_region_size = 1 * GIB_IN_BYTES;
+    config.numa_memory_nodes = NumaNodeIDs{node_id};
+    SingleBenchmark bm{bm_name_, config, {}, {}};
+
+    // Generate data creates the memory mapping and populates the memory based on the given numa_memory_nodes.
+    bm.generate_data();
+    const auto bm_data = bm.get_data()[0];
+
+    const auto region_page_count = config.memory_region_size / utils::PAGE_SIZE;
+    for (auto page_idx = uint64_t{0}; page_idx < region_page_count; ++page_idx) {
+      auto* addr = bm_data + page_idx * utils::PAGE_SIZE;
+      ASSERT_EQ(get_numa_node_index_by_address(addr), node_id);
+    }
+  }
 }
 
 }  // namespace mema

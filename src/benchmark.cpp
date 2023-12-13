@@ -127,19 +127,19 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, char* data, Benchma
 }
 
 char* Benchmark::prepare_data(const BenchmarkConfig& config, const size_t memory_region_size) {
-  char* data = utils::map(memory_region_size, config.transparent_huge_pages, config.explicit_hugepages_size,
-                          config.numa_memory_nodes);
-  spdlog::debug("Finished mapping memory range.");
+  auto* data = utils::map(memory_region_size, config.transparent_huge_pages, config.explicit_hugepages_size);
+  spdlog::debug("Finished mapping memory region.");
+
+  set_memory_numa_nodes(data, memory_region_size, config.numa_memory_nodes);
+  log_numa_nodes(spdlog::level::debug, "Finished binding the memory region to ", config.numa_memory_nodes);
+
+  utils::populate_memory(data, memory_region_size);
+  spdlog::debug("Finished populating/pre-faulting the memory region.");
 
   if (config.contains_read_op()) {
     // If we read data in this benchmark, we need to generate it first.
     utils::generate_read_data(data, memory_region_size);
     spdlog::debug("Finished generating read data.");
-  }
-
-  if (config.contains_write_op() && config.prefault_memory) {
-    utils::prefault_memory(data, memory_region_size, utils::PAGE_SIZE);
-    spdlog::debug("Finished memory range.");
   }
 
   spdlog::debug("Finished preparing memory range.");
@@ -217,14 +217,14 @@ void Benchmark::run_custom_ops_in_thread(ThreadRunConfig* thread_config, const B
 
 void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkConfig& config) {
   // Pin thread to the configured numa nodes.
-  set_task_on_numa_nodes(config.numa_task_nodes);
+  set_task_numa_nodes(config.numa_task_nodes);
   log_permissions_for_numa_nodes(spdlog::level::debug, thread_config->thread_idx);
 
-  // Check if thread is pinned to a configured NUMA node.
-  const auto thread_numa_task_nodes = utils::get_numa_task_nodes();
+  // Check if thread is pinned to the configured NUMA node.
+  const auto thread_numa_task_nodes = get_numa_task_nodes();
   if (!config.numa_task_nodes.empty() && !std::equal(config.numa_task_nodes.begin(), config.numa_task_nodes.end(),
                                                      thread_numa_task_nodes.begin(), thread_numa_task_nodes.end())) {
-    spdlog::error("Thread #{}: Thread not pinned to a configured NUMA node.", thread_config->thread_idx);
+    spdlog::critical("Thread #{}: Thread not pinned to the configured NUMA nodes.", thread_config->thread_idx);
     utils::crash_exit();
   }
 
@@ -297,7 +297,7 @@ void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkCon
           break;
         }
         default: {
-          spdlog::error("Illegal state. Cannot be in `run_in_thread()` with different mode.");
+          spdlog::critical("Illegal state. Cannot be in `run_in_thread()` with different mode.");
           utils::crash_exit();
         }
       }

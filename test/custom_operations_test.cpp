@@ -133,7 +133,7 @@ TEST_F(CustomOperationTest, CustomWrite128NegativeOffsetString) {
 
 TEST_F(CustomOperationTest, BadChainStartsWithWrite) {
   std::vector<CustomOp> ops = {CustomOp{.type = Operation::Write}, CustomOp{.type = Operation::Read}};
-  EXPECT_FALSE(CustomOp::validate(ops));
+  EXPECT_THROW(CustomOp::validate(ops), MemaException);
 }
 
 }  // namespace mema

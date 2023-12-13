@@ -56,7 +56,7 @@ struct CustomOp {
   static std::string to_string(const CustomOp& op);
   std::string to_string() const;
 
-  static bool validate(const std::vector<CustomOp>& operations);
+  static void validate(const std::vector<CustomOp>& operations);
 
   friend std::ostream& operator<<(std::ostream& os, const CustomOp& op);
   bool operator==(const CustomOp& rhs) const;
@@ -114,10 +114,6 @@ struct BenchmarkConfig {
 
   /** Frequency in which to sample latency of custom operations. Only works in combination with `Mode::Custom`. */
   uint64_t latency_sample_frequency = 0;
-
-  /** Whether or not to prefault the memory region before writing to it. If set to false, the benchmark will include the
-   * time caused by page faults on first access to the allocated memory region. */
-  bool prefault_memory = true;
 
   /** Sepecify the use of huge pages in combination with `explicit_hugepages_size`. */
   bool transparent_huge_pages = true;

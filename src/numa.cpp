@@ -12,76 +12,72 @@
 
 namespace mema {
 
-void log_numa_nodes(const NumaNodeIDs& nodes) {
-  const std::string used_nodes_str = std::accumulate(
+void log_numa_nodes(spdlog::level::level_enum log_level, const std::string& message, const NumaNodeIDs& nodes) {
+  const auto used_nodes_str = std::accumulate(
       nodes.begin(), nodes.end(), std::string(),
       [](const auto& a, const auto b) -> std::string { return a + (a.length() > 0 ? ", " : "") + std::to_string(b); });
-  spdlog::debug("Setting NUMA-affinity to node{}: {}", nodes.size() > 1 ? "s" : "", used_nodes_str);
+  spdlog::log(log_level, "{} NUMA node{}: {}", message, nodes.size() > 1 ? "s" : "", used_nodes_str);
 }
 
-void set_task_on_numa_nodes(const NumaNodeIDs& node_ids) {
+void set_task_numa_nodes(const NumaNodeIDs& node_ids) {
+  if (node_ids.empty()) {
+    spdlog::warn("No NUMA task nodes specified, task was not pinned to NUMA nodes.");
+    return;
+  }
+
   const size_t numa_node_count = numa_num_configured_nodes();
   const size_t max_node_id = numa_max_node();
 
-  if (node_ids.empty()) {
-    spdlog::warn("No NUMA task nodes specified, task was not pinned to a NUMA node.");
-    return;
-  }
-
-  // User specified numa nodes via the config file.
-  if (numa_node_count < node_ids.size()) {
-    spdlog::critical("More NUMA nodes specified than detected on server.");
-    utils::crash_exit();
-  }
-  log_numa_nodes(node_ids);
-
-  if (numa_node_count < 2) {
-    // Do nothing, as there isn't any affinity to be set.
-    spdlog::debug("Not setting NUMA-awareness with {} node(s).", numa_node_count);
-    return;
-  }
-
-  const auto* const run_node_mask = numa_get_run_node_mask();
-  auto* const numa_nodemask = numa_bitmask_alloc(max_node_id + 1);
+  const auto* const allowed_run_node_mask = numa_get_run_node_mask();
+  auto* const nodemask = numa_allocate_nodemask();
   for (const auto node_id : node_ids) {
-    if (node_id > max_node_id || !numa_bitmask_isbitset(run_node_mask, node_id)) {
+    if (!numa_bitmask_isbitset(allowed_run_node_mask, node_id)) {
       spdlog::critical("Thread is not allowed to run on given node id (given: {}).", node_id);
       utils::crash_exit();
     }
-    numa_bitmask_setbit(numa_nodemask, node_id);
+    numa_bitmask_setbit(nodemask, node_id);
   }
 
-  // Perform task pinning.
-  const auto success = numa_run_on_node_mask(numa_nodemask);
-
-  if (success == -1) {
-    spdlog::critical("Something went wrong while while pinning the task to a NUMA node.");
+  const auto task_pinned = numa_run_on_node_mask(nodemask) == 0;
+  const auto task_pinning_errno = errno;
+  numa_bitmask_free(nodemask);
+  if (!task_pinned) {
+    spdlog::critical("Pinning the task to NUMA nodes failed. Error: {}", std::strerror(task_pinning_errno));
     utils::crash_exit();
   }
 
-  // Mask deallocation.
-  numa_free_nodemask(numa_nodemask);
+  log_numa_nodes(spdlog::level::debug, "Bound thread to", node_ids);
 }
 
-void set_memory_on_numa_nodes(void* addr, const size_t memory_size, const NumaNodeIDs& node_ids) {
+void set_memory_numa_nodes(void* addr, const size_t memory_size, const NumaNodeIDs& node_ids) {
   if (node_ids.empty()) {
     spdlog::critical("Cannot set memory on numa nodes with an empty set of nodes.");
   }
-  const auto max_node_id = numa_max_node();
-  auto numa_nodes_ss = std::stringstream{};
   const auto* const allowed_memory_nodes_mask = numa_get_mems_allowed();
-  auto* const numa_nodemask = numa_bitmask_alloc(max_node_id + 1);
+  auto* const nodemask = numa_allocate_nodemask();
   for (const auto node_id : node_ids) {
-    if (node_id > max_node_id || !numa_bitmask_isbitset(allowed_memory_nodes_mask, node_id)) {
+    if (!numa_bitmask_isbitset(allowed_memory_nodes_mask, node_id)) {
       spdlog::critical("Memory allocation on numa node id not allowed (given: {}).", node_id);
       utils::crash_exit();
     }
-    numa_bitmask_setbit(numa_nodemask, node_id);
-    numa_nodes_ss << " " << node_id;
+    numa_bitmask_setbit(nodemask, node_id);
   }
-  numa_tonodemask_memory(addr, memory_size, numa_nodemask);
-  numa_free_nodemask(numa_nodemask);
-  spdlog::debug("Bound memory region {} to memory NUMA nodes {}.", addr, numa_nodes_ss.str());
+
+  MemaAssert(nodemask != nullptr, "When setting the memory nodes, node mask cannot be nullptr.");
+  const auto mbind_succeeded =
+      mbind(addr, memory_size, MBIND_MODE, nodemask->maskp, nodemask->size + 1, MBIND_FLAGS) == 0;
+  const auto mbind_errno = errno;
+  numa_bitmask_free(nodemask);
+  if (!mbind_succeeded) {
+    spdlog::critical(
+        "mbind failed: {}. You might have run out of space on the node(s) or reached the maximum map "
+        "limit (vm.max_map_count).",
+        strerror(mbind_errno));
+    utils::crash_exit();
+  }
+  auto stream = std::stringstream{};
+  stream << "Bound memory region " << addr << " to";
+  log_numa_nodes(spdlog::level::debug, stream.str(), node_ids);
 }
 
 uint8_t init_numa() {
@@ -124,6 +120,41 @@ void log_permissions_for_numa_nodes(spdlog::level::level_enum log_level, const s
 
   log_numa(numa_get_run_node_mask(), "task binding");
   log_numa(numa_get_mems_allowed(), "memory allocation");
+}
+
+NumaNodeIDs get_numa_task_nodes() {
+  const auto max_node_id = numa_max_node();
+  auto run_nodes = NumaNodeIDs{};
+
+  // Check which NUMA node the calling thread is allowed to run on.
+  const auto* const allowed_run_node_mask = numa_get_run_node_mask();
+
+  for (auto node_id = NumaNodeID{0}; node_id <= max_node_id; ++node_id) {
+    if (numa_bitmask_isbitset(allowed_run_node_mask, node_id)) {
+      run_nodes.emplace_back(node_id);
+    }
+  }
+
+  if (run_nodes.empty()) {
+    spdlog::critical("Could not determine NUMA task nodes of calling thread.");
+    utils::crash_exit();
+  }
+
+  return run_nodes;
+}
+
+NumaNodeID get_numa_node_index_by_address(char* const addr) {
+  auto node = int32_t{};
+
+  auto addr_ptr = reinterpret_cast<void*>(addr);
+  const auto ret = move_pages(0, 1, &addr_ptr, NULL, &node, 0);
+
+  if (ret != 0) {
+    spdlog::critical("move_pages() failed to determine NUMA node for address.");
+    utils::crash_exit();
+  }
+
+  return static_cast<NumaNodeID>(node);
 }
 
 }  // namespace mema

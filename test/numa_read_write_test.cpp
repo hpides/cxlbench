@@ -14,45 +14,30 @@
 #include "test_utils.hpp"
 #include "utils.hpp"
 
-namespace {
-constexpr uint32_t MIB_IN_BYTES = 1024 * 1024;
-}
-
 namespace mema {
 
-class NumaReadWriteTest : public BaseTest {
- protected:
-  void SetUp() override { init_numa(); }
-
-  NumaNodeID get_numa_node_index_by_address(char* addr) {
-    auto node = int32_t{};
-
-    auto addr_ptr = reinterpret_cast<void*>(addr);
-    auto ret = move_pages(0, 1, &addr_ptr, NULL, &node, 0);
-
-    if (ret != 0) {
-      spdlog::critical("move_pages() failed to determine NUMA node for address.");
-      utils::crash_exit();
-    }
-
-    return static_cast<NumaNodeID>(node);
-  }
-};
+class NumaReadWriteTest : public BaseTest {};
 
 TEST_F(NumaReadWriteTest, SimpleWriteRead) {
   const auto memory_region_size = 100 * MIB_IN_BYTES;
   const auto max_node_id = numa_max_node();
   const auto* const memory_nodes_mask = numa_get_mems_allowed();
-  for (auto numa_idx = NumaNodeID{0}; numa_idx <= max_node_id; ++numa_idx) {
-    SCOPED_TRACE("NUMA node index: " + std::to_string(numa_idx));
-    if (!numa_bitmask_isbitset(memory_nodes_mask, numa_idx)) {
+  for (auto node_id = NumaNodeID{0}; node_id <= max_node_id; ++node_id) {
+    SCOPED_TRACE("NUMA node index: " + std::to_string(node_id));
+    if (!numa_bitmask_isbitset(memory_nodes_mask, node_id)) {
       continue;
     }
+
+    // Prepare memory region.
     char* base_addr =
         static_cast<char*>(mmap(nullptr, memory_region_size, PROT_READ | PROT_WRITE, utils::MAP_FLAGS, -1, 0));
     ASSERT_NE(base_addr, MAP_FAILED);
     ASSERT_NE(base_addr, nullptr);
-    set_memory_on_numa_nodes(base_addr, memory_region_size, {numa_idx});
+    set_memory_numa_nodes(base_addr, memory_region_size, {node_id});
+    utils::populate_memory(base_addr, memory_region_size);
+    utils::verify_memory_location(base_addr, memory_region_size, {node_id});
+
+    // Write and read data.
     const auto cache_line_count = memory_region_size / rw_ops::CACHE_LINE_SIZE;
     for (auto cache_line_idx = size_t{0}; cache_line_idx < cache_line_count; ++cache_line_idx) {
       const auto addr = base_addr + (cache_line_idx * rw_ops::CACHE_LINE_SIZE);
@@ -69,7 +54,7 @@ TEST_F(NumaReadWriteTest, SimpleWriteRead) {
       ASSERT_EQ(compare_result, 0);
 
       // Check if data is allocated on the correct numa node.
-      ASSERT_EQ(get_numa_node_index_by_address(addr), numa_idx);
+      ASSERT_EQ(get_numa_node_index_by_address(addr), node_id);
     }
 
     munmap(base_addr, memory_region_size);
@@ -80,17 +65,22 @@ TEST_F(NumaReadWriteTest, IntrinsicsWriteRead) {
   const auto memory_region_size = 100 * MIB_IN_BYTES;
   const auto max_node_id = numa_max_node();
   const auto* const memory_nodes_mask = numa_get_mems_allowed();
-  for (auto numa_idx = NumaNodeID{0}; numa_idx <= max_node_id; ++numa_idx) {
-    SCOPED_TRACE("NUMA node index: " + std::to_string(numa_idx));
-    if (!numa_bitmask_isbitset(memory_nodes_mask, numa_idx)) {
+  for (auto node_id = NumaNodeID{0}; node_id <= max_node_id; ++node_id) {
+    SCOPED_TRACE("NUMA node index: " + std::to_string(node_id));
+    if (!numa_bitmask_isbitset(memory_nodes_mask, node_id)) {
       continue;
     }
 
+    // Prepare memory region
     char* base_addr =
         static_cast<char*>(mmap(nullptr, memory_region_size, PROT_READ | PROT_WRITE, utils::MAP_FLAGS, -1, 0));
     ASSERT_NE(base_addr, MAP_FAILED);
     ASSERT_NE(base_addr, nullptr);
-    set_memory_on_numa_nodes(base_addr, memory_region_size, {numa_idx});
+    set_memory_numa_nodes(base_addr, memory_region_size, {node_id});
+    utils::populate_memory(base_addr, memory_region_size);
+    utils::verify_memory_location(base_addr, memory_region_size, {node_id});
+
+    // Write and read data
     const auto cache_line_count = memory_region_size / rw_ops::CACHE_LINE_SIZE;
     for (auto cache_line_idx = size_t{0}; cache_line_idx < cache_line_count; ++cache_line_idx) {
       const auto addr = base_addr + (cache_line_idx * rw_ops::CACHE_LINE_SIZE);
@@ -113,7 +103,7 @@ TEST_F(NumaReadWriteTest, IntrinsicsWriteRead) {
       ASSERT_EQ(compare_result, 0);
 
       // Check if data is allocated on the correct numa node.
-      ASSERT_EQ(get_numa_node_index_by_address(addr), numa_idx);
+      ASSERT_EQ(get_numa_node_index_by_address(addr), node_id);
     }
 
     munmap(base_addr, memory_region_size);

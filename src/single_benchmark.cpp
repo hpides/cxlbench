@@ -40,6 +40,7 @@ void SingleBenchmark::generate_data() {
     utils::crash_exit();
   }
   data_.push_back(prepare_data(configs_[0], configs_[0].memory_region_size));
+  utils::verify_memory_location(data_[0], configs_[0].memory_region_size, configs_[0].numa_memory_nodes);
 }
 
 void SingleBenchmark::set_up() {
