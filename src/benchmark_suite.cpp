@@ -44,9 +44,9 @@ nlohmann::json parallel_results_to_json(const mema::ParallelBenchmark& bm, const
 
 nlohmann::json benchmark_results_to_json(const mema::Benchmark& bm, const nlohmann::json& bm_results) {
   auto nt_stores_instruction_set = std::string{};
-#if defined NT_STORES_AVX_512
+#if defined USE_AVX_512
   nt_stores_instruction_set = "avx-512";
-#elif defined NT_STORES_AVX_2
+#elif defined USE_AVX_2
   nt_stores_instruction_set = "avx-2";
 #else
   nt_stores_instruction_set = "none";

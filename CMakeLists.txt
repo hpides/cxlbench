@@ -27,7 +27,7 @@ set(CMAKE_THREAD_LIBS_INIT "-pthread")
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   # Clang uses an expression nesting limit of 256. This needs to be increased for the unroll solution (see unroll_impl).
-  string(APPEND CMAKE_CXX_FLAGS " -fbracket-depth=1024")
+  string(APPEND CMAKE_CXX_FLAGS " -fbracket-depth=2048")
 endif()
 
 # Set default build type if none was passed on the command line
@@ -80,29 +80,29 @@ endif()
 
 function(fail_specify_avx)
     message(FATAL_ERROR "Please specify the instruction set to be used (only one):
-    -DNT_STORES_AVX_2=ON
-    -DNT_STORES_AVX_512=ON")
+    -DUSE_AVX_2=ON
+    -DUSE_AVX_512=ON")
 endfunction()
 
-set(NT_STORE OFF)
+set(USE_AVX OFF)
 
 function(use_avx_2_if_available)
     if (${HAS_AVX_2})
-        set(NT_STORE "AVX-2" PARENT_SCOPE)
+        set(USE_AVX "AVX-2" PARENT_SCOPE)
     endif()
 endfunction()
 
 function(use_avx_512_if_available)
     if (${HAS_AVX_512})
-        set(NT_STORE "AVX-512" PARENT_SCOPE)
+        set(USE_AVX "AVX-512" PARENT_SCOPE)
     endif()
 endfunction()
 
-if ((${NT_STORES_AVX_2}) AND (${NT_STORES_AVX_512}))
+if ((${USE_AVX_2}) AND (${USE_AVX_512}))
     fail_specify_avx()
-elseif (${NT_STORES_AVX_2})
+elseif (${USE_AVX_2})
     use_avx_2_if_available()
-elseif (${NT_STORES_AVX_512})
+elseif (${USE_AVX_512})
     use_avx_512_if_available()
 else()
     use_avx_2_if_available()
@@ -110,11 +110,11 @@ else()
     use_avx_512_if_available()
 endif()
 
-if (${NT_STORE} STREQUAL "AVX-512")
-    add_definitions("-DNT_STORES_AVX_512")
+if (${USE_AVX} STREQUAL "AVX-512")
+    add_definitions("-DUSE_AVX_512")
     message(STATUS "Using AVX-512 non-temporal stores.")
-elseif (${NT_STORE} STREQUAL "AVX-2")
-    add_definitions("-DNT_STORES_AVX_2")
+elseif (${USE_AVX} STREQUAL "AVX-2")
+    add_definitions("-DUSE_AVX_2")
     message(STATUS "Using AVX-2 non-temporal stores.")
 else ()
     message(WARNING "System does not support any non-temporal store instructions.")

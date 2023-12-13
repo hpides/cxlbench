@@ -114,7 +114,7 @@ class IoOperation {
 #endif  // HAS_CLWB
       }
       case FlushInstruction::NoCache: {
-#if defined(NT_STORES_AVX_2) || defined(NT_STORES_AVX_512)
+#if defined(USE_AVX_2) || defined(USE_AVX_512)
         switch (access_size_) {
           case 64:
             return rw_ops::simd_write_nt_64(op_addresses_);
@@ -220,7 +220,7 @@ class ChainedOperation {
 
  private:
   inline char* run_read(char* addr) {
-    mema::rw_ops::CharVec64 read_value{};
+    mema::rw_ops::CharVec read_value{};
     switch (access_size_) {
       case 64:
         read_value = rw_ops::read_64(addr);
@@ -298,7 +298,7 @@ class ChainedOperation {
 #endif  // HAS_CLWB
       }
       case FlushInstruction::NoCache: {
-#if defined(NT_STORES_AVX_2) || defined(NT_STORES_AVX_512)
+#if defined(USE_AVX_2) || defined(USE_AVX_512)
         switch (access_size_) {
           case 64:
             return rw_ops::simd_write_nt_64(addr);

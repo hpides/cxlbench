@@ -4,7 +4,7 @@
 
 namespace mema::rw_ops {
 
-#ifdef NT_STORES_AVX_2
+#ifdef USE_AVX_2
 
 #define WRITE_SIMD_NT_256(mem_addr, offset, data) \
   _mm256_stream_si256(reinterpret_cast<__m256i*>((mem_addr) + ((offset)*32)), data)
@@ -33,5 +33,5 @@ inline void simd_write_nt_64B_accesses_sfence(char* address) {
   sfence_barrier();
 }
 
-#endif  // NT_STORES_AVX_2
+#endif  // USE_AVX_2
 }  // namespace mema::rw_ops

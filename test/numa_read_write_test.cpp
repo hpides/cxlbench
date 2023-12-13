@@ -87,19 +87,19 @@ TEST_F(NumaReadWriteTest, IntrinsicsWriteRead) {
 
       // Verify that the data at the memory region is not equal to WRITE_DATA.
       char result_buffer[64] __attribute__((aligned(64))) = {};
-      auto* vec64_result_buffer = reinterpret_cast<mema::rw_ops::CharVec64*>(result_buffer);
-      vec64_result_buffer[0] = mema::rw_ops::read_64(addr);
+      auto* vec_result_buffer = reinterpret_cast<rw_ops::CharVec*>(result_buffer);
+      vec_result_buffer[0] = rw_ops::read_64(addr);
 
-      auto compare_result = std::memcmp(result_buffer, rw_ops::WRITE_DATA, 64);
+      auto compare_result = std::memcmp(result_buffer, rw_ops::WRITE_DATA, rw_ops::VECTOR_SIZE);
       ASSERT_NE(compare_result, 0);
 
       // Write data to memory region.
       rw_ops::write_none_64(addr);
 
       // Verify that the data at the memory region is equal to WRITE_DATA.
-      vec64_result_buffer[0] = mema::rw_ops::read_64(addr);
+      vec_result_buffer[0] = rw_ops::read_64(addr);
 
-      compare_result = std::memcmp(result_buffer, rw_ops::WRITE_DATA, 64);
+      compare_result = std::memcmp(result_buffer, rw_ops::WRITE_DATA, rw_ops::VECTOR_SIZE);
       ASSERT_EQ(compare_result, 0);
 
       // Check if data is allocated on the correct numa node.

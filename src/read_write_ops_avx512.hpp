@@ -4,7 +4,7 @@
 
 namespace mema::rw_ops {
 
-#ifdef NT_STORES_AVX_512
+#ifdef USE_AVX_512
 
 #define WRITE_SIMD_NT_512(mem_addr, offset, data) \
   _mm512_stream_si512(reinterpret_cast<__m512i*>((mem_addr) + ((offset)*64)), data)
@@ -31,6 +31,6 @@ inline void simd_write_nt_64B_accesses_sfence(char* address) {
   sfence_barrier();
 }
 
-#endif  // NT_STORES_AVX_512
+#endif  // USE_AVX_512
 
 }  // namespace mema::rw_ops

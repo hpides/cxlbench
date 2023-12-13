@@ -8,7 +8,7 @@
 #include "read_write_ops_avx2.hpp"
 #include "read_write_ops_avx512.hpp"
 
-#if !(defined(NT_STORES_AVX_2) || defined(NT_STORES_AVX_512))
+#if !(defined(USE_AVX_2) || defined(USE_AVX_512))
 #include "read_write_ops_types.hpp"
 #endif
 
@@ -31,49 +31,49 @@ inline void flush_clwb(char* addr, const size_t len) {
  */
 
 template <int LOOP_COUNT>
-inline CharVec64 read_64B_accesses(char* address) {
-  volatile CharVec64* volatile_addr = reinterpret_cast<CharVec64*>(address);
-  auto result = CharVec64{0};
+inline CharVec read_64B_accesses(char* address) {
+  volatile CharVec* volatile_addr = reinterpret_cast<CharVec*>(address);
+  auto result = CharVec{0};
   // clang-format off
-  unroll<LOOP_COUNT>([&](size_t loop_index) {
+  unroll<CACHE_LINE_FACTOR * LOOP_COUNT>([&](size_t loop_index) {
     result = volatile_addr[loop_index];
   });
   // clang-format on
   return result;
 }
 
-inline CharVec64 read_64(char* addr) { return read_64B_accesses<1>(addr); }
+inline CharVec read_64(char* addr) { return read_64B_accesses<1>(addr); }
 
-inline CharVec64 read_128(char* addr) { return read_64B_accesses<2>(addr); }
+inline CharVec read_128(char* addr) { return read_64B_accesses<2>(addr); }
 
-inline CharVec64 read_256(char* addr) { return read_64B_accesses<4>(addr); }
+inline CharVec read_256(char* addr) { return read_64B_accesses<4>(addr); }
 
-inline CharVec64 read_512(char* addr) { return read_64B_accesses<8>(addr); }
+inline CharVec read_512(char* addr) { return read_64B_accesses<8>(addr); }
 
-inline CharVec64 read_1k(char* addr) { return read_64B_accesses<16>(addr); }
+inline CharVec read_1k(char* addr) { return read_64B_accesses<16>(addr); }
 
-inline CharVec64 read_2k(char* addr) { return read_64B_accesses<32>(addr); }
+inline CharVec read_2k(char* addr) { return read_64B_accesses<32>(addr); }
 
-inline CharVec64 read_4k(char* addr) { return read_64B_accesses<64>(addr); }
+inline CharVec read_4k(char* addr) { return read_64B_accesses<64>(addr); }
 
-inline CharVec64 read_8k(char* addr) { return read_64B_accesses<128>(addr); }
+inline CharVec read_8k(char* addr) { return read_64B_accesses<128>(addr); }
 
-inline CharVec64 read_16k(char* addr) { return read_64B_accesses<256>(addr); }
+inline CharVec read_16k(char* addr) { return read_64B_accesses<256>(addr); }
 
-inline CharVec64 read_32k(char* addr) { return read_64B_accesses<512>(addr); }
+inline CharVec read_32k(char* addr) { return read_64B_accesses<512>(addr); }
 
-inline CharVec64 read_64k(char* addr) { return read_64B_accesses<1024>(addr); }
+inline CharVec read_64k(char* addr) { return read_64B_accesses<1024>(addr); }
 
-inline CharVec64 read(char* addr, const size_t access_size) {
-  auto result = CharVec64{0};
+inline CharVec read(char* addr, const size_t access_size) {
+  auto result = CharVec{0};
   const char* access_end_addr = addr + access_size;
   for (char* mem_addr = addr; mem_addr < access_end_addr; mem_addr += (1024 * 64)) {
     // Note that code duplication might be reduced here by calling read_64B_accesses(), but that this requires
     // inspecting the assembly instructions again so that we do not introduce overhead that we can avoid.
-    volatile CharVec64* volatile_addr = reinterpret_cast<CharVec64*>(addr);
+    volatile CharVec* volatile_addr = reinterpret_cast<CharVec*>(addr);
     // 1x 64k access (1024x 64B access)
     // clang-format off
-    unroll<1024>([&](size_t loop_index) {
+    unroll<CACHE_LINE_FACTOR * 1024>([&](size_t loop_index) {
       result = volatile_addr[loop_index];
     });
     // clang-format on
@@ -84,9 +84,9 @@ inline CharVec64 read(char* addr, const size_t access_size) {
 template <int LOOP_COUNT>
 inline void read_64B_accesses(const std::vector<char*>& addresses) {
   for (char* addr : addresses) {
-    volatile CharVec64* volatile_addr = reinterpret_cast<CharVec64*>(addr);
+    volatile CharVec* volatile_addr = reinterpret_cast<CharVec*>(addr);
     // clang-format off
-    unroll<LOOP_COUNT>([&](size_t loop_index) {
+    unroll<CACHE_LINE_FACTOR * LOOP_COUNT>([&](size_t loop_index) {
       auto result = volatile_addr[loop_index];
     });
     // clang-format on
@@ -135,10 +135,10 @@ inline void read(const std::vector<char*>& addresses, const size_t access_size) 
 
 template <int LOOP_COUNT>
 inline void write_64B_accesses(char* address) {
-  const CharVec64* write_data = reinterpret_cast<const CharVec64*>(WRITE_DATA);
-  CharVec64* target_address = reinterpret_cast<CharVec64*>(address);
+  const CharVec* write_data = reinterpret_cast<const CharVec*>(WRITE_DATA);
+  CharVec* target_address = reinterpret_cast<CharVec*>(address);
   // clang-format off
-  unroll<LOOP_COUNT>([&](size_t loop_index) {
+  unroll<CACHE_LINE_FACTOR * LOOP_COUNT>([&](size_t loop_index) {
     target_address[loop_index] = write_data[0];
   });
   // clang-format on
@@ -388,7 +388,7 @@ inline void write_none(const std::vector<char*>& addresses, const size_t access_
   write(addresses, access_size, no_flush, no_barrier);
 }
 
-#if defined(NT_STORES_AVX_2) || defined(NT_STORES_AVX_512)
+#if defined(USE_AVX_2) || defined(USE_AVX_512)
 /**
  * #####################################################
  * NON_TEMPORAL STORE OPERATIONS
@@ -504,6 +504,6 @@ inline void simd_write_nt(const std::vector<char*>& addresses, const size_t acce
   }
 }
 
-#endif  // defined(NT_STORES_AVX_2) || defined(NT_STORES_AVX_512)
+#endif  // defined(USE_AVX_2) || defined(USE_AVX_512)
 
 }  // namespace mema::rw_ops

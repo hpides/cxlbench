@@ -265,7 +265,7 @@ void BenchmarkConfig::validate() const {
 #endif
   CHECK_ARGUMENT(clwb_supported_or_not_used, "MemA must be compiled with support for clwb to use clwb flushes.");
 
-#if defined(NT_STORES_AVX_2) || defined(NT_STORES_AVX_512)
+#if defined(USE_AVX_2) || defined(USE_AVX_512)
   const bool nt_stores_supported_or_not_used = true;
 #else
   const bool nt_stores_supported_or_not_used = flush_instruction != FlushInstruction::NoCache;
