@@ -44,9 +44,11 @@ def flatten_nested_json_df(df, deny_explosion_list):
 
     print_debug(f"original shape: {df.shape}")
     print_debug(f"original columns: {df.columns}")
+    print_debug(f"deny explosion for: {deny_explosion_list}")
 
     # search for columns to explode/flatten
     s = (df.applymap(type) == list).all()
+    print_debug(s)
     list_columns = s[s].index.tolist()
 
     s = (df.applymap(type) == dict).all()
@@ -68,6 +70,17 @@ def flatten_nested_json_df(df, deny_explosion_list):
             if col in deny_explosion_list:
                 print_debug(f"skip exploding: {col}")
                 continue
+
+            ends_with_deny_key = False
+            for deny_key in deny_explosion_list:
+                if col.endswith(deny_key):
+                    ends_with_deny_key = True
+                    break
+
+            if ends_with_deny_key:
+                print_debug(f"skip exploding: {col}")
+                continue
+
             print_debug(f"exploding: {col}")
             # explode lists vertically, adding new columns
             df = df.drop(columns=[col]).join(df[col].explode().to_frame())
@@ -76,26 +89,30 @@ def flatten_nested_json_df(df, deny_explosion_list):
         # check if there are still dict o list fields to flatten
         s = (df[new_columns].applymap(type) == list).all()
         list_columns = s[s].index.tolist()
-
         s = (df[new_columns].applymap(type) == dict).all()
         dict_columns = s[s].index.tolist()
 
         print_debug(f"lists: {list_columns}, dicts: {dict_columns}")
 
         # shorten column names
+        def append_short_name(column, renamed_columns):
+            split_keywords = ["benchmarks.results.", "benchmarks.config."]
+            for split_keyword in split_keywords:
+                if split_keyword in column:
+                    renamed_columns.append(column.split(split_keyword)[-1:][0])
+                    return True
+            return False
+
         renamed_columns = []
         for column in df.columns:
-            if "latency." in column:
-                if "results.latency." in column:
-                    renamed_columns.append(column.split("results.")[-1:][0])
-                    continue
-
+            appended = append_short_name(column, renamed_columns)
+            if not appended:
                 renamed_columns.append(column)
-            else:
-                renamed_columns.append(column.split(".")[-1:][0])
 
         # check if name transformation created duplicates
-        print_debug(renamed_columns)
+        print_debug(f"original columns: {df.columns}")
+        print_debug(f"renamed columns: {renamed_columns}")
+        print_debug(f"set renamed columns: {set(renamed_columns)}")
         assert len(renamed_columns) == len(df.columns)
         assert len(renamed_columns) == len(set(renamed_columns))
 
