@@ -58,7 +58,7 @@ std::string Benchmark::benchmark_type_as_str() const {
 BenchmarkType Benchmark::get_benchmark_type() const { return benchmark_type_; }
 
 void Benchmark::single_set_up(const BenchmarkConfig& config, char* data, BenchmarkExecution* execution,
-                              BenchmarkResult* result, std::vector<std::thread>* pool,
+                              BenchmarkResult* result, std::vector<std::thread>* thread_pool,
                               std::vector<ThreadRunConfig>* thread_configs) {
   const size_t total_range_op_count = config.memory_region_size / config.access_size;
   const bool is_custom_execution = config.exec_mode == Mode::Custom;
@@ -66,7 +66,7 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, char* data, Benchma
       (config.exec_mode == Mode::Random || is_custom_execution) ? config.number_operations : total_range_op_count;
   const size_t op_per_thread_count = num_operations / config.number_threads;
 
-  pool->reserve(config.number_threads);
+  thread_pool->reserve(config.number_threads);
   thread_configs->reserve(config.number_threads);
   result->total_operation_durations.resize(config.number_threads);
   result->total_operation_sizes.resize(config.number_threads, 0);

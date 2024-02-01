@@ -16,15 +16,16 @@ namespace mema {
 bool ParallelBenchmark::run() {
   signal(SIGSEGV, thread_error_handler);
 
-  for (size_t bm_num = 0; bm_num < configs_.size(); ++bm_num) {
-    for (size_t thread_index = 0; thread_index < configs_[bm_num].number_threads; thread_index++) {
-      pools_[bm_num].emplace_back(&run_in_thread, &thread_configs_[bm_num][thread_index], std::ref(configs_[bm_num]));
+  for (auto bm_idx = uint64_t{0}; bm_idx < configs_.size(); ++bm_idx) {
+    for (auto thread_index = uint64_t{0}; thread_index < configs_[bm_idx].number_threads; thread_index++) {
+      thread_pools_[bm_idx].emplace_back(&run_in_thread, &thread_configs_[bm_idx][thread_index],
+                                         std::ref(configs_[bm_idx]));
     }
   }
 
   // wait for all threads
-  for (std::vector<std::thread>& pool : pools_) {
-    for (std::thread& thread : pool) {
+  for (auto& thread_pool : thread_pools_) {
+    for (auto& thread : thread_pool) {
       if (thread_error) {
         utils::print_segfault_error();
         return false;
@@ -48,10 +49,10 @@ void ParallelBenchmark::generate_data() {
 }
 
 void ParallelBenchmark::set_up() {
-  pools_.resize(2);
+  thread_pools_.resize(2);
   thread_configs_.resize(2);
-  single_set_up(configs_[0], data_[0], executions_[0].get(), results_[0].get(), &pools_[0], &thread_configs_[0]);
-  single_set_up(configs_[1], data_[1], executions_[1].get(), results_[1].get(), &pools_[1], &thread_configs_[1]);
+  single_set_up(configs_[0], data_[0], executions_[0].get(), results_[0].get(), &thread_pools_[0], &thread_configs_[0]);
+  single_set_up(configs_[1], data_[1], executions_[1].get(), results_[1].get(), &thread_pools_[1], &thread_configs_[1]);
 }
 
 nlohmann::json ParallelBenchmark::get_result_as_json() {

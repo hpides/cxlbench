@@ -140,6 +140,8 @@ class Benchmark {
 
   /** Return the type of the benchmark. */
   std::string benchmark_type_as_str() const;
+
+  // Return the benchmark Type.
   BenchmarkType get_benchmark_type() const;
 
   const std::vector<char*>& get_data() const;
@@ -174,7 +176,7 @@ class Benchmark {
   std::vector<std::unique_ptr<BenchmarkResult>> results_;
   std::vector<std::unique_ptr<BenchmarkExecution>> executions_;
   std::vector<std::vector<ThreadRunConfig>> thread_configs_;
-  std::vector<std::vector<std::thread>> pools_;
+  std::vector<std::vector<std::thread>> thread_pools_;
 };
 
 }  // namespace mema

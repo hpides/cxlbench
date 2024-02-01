@@ -34,6 +34,12 @@ int main(int argc, char** argv) {
   std::filesystem::path result_path = std::filesystem::current_path() / DEFAULT_RESULT_PATH;
   app.add_option("-r,--results", result_path, "Path to the result directory (default: " + result_path.string() + ")");
 
+  // Parrallel workloads: only execute configurations in which the thread count is equal across workloads.
+  auto only_equal_thread_counts = false;
+  app.add_flag("-e, --equal_thread_count", only_equal_thread_counts,
+               "Set true to only execute parallel benchmarks with an equal number of threads accross the workloads.")
+      ->default_val(false);
+
   try {
     app.parse(argc, argv);
     spdlog::debug("Parsed command line arguments.");
@@ -43,6 +49,7 @@ int main(int argc, char** argv) {
   }
 
   // Set up logging
+  //--------------------------------------------------------------------------------------------------------------------
 
   // stdout logger
   auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
@@ -73,6 +80,7 @@ int main(int argc, char** argv) {
   }
 
   // Run the actual benchmarks after parsing and validating them.
+  //--------------------------------------------------------------------------------------------------------------------
   spdlog::info("Running benchmarks with config(s) from '{}'.", config_path.string());
   if (!std::filesystem::exists(config_path)) {
     spdlog::critical(
@@ -94,6 +102,6 @@ int main(int argc, char** argv) {
     utils::crash_exit();
   }
 
-  BenchmarkSuite::run_benchmarks({config_path, result_path});
+  BenchmarkSuite::run_benchmarks({config_path, result_path, only_equal_thread_counts});
   return 0;
 }
