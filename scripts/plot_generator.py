@@ -764,7 +764,7 @@ def get_maximum_value_zones(df, threshold_value):
         min_y = len(value_matrix) + 1
         min_x_zone = None
         min_y_zone = None
-        for (x1, y1) in begin_points:
+        for x1, y1 in begin_points:
             if x1 < min_x:
                 min_x = x1
                 min_x_zone = ((x1, y1), end_point)
