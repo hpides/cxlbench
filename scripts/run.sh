@@ -28,11 +28,10 @@ BUILD_DIR="$ROOT_DIR"/"$BUILD_DIR_NAME"
 
 echo "Workload: $2"
 # Workload-specific flags
-WORKLOAD_FLAGS=""
-if [ "$2" == "bw_expansion" ]; then
-  WORKLOAD_FLAGS="-e"
+if [[ "$2" =~ ^bw_expansion_.* ]]; then
+  WORKLOAD_FLAGS=-e
+  echo "Workload-specific flags: $WORKLOAD_FLAGS"
 fi
-echo "Workload-specific flags: $WORKLOAD_FLAGS"
 
 mkdir -p "$BUILD_DIR"
 echo "Build directory: \""$BUILD_DIR"\""
@@ -66,7 +65,7 @@ RESULT_DIR="$ROOT_DIR"/results/"$WORKLOAD"/"$TAG"/"$START_TIME"
 mkdir -p "$RESULT_DIR"
 
 # Run benchmarks
-./mema-bench -r "$RESULT_DIR" "$WORKLOAD_FLAGS"
+./mema-bench -r $RESULT_DIR $WORKLOAD_FLAGS
 echo "All results are written to $RESULT_DIR."
 echo "If you want to copy the data to your dev machine, the following command might help:"
 echo "./scripts/scp.sh $(hostname) $RESULT_DIR ./results/$WORKLOAD/$TAG"
