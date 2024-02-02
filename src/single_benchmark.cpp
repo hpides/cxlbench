@@ -17,13 +17,13 @@ bool SingleBenchmark::run() {
   signal(SIGSEGV, thread_error_handler);
 
   const BenchmarkConfig& config = configs_[0];
-  std::vector<std::thread>& pool = pools_[0];
+  auto& thread_pool = thread_pools_[0];
   for (size_t thread_index = 0; thread_index < config.number_threads; thread_index++) {
-    pool.emplace_back(run_in_thread, &thread_configs_[0][thread_index], std::ref(config));
+    thread_pool.emplace_back(run_in_thread, &thread_configs_[0][thread_index], std::ref(config));
   }
 
   // wait for all threads
-  for (std::thread& thread : pool) {
+  for (std::thread& thread : thread_pool) {
     if (thread_error) {
       utils::print_segfault_error();
       return false;
@@ -44,9 +44,9 @@ void SingleBenchmark::generate_data() {
 }
 
 void SingleBenchmark::set_up() {
-  pools_.resize(1);
+  thread_pools_.resize(1);
   thread_configs_.resize(1);
-  single_set_up(configs_[0], data_[0], executions_[0].get(), results_[0].get(), &pools_[0], &thread_configs_[0]);
+  single_set_up(configs_[0], data_[0], executions_[0].get(), results_[0].get(), &thread_pools_[0], &thread_configs_[0]);
 }
 
 nlohmann::json SingleBenchmark::get_result_as_json() {

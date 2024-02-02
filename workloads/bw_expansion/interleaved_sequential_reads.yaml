@@ -1,0 +1,15 @@
+interleaved_sequential_reads:
+  matrix:
+    number_threads: [ 2, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80]
+    number_partitions: [1]
+    access_size: [ 4096 ]
+
+  args:
+    exec_mode: sequential
+    memory_region_size: 7G
+    # Add both local memory and device memory nodes here
+    numa_memory_nodes: [ 0, 1 ]
+    # Only add the local memory node here, assuming that it is a CPU.
+    numa_task_nodes: [ 0 ]
+    operation: read
+    run_time: 10
