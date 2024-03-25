@@ -43,15 +43,50 @@ set_target_properties(mema-bench PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BI
 get_target_property(yaml-cpp_include_dirs yaml-cpp INTERFACE_INCLUDE_DIRECTORIES)
 target_include_directories(yaml-cpp SYSTEM PUBLIC ${yaml-cpp_include_dirs})
 
-# Microbenchmark targets
+# Microbenchmark cacheline
 add_executable(bench-cacheline microexperiments/bench_cacheline.cpp)
 target_link_libraries(bench-cacheline benchmark::benchmark ${NUMA_LIBRARIES})
 set_target_properties(bench-cacheline PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 
+# Microbenchmark largher than node allocations
 add_executable(larger-than-node-allocations microexperiments/larger_than_node_allocation.cpp)
 target_link_libraries(larger-than-node-allocations benchmark::benchmark ${NUMA_LIBRARIES})
 set_target_properties(larger-than-node-allocations PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 
+# Tool to check move_pages
 add_executable(check_move_pages microexperiments/check_move_pages.cpp)
 target_link_libraries(check_move_pages ${NUMA_LIBRARIES})
 set_target_properties(check_move_pages PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+
+# Microbenchmark false sharing (Ulrich Drepper)
+set(
+        FALSE_SHARING_DREPPER_SOURCES
+
+        microexperiments/falsesharing_drepper/main.cpp
+)
+
+add_executable(false-sharing-drepper ${FALSE_SHARING_DREPPER_SOURCES})
+target_link_libraries(false-sharing-drepper)
+set_target_properties(false-sharing-drepper PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+
+# Microbenchmark false sharing (based on Drepper with modern C++)
+set(
+        FALSE_SHARING_SOURCES
+
+        microexperiments/falsesharing/main.cpp
+)
+
+add_executable(false-sharing ${FALSE_SHARING_SOURCES})
+target_link_libraries(false-sharing)
+set_target_properties(false-sharing PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+
+# Clang tidy
+if(MEMATIDY)
+  set(CMAKE_CXX_CLANG_TIDY "clang-tidy")
+  set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+  message(STATUS "Enabled clang-tidy")
+  set_target_properties(false-sharing PROPERTIES CXX_CLANG_TIDY "clang-tidy")
+endif()
+
+include(CMakePrintHelpers)
+cmake_print_variables(CMAKE_CXX_FLAGS)
