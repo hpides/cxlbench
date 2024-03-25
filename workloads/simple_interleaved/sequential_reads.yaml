@@ -1,0 +1,14 @@
+sequential_reads:
+  matrix:
+    # number_threads: [ 8, 12, 16 ]
+    number_threads: [ 16 ]
+    access_size: [ 64 ]
+
+  args:
+    exec_mode: sequential
+    memory_region_size: 10G
+    numa_memory_nodes: [ 0 ]
+    numa_task_nodes: [ 0 ]
+    number_partitions: 1
+    operation: read
+    run_time: 10

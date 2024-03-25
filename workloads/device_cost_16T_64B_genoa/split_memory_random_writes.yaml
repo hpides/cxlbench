@@ -1,0 +1,16 @@
+split_memory_random_writes:
+  matrix:
+    number_threads: [ 16 ]
+    access_size: [ 64 ]
+    flush_instruction: [ none ]
+    percentage_pages_first_node: [ 100, 95, 90, 85, 80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10, 5, 0 ]
+
+  args:
+    exec_mode: random
+    memory_region_size: 10G
+    numa_memory_nodes: [ 0, 1 ]
+    numa_task_nodes: [ 0 ]
+    number_partitions: 1
+    operation: write
+    number_operations: 21000000
+    run_time: 10

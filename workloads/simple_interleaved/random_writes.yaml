@@ -1,0 +1,16 @@
+random_writes:
+  matrix:
+    # number_threads: [ 8, 12, 16 ]
+    number_threads: [ 16 ]
+    access_size: [ 64 ]
+    flush_instruction: [ none ]
+
+  args:
+    exec_mode: random
+    memory_region_size: 10G
+    numa_memory_nodes: [ 0, 1 ]
+    numa_task_nodes: [ 0 ]
+    number_partitions: 1
+    operation: write
+    number_operations: 20000000
+    run_time: 10

@@ -1,0 +1,15 @@
+scale_writes_seq:
+  matrix:
+    # number_threads: [ 56 ]
+    number_threads: [ 1, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56 ]
+    access_size: [ 64 ]
+    flush_instruction: [ none ]
+
+  args:
+    exec_mode: sequential
+    memory_region_size: 5G
+    numa_memory_nodes: [ 2 ]
+    numa_task_nodes: [ 0 ]
+    number_partitions: 1
+    operation: write
+    run_time: 5

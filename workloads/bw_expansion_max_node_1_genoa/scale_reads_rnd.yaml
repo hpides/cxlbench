@@ -1,0 +1,15 @@
+scale_reads_rnd:
+  matrix:
+    # number_threads: [ 56 ]
+    number_threads: [ 1, 4, 8, 12, 16, 20, 24 ]
+    access_size: [ 64 ]
+
+  args:
+    exec_mode: random
+    memory_region_size: 5G
+    numa_memory_nodes: [ 1 ]
+    numa_task_nodes: [ 0 ]
+    number_partitions: 1
+    operation: read
+    number_operations: 100000000
+    run_time: 5

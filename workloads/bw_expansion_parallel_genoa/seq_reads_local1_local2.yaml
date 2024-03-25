@@ -1,0 +1,29 @@
+seq_reads_local1_local2:
+  parallel_benchmark:
+    local1:
+      matrix:
+        number_threads: [ 20 ]
+        access_size: [ 64 ]
+
+      args:
+        exec_mode: sequential
+        memory_region_size: 5G
+        numa_memory_nodes: [ 0 ]
+        numa_task_nodes: [ 0 ]
+        number_partitions: 1
+        operation: read
+        run_time: 5
+
+    local2:
+      matrix:
+        number_threads: [ 1, 4, 8, 12, 16 ]
+        access_size: [ 64 ]
+
+      args:
+        exec_mode: sequential
+        memory_region_size: 5G
+        numa_memory_nodes: [ 0 ]
+        numa_task_nodes: [ 0 ]
+        number_partitions: 1
+        operation: read
+        run_time: 5
