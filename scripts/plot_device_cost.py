@@ -1,10 +1,12 @@
 #! /usr/bin/env python3
 
+# Experiment: Cost of Device Accesses
+
 import argparse
 import glob
 import json_util as ju
-import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import os
 import pandas as pd
 import seaborn as sns
@@ -17,6 +19,7 @@ KEY_BM_NAME = "bm_name"
 KEY_BM_TYPE = "bm_type"
 KEY_CHUNK_SIZE = "min_io_chunk_size"
 KEY_CUSTOM_OPS = "custom_operations"
+KEY_EXEC_MODE = "exec_mode"
 KEY_EXPLODED_NUMA_MEMORY_NODES = "benchmarks.config.numa_memory_nodes"
 KEY_EXPLODED_NUMA_TASK_NODES = "benchmarks.config.numa_task_nodes"
 KEY_LAT_AVG = "latency.avg"
@@ -27,6 +30,7 @@ KEY_NUMA_MEMORY_NODES = "numa_memory_nodes"
 KEY_OPERATION = "operation"
 KEY_OPERATION_COUNT = "number_operations"
 KEY_PARTITION_COUNT = "number_partitions"
+KEY_PERCENTAGE_FIRST_NODE = "percentage_pages_first_node"
 KEY_RANDOM_DISTRIBUTION = "random_distribution"
 KEY_RUN_TIME = "run_time"
 KEY_SUB_BM_NAMES = "sub_bm_names"
@@ -40,11 +44,10 @@ FLUSH_INSTR_NONE = "none"
 DATA_FILE_PREFIX = "data_"
 PLOT_FILE_PREFIX = "plot_"
 FILE_TAG_SUBSTRING = "TAG_"
+MAX_THREAD_COUNT = 120
 
 # benchmark configuration names
-BM_CONFIG_OS_INTERLEAVING = "interleaved_sequential_reads"
-BM_CONFIG_EXPLICIT_PLACEMENT = "parallel_sequential_reads"
-BM_SUPPORTED_CONFIGS = [BM_CONFIG_OS_INTERLEAVING, BM_CONFIG_EXPLICIT_PLACEMENT]
+BM_SUPPORTED_CONFIGS = ["split_memory_random_writes", "split_memory_random_reads"]
 
 PRINT_DEBUG = False
 
@@ -78,7 +81,7 @@ if __name__ == "__main__":
 
     parser.add_argument("results", type=valid_path, help="path to the results directory")
     parser.add_argument("-o", "--output_dir", help="path to the output directory")
-    parser.add_argument("--bars", action="store_true")
+    parser.add_argument("-y", "--y_tick_distance", help="distance between y-ticks")
     parser.add_argument("--memory_nodes", nargs="+", help="names of the memory nodes")
     args = parser.parse_args()
 
@@ -96,16 +99,18 @@ if __name__ == "__main__":
             parts = results_path.rsplit("/", 1)
             assert len(parts)
             output_dir_string = parts[0]
-            id = parts[1].split(".", 1)[0]
-            output_dir_string = output_dir_string + "/plots/" + id
+            output_dir_string = output_dir_string + "/plots/"
         else:
             assert os.path.isdir(results_path)
             output_dir_string = results_path + "/plots"
 
+    y_tick_distance = None
+    if args.y_tick_distance is not None:
+        y_tick_distance = int(args.y_tick_distance)
+
     print("Output directory:", output_dir_string)
     output_dir = os.path.abspath(output_dir_string)
     results = args.results
-    do_barplots = args.bars
     if args.memory_nodes is not None:
         memory_nodes = args.memory_nodes
     else:
@@ -146,41 +151,13 @@ if __name__ == "__main__":
     bm_names = df[KEY_BM_NAME].unique()
     print("Existing BM groups: {}".format(bm_names))
 
-    # -------------------------------------------------------------------------------------------------------------------
-
-    df_os = df[(df[KEY_BM_NAME] == BM_CONFIG_OS_INTERLEAVING)]
-    df_os = ju.flatten_nested_json_df(
-        df_os,
-        [
-            KEY_MATRIX_ARGS,
-            KEY_THREADS,
-            KEY_NUMA_TASK_NODES,
-            KEY_NUMA_MEMORY_NODES,
-            "matrix_args.local_memory_access",
-            "matrix_args.device_memory_access",
-            "sub_bm_names",
-        ],
-    )
-    df_os.to_csv("{}/interleaving.csv".format(output_dir))
-
-    df_explicit = df[(df[KEY_BM_NAME] == BM_CONFIG_EXPLICIT_PLACEMENT)]
-    df_explicit = ju.flatten_nested_json_df(
-        df_explicit,
-        [
-            KEY_MATRIX_ARGS,
-            KEY_THREADS,
-            KEY_NUMA_TASK_NODES,
-            KEY_NUMA_MEMORY_NODES,
-            "matrix_args.local_memory_access",
-            "matrix_args.device_memory_access",
-            "sub_bm_names",
-        ],
-    )
-    # only keep recors where local memory thread count and device memory thread count are equal
-    df_explicit = df_explicit[
-        df_explicit["local_memory_access.number_threads"] == df_explicit["device_memory_access.number_threads"]
+    # ------------------------------------------------------------------------------------------------------------------
+    deny_list_explosion = [
+        KEY_MATRIX_ARGS,
+        KEY_THREADS,
+        KEY_NUMA_TASK_NODES,
+        KEY_NUMA_MEMORY_NODES,
     ]
-    df_explicit.to_csv("{}/explicit-placement.csv".format(output_dir))
 
     drop_columns = [
         "index",
@@ -193,89 +170,91 @@ if __name__ == "__main__":
         "nt_stores_instruction_set",
         "sub_bm_names",
     ]
-    df_os = df_os.drop(columns=drop_columns, errors="ignore")
-    df_os.to_csv("{}/interleaving-reduced.csv".format(output_dir))
 
-    drop_columns = [
-        "index",
-        "bm_type",
-        "bm_name",
-        "compiler",
-        "git_hash",
-        "hostname",
-        "matrix_args",
-        "nt_stores_instruction_set",
-        "sub_bm_names",
-    ]
-    df_explicit = df_explicit.drop(columns=drop_columns, errors="ignore")
-    df_explicit.to_csv("{}/explicit-placement-reduced.csv".format(output_dir))
+    df = df[(df[KEY_BM_NAME].isin(BM_SUPPORTED_CONFIGS))]
+    df = ju.flatten_nested_json_df(df, deny_list_explosion)
+    # Transform GiB/s to GB/s
+    df[KEY_BANDWIDTH_GB] = df[KEY_BANDWIDTH_GiB] * (1024**3 / 1e9)
+    KEY_TAG = "Workload"
+    df[KEY_TAG] = df[KEY_EXEC_MODE] + " " + df[KEY_OPERATION]
+    KEY_PERCENTAGE_SECOND_NODE = "percentage_pages_second_node"
+    df[KEY_PERCENTAGE_SECOND_NODE] = 100 - df[KEY_PERCENTAGE_FIRST_NODE]
+    df.to_csv("{}/{}.csv".format(output_dir, "results"))
+    df = df.drop(columns=drop_columns, errors="ignore")
+    df.to_csv("{}/{}.csv".format(output_dir, "results-reduced"))
+    df = df[(df[KEY_THREAD_COUNT] <= MAX_THREAD_COUNT)]
+    df = df.reset_index(drop=True)
 
     # ------------------------------------------------------------------------------------------------------------------
     # create plots
+    TAG_RND_READS = "Random Reads"
+    TAG_SEQ_READS = "Seq Reads"
+    TAG_RND_WRITES = "Random Writes"
+    TAG_SEQ_WRITES = "Seq Writes"
 
-    # prepare dataframes
-    df_os["tag"] = "os_interleaving"
-    df_os["total_threads"] = df_os["number_threads"]
-    df_os["combined_bandwidth"] = df_os["bandwidth"]
+    tag_replacements = {
+        "random read": TAG_RND_READS,
+        "sequential read": TAG_SEQ_READS,
+        "random write": TAG_RND_WRITES,
+        "sequential write": TAG_SEQ_WRITES,
+    }
 
-    df_explicit["bandwidth"] = df_explicit["local_memory_access.results.bandwidth"]
-    df_explicit["tag"] = "explicit_placement"
-    df_explicit["total_threads"] = (
-        df_explicit["local_memory_access.number_threads"] + df_explicit["device_memory_access.number_threads"]
-    )
-    df_explicit["combined_bandwidth"] = (
-        df_explicit["local_memory_access.results.bandwidth"] + df_explicit["device_memory_access.results.bandwidth"]
-    )
+    df[KEY_TAG].replace(tag_replacements, inplace=True)
 
-    df = pd.concat([df_os, df_explicit])
+    # x ticks in steps of 10, 0 to 100.
+    page_share_on_device = [x * 10 for x in range(0, 11)]
 
-    # create grouped stacked barplot showing bw_0 and bw_1. For interleaving, only bw_0 is used. For explicit placement,
-    # bw_0 shows the local memory access bandwidth and bw_1 shows the device memory access bandwidth.
-    sns.set(style="whitegrid")
-    plt.figure(figsize=(5, 2.5))
+    sns.set_context("paper")
+    sns.set(style="ticks")
+    plt.figure(figsize=(5.5, 2.3))
     hpi_palette = [(0.9609, 0.6563, 0), (0.8633, 0.3789, 0.0313), (0.6914, 0.0234, 0.2265)]
+    palette = {
+        TAG_RND_READS: hpi_palette[0],
+        TAG_SEQ_READS: hpi_palette[0],
+        TAG_RND_WRITES: hpi_palette[2],
+        TAG_SEQ_WRITES: hpi_palette[2],
+    }
 
-    # Add bandwidth for device memory for explicit placement and os interleaving. For explicit placement, we actually
-    # show the total bandwidth but put the local bandwidth in front of it to create a stacked bar.
-    df["label1"] = df["tag"]
-    df["label1"].replace({"os_interleaving": "OS-Interleaved", "explicit_placement": "Device Memory"}, inplace=True)
-    barplot = sns.barplot(x="total_threads", y="combined_bandwidth", data=df, palette=hpi_palette, hue="label1")
+    markers = {TAG_RND_READS: ".", TAG_SEQ_READS: ".", TAG_RND_WRITES: "X", TAG_SEQ_WRITES: "X"}
 
-    # Add bandwidth for local memory access.
-    df["label2"] = df["tag"]
-    df["label2"].replace({"os_interleaving": "None", "explicit_placement": "Local Memory"}, inplace=True)
+    dashes = {TAG_RND_READS: [1, 0], TAG_SEQ_READS: [1, 0], TAG_RND_WRITES: [1, 0], TAG_SEQ_WRITES: [1, 0]}
 
-    barplot = sns.barplot(
-        x="total_threads",
-        y="local_memory_access.results.bandwidth",
+    hue_order = [TAG_RND_READS, TAG_RND_WRITES]
+
+    lineplot = sns.lineplot(
         data=df,
-        color=hpi_palette[2],
-        hue="label2",
+        x=KEY_PERCENTAGE_SECOND_NODE,
+        y=KEY_BANDWIDTH_GB,
+        palette=palette,
+        style=KEY_TAG,
+        dashes=dashes,
+        markers=markers,
+        hue_order=hue_order,
+        hue=KEY_TAG,
     )
+    lineplot.set_xticks(page_share_on_device)
+    lineplot.set_xticklabels(page_share_on_device)
+    lineplot.yaxis.grid()
+    if y_tick_distance is not None:
+        lineplot.yaxis.set_major_locator(ticker.MultipleLocator(y_tick_distance))
 
-    fig = barplot.get_figure()
-
-    plt.xlabel("Total Thread Count")
-    plt.ylabel("Throughput [GB/s]")
-    plt.yticks(range(0, int(max(df_explicit["combined_bandwidth"])) + 20, 20))
-
-    # Add legend.
-    bar_interleaved_access = mpatches.Patch(color=hpi_palette[0], label="Interleaved")
-    bar_local_access = mpatches.Patch(color=hpi_palette[1], label="Local Memory")
-    bar_device_access = mpatches.Patch(color=hpi_palette[2], label="Device Memory")
-    handles = [bar_interleaved_access, bar_local_access, bar_device_access]
-    legend = plt.legend(
-        bbox_to_anchor=(0.5, 1.3),
-        loc="upper center",
-        borderaxespad=0.0,
-        ncol=3,
-        handles=handles,
-        handlelength=0.8,
-        columnspacing=0.8,
-        handletextpad=0.5,
+    lineplot.legend(title=None)
+    sns.move_legend(
+        lineplot,
+        "lower center",
+        bbox_to_anchor=(0.5, 0.92),
+        ncol=4,
         frameon=False,
+        columnspacing=0.5,
+        handlelength=1.2,
+        handletextpad=0.5,
     )
+
+    fig = lineplot.get_figure()
+
+    plt.xlabel("Pages on device memory in %")
+    plt.ylabel("Throughput in GB/s")
 
     plt.tight_layout()
 
-    fig.savefig("{}/{}{}.pdf".format(output_dir, PLOT_FILE_PREFIX, "explicit_placement"))
+    fig.savefig("{}/{}{}.pdf".format(output_dir, PLOT_FILE_PREFIX, "device_penalty"), bbox_inches="tight", pad_inches=0)
