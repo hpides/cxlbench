@@ -129,6 +129,8 @@ class Benchmark {
   /** Create all the IO addresses ahead of time to avoid unnecessary ops during the actual benchmark. */
   virtual void set_up() = 0;
 
+  virtual void verify_page_locations() = 0;
+
   /** Return the results as a JSON to be exported to the user and visualization. */
   virtual nlohmann::json get_result_as_json() = 0;
 
@@ -157,7 +159,15 @@ class Benchmark {
                             BenchmarkResult* result, std::vector<std::thread>* pool,
                             std::vector<ThreadRunConfig>* thread_config);
 
-  static char* prepare_data(const BenchmarkConfig& config, size_t memory_region_size);
+  static char* prepare_data(const BenchmarkConfig& config, const size_t memory_region_size);
+
+  // Prepares the memory region with pages interleaved accross the given NUMA nodes.
+  static char* prepare_interleaved_data(const BenchmarkConfig& config, const size_t memory_region_size);
+
+  // Prepares the memory region with two partitions each being located on a different NUMA nodes.
+  static char* prepare_partitioned_data(const BenchmarkConfig& config, const size_t memory_region_size);
+
+  static char* verify_page_placement(const BenchmarkConfig& config);
 
   static void run_custom_ops_in_thread(ThreadRunConfig* thread_config, const BenchmarkConfig& config);
   static void run_in_thread(ThreadRunConfig* thread_config, const BenchmarkConfig& config);

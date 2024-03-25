@@ -109,6 +109,7 @@ TEST_F(ConfigTest, SingleDecodeSequential) {
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
   EXPECT_EQ(bm_config.numa_memory_nodes, (NumaNodeIDs{0, 1}));
   EXPECT_EQ(bm_config.numa_task_nodes, NumaNodeIDs{0});
+  EXPECT_EQ(bm_config.percentage_pages_first_node, 37);
 }
 
 TEST_F(ConfigTest, DecodeRandom) {
@@ -136,6 +137,7 @@ TEST_F(ConfigTest, DecodeRandom) {
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
   EXPECT_EQ(bm_config.numa_memory_nodes, NumaNodeIDs{1});
   EXPECT_EQ(bm_config.numa_task_nodes, NumaNodeIDs{0});
+  EXPECT_EQ(bm_config.percentage_pages_first_node, bm_config_default.percentage_pages_first_node);
 }
 
 TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
@@ -190,6 +192,7 @@ TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
   EXPECT_EQ(bm_config.numa_memory_nodes, (NumaNodeIDs{2, 3}));
   EXPECT_EQ(bm_config.numa_task_nodes, (NumaNodeIDs{0, 1}));
+  EXPECT_EQ(bm_config.percentage_pages_first_node, bm_config_default.percentage_pages_first_node);
 }
 
 TEST_F(ConfigTest, DecodeMatrix) {
@@ -231,6 +234,7 @@ TEST_F(ConfigTest, DecodeMatrix) {
     EXPECT_EQ(config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
     EXPECT_EQ(config.numa_memory_nodes, (NumaNodeIDs{0, 3}));
     EXPECT_EQ(config.numa_task_nodes, NumaNodeIDs{0});
+    EXPECT_EQ(bm_config.percentage_pages_first_node, bm_config_default.percentage_pages_first_node);
   }
 }
 
@@ -281,6 +285,7 @@ TEST_F(ConfigTest, DecodeCustomOperationsMatrix) {
     EXPECT_EQ(config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
     EXPECT_TRUE(bm_config.numa_memory_nodes.empty());
     EXPECT_TRUE(bm_config.numa_task_nodes.empty());
+    EXPECT_EQ(bm_config.percentage_pages_first_node, bm_config_default.percentage_pages_first_node);
   }
 }
 
@@ -341,6 +346,7 @@ TEST_F(ConfigTest, ParallelDecodeMatrix) {
     EXPECT_EQ(config_two.latency_sample_frequency, bm_config_default.latency_sample_frequency);
     EXPECT_TRUE(bm_config.numa_memory_nodes.empty());
     EXPECT_TRUE(bm_config.numa_task_nodes.empty());
+    EXPECT_EQ(bm_config.percentage_pages_first_node, bm_config_default.percentage_pages_first_node);
   }
 }
 
@@ -433,6 +439,8 @@ TEST_F(ConfigTest, AsJsonReadSequential) {
   EXPECT_EQ(json["numa_memory_nodes"].get<NumaNodeIDs>(), bm_config.numa_memory_nodes);
   ASSERT_JSON_TRUE(json, contains("numa_task_nodes"));
   EXPECT_EQ(json["numa_task_nodes"].get<NumaNodeIDs>(), bm_config.numa_task_nodes);
+  ASSERT_JSON_TRUE(json, contains("percentage_pages_first_node"));
+  EXPECT_EQ(json["percentage_pages_first_node"].get<int64_t>(), bm_config.percentage_pages_first_node);
   ASSERT_JSON_TRUE(json, contains("number_partitions"));
   EXPECT_EQ(json["number_partitions"].get<uint16_t>(), bm_config.number_partitions);
   ASSERT_JSON_TRUE(json, contains("number_threads"));
@@ -474,6 +482,8 @@ TEST_F(ConfigTest, AsJsonWriteCustom) {
   EXPECT_EQ(json["numa_memory_nodes"].get<NumaNodeIDs>(), bm_config.numa_memory_nodes);
   ASSERT_JSON_TRUE(json, contains("numa_task_nodes"));
   EXPECT_EQ(json["numa_task_nodes"].get<NumaNodeIDs>(), bm_config.numa_task_nodes);
+  ASSERT_JSON_TRUE(json, contains("percentage_pages_first_node"));
+  EXPECT_EQ(json["percentage_pages_first_node"].get<int64_t>(), bm_config.percentage_pages_first_node);
   ASSERT_JSON_TRUE(json, contains("number_partitions"));
   EXPECT_EQ(json["number_partitions"].get<uint16_t>(), bm_config.number_partitions);
   ASSERT_JSON_TRUE(json, contains("number_threads"));
@@ -513,27 +523,41 @@ TEST_F(ConfigTest, ToString) {
   auto bm_config = BenchmarkConfig{};
 
   // bm_config.
-  bm_config.memory_region_size = 40 * GIBIBYTES_IN_BYTES;
+  bm_config.memory_region_size = 40 * GiB;
   bm_config.exec_mode = Mode::Random;
   bm_config.numa_memory_nodes = {1, 2};
   bm_config.numa_task_nodes = {3, 4};
   bm_config.number_partitions = 8;
   bm_config.number_threads = 4;
-  bm_config.min_io_chunk_size = 32 * MEBIBYTES_IN_BYTES;
+  bm_config.min_io_chunk_size = 32 * MiB;
   bm_config.access_size = 512;
   bm_config.operation = Operation::Write;
   bm_config.flush_instruction = FlushInstruction::Cache;
   bm_config.number_operations = 50'000'000;
   bm_config.random_distribution = RandomDistribution::Zipf;
   bm_config.zipf_alpha = 0.8;
+  bm_config.percentage_pages_first_node = 42;
 
-  std::string expected_output =
-      "memory range: 42949672960, exec mode: random, "
-      "memory numa nodes: [1, 2], task numa nodes: [3, 4], partition count: 8, thread count: 4, min io chunk size: "
-      "33554432, access size: 512, "
-      "operation: write, flush instruction: cache, number operations: 50000000, random distribution: zipf, "
-      "zipf alpha: 0.8";
-  EXPECT_EQ(bm_config.to_string(), expected_output);
+  {
+    const std::string expected_output =
+        "memory range: 42949672960, exec mode: random, "
+        "memory numa nodes: [1, 2], task numa nodes: [3, 4], partition count: 8, thread count: 4, min io chunk size: "
+        "33554432, page placement: partitioned with 42% on first node, access size: 512, "
+        "operation: write, flush instruction: cache, number operations: 50000000, random distribution: zipf, "
+        "zipf alpha: 0.8";
+    EXPECT_EQ(bm_config.to_string(), expected_output);
+  }
+
+  {
+    bm_config.percentage_pages_first_node = -1;
+    const std::string expected_output =
+        "memory range: 42949672960, exec mode: random, "
+        "memory numa nodes: [1, 2], task numa nodes: [3, 4], partition count: 8, thread count: 4, min io chunk size: "
+        "33554432, page placement: round robin, access size: 512, "
+        "operation: write, flush instruction: cache, number operations: 50000000, random distribution: zipf, "
+        "zipf alpha: 0.8";
+    EXPECT_EQ(bm_config.to_string(), expected_output);
+  }
 }
 
 }  // namespace mema

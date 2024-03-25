@@ -129,6 +129,18 @@ inline void read(const std::vector<char*>& addresses, const size_t access_size) 
 
 /**
  * #####################################################
+ * WRITE SCALAR OPERATIONS
+ * #####################################################
+ */
+
+inline void write_data_scalar(char* start_address, const char* end_address) {
+  for (char* mem_addr = start_address; mem_addr < end_address; mem_addr += 64) {
+    std::memcpy(mem_addr, WRITE_DATA, 64);
+  }
+}
+
+/**
+ * #####################################################
  * BASE STORE OPERATIONS
  * #####################################################
  */

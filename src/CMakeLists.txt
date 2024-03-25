@@ -51,3 +51,7 @@ set_target_properties(bench-cacheline PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMA
 add_executable(larger-than-node-allocations microexperiments/larger_than_node_allocation.cpp)
 target_link_libraries(larger-than-node-allocations benchmark::benchmark ${NUMA_LIBRARIES})
 set_target_properties(larger-than-node-allocations PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+
+add_executable(check_move_pages microexperiments/check_move_pages.cpp)
+target_link_libraries(check_move_pages ${NUMA_LIBRARIES})
+set_target_properties(check_move_pages PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")

@@ -23,6 +23,8 @@ class SingleBenchmark : public Benchmark {
 
   void set_up() final;
 
+  void verify_page_locations() final;
+
   nlohmann::json get_result_as_json() final;
 
   ~SingleBenchmark() { SingleBenchmark::tear_down(false); }

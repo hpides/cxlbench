@@ -46,9 +46,6 @@ char* map(const uint64_t expected_length, const bool use_transparent_huge_pages,
 // to each page. The page offsets are calculated using PAGE_SIZE.
 void populate_memory(char* addr, const uint64_t memory_size);
 
-// Checks if the memory region's pages are located on the expected numa nodes.
-void verify_memory_location(char* const start_addr, size_t memory_region_size, const NumaNodeIDs& expected_node_ids);
-
 // Calculates and returns the mmap page size flag for the given page size. Similar to MAP_HUGE_2MB and MAP_HUGE_1GB but
 // dynamic for every given page size.
 int mmap_page_size_mask(const uint32_t page_size);

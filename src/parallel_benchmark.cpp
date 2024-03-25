@@ -44,8 +44,6 @@ void ParallelBenchmark::generate_data() {
   }
   data_.push_back(prepare_data(configs_[0], configs_[0].memory_region_size));
   data_.push_back(prepare_data(configs_[1], configs_[1].memory_region_size));
-  utils::verify_memory_location(data_[0], configs_[0].memory_region_size, configs_[0].numa_memory_nodes);
-  utils::verify_memory_location(data_[1], configs_[1].memory_region_size, configs_[1].numa_memory_nodes);
 }
 
 void ParallelBenchmark::set_up() {
@@ -53,6 +51,20 @@ void ParallelBenchmark::set_up() {
   thread_configs_.resize(2);
   single_set_up(configs_[0], data_[0], executions_[0].get(), results_[0].get(), &thread_pools_[0], &thread_configs_[0]);
   single_set_up(configs_[1], data_[1], executions_[1].get(), results_[1].get(), &thread_pools_[1], &thread_configs_[1]);
+}
+
+void ParallelBenchmark::verify_page_locations() {
+  for (auto benchmark_idx = uint32_t{0}; benchmark_idx < 2; ++benchmark_idx) {
+    auto& config = configs_[benchmark_idx];
+    auto* data = data_[benchmark_idx];
+
+    if (config.percentage_pages_first_node == -1) {
+      verify_interleaved_page_placement(data, config.memory_region_size, config.numa_memory_nodes);
+    } else {
+      verify_partitioned_page_placement(data, config.memory_region_size, config.numa_memory_nodes,
+                                        config.percentage_pages_first_node);
+    }
+  }
 }
 
 nlohmann::json ParallelBenchmark::get_result_as_json() {

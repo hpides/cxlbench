@@ -33,9 +33,9 @@ TEST_F(NumaReadWriteTest, SimpleWriteRead) {
         static_cast<char*>(mmap(nullptr, memory_region_size, PROT_READ | PROT_WRITE, utils::MAP_FLAGS, -1, 0));
     ASSERT_NE(base_addr, MAP_FAILED);
     ASSERT_NE(base_addr, nullptr);
-    set_memory_numa_nodes(base_addr, memory_region_size, {node_id});
+    bind_memory_interleaved(base_addr, memory_region_size, {node_id});
     utils::populate_memory(base_addr, memory_region_size);
-    utils::verify_memory_location(base_addr, memory_region_size, {node_id});
+    verify_interleaved_page_placement(base_addr, memory_region_size, {node_id});
 
     // Write and read data.
     const auto cache_line_count = memory_region_size / rw_ops::CACHE_LINE_SIZE;
@@ -76,9 +76,9 @@ TEST_F(NumaReadWriteTest, IntrinsicsWriteRead) {
         static_cast<char*>(mmap(nullptr, memory_region_size, PROT_READ | PROT_WRITE, utils::MAP_FLAGS, -1, 0));
     ASSERT_NE(base_addr, MAP_FAILED);
     ASSERT_NE(base_addr, nullptr);
-    set_memory_numa_nodes(base_addr, memory_region_size, {node_id});
+    bind_memory_interleaved(base_addr, memory_region_size, {node_id});
     utils::populate_memory(base_addr, memory_region_size);
-    utils::verify_memory_location(base_addr, memory_region_size, {node_id});
+    verify_interleaved_page_placement(base_addr, memory_region_size, {node_id});
 
     // Write and read data
     const auto cache_line_count = memory_region_size / rw_ops::CACHE_LINE_SIZE;

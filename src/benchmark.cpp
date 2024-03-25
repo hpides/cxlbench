@@ -41,7 +41,7 @@ nlohmann::json hdr_histogram_to_json(hdr_histogram* hdr) {
 
 inline double get_bandwidth(const uint64_t total_data_size, const std::chrono::steady_clock::duration total_duration) {
   const double duration_in_s = static_cast<double>(total_duration.count()) / mema::SECONDS_IN_NANOSECONDS;
-  const double data_in_gib = static_cast<double>(total_data_size) / mema::GIBIBYTES_IN_BYTES;
+  const double data_in_gib = static_cast<double>(total_data_size) / mema::GiB;
   return data_in_gib / duration_in_s;
 }
 
@@ -127,11 +127,55 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, char* data, Benchma
 }
 
 char* Benchmark::prepare_data(const BenchmarkConfig& config, const size_t memory_region_size) {
+  if (config.percentage_pages_first_node == -1) {
+    return prepare_interleaved_data(config, memory_region_size);
+  }
+
+  return prepare_partitioned_data(config, memory_region_size);
+}
+
+char* Benchmark::prepare_interleaved_data(const BenchmarkConfig& config, const size_t memory_region_size) {
+  spdlog::info("Preparing interleaved data.");
+  auto* data = utils::map(memory_region_size, config.transparent_huge_pages, config.explicit_hugepages_size);
+  bind_memory_interleaved(data, memory_region_size, config.numa_memory_nodes);
+  spdlog::debug("Finished mapping memory region.");
+  utils::populate_memory(data, memory_region_size);
+  spdlog::debug("Finished populating/pre-faulting the memory region.");
+
+  if (config.contains_read_op()) {
+    // If we read data in this benchmark, we need to generate it first.
+    utils::generate_read_data(data, memory_region_size);
+    spdlog::debug("Finished generating read data.");
+  }
+
+  if (!verify_interleaved_page_placement(data, memory_region_size, config.numa_memory_nodes)) {
+    auto page_locations = PageLocations{};
+    fill_page_locations_round_robin(page_locations, memory_region_size, config.numa_memory_nodes);
+    place_pages(data, memory_region_size, page_locations);
+    if (!verify_interleaved_page_placement(data, memory_region_size, config.numa_memory_nodes)) {
+      spdlog::critical("Verification for interleaved pages failed again. Stopping here.");
+      utils::crash_exit();
+    }
+  }
+
+  spdlog::info("Finished preparing interleaved data.");
+  return data;
+}
+
+char* Benchmark::prepare_partitioned_data(const BenchmarkConfig& config, const size_t memory_region_size) {
+  spdlog::info("Preparing partitioned data.");
   auto* data = utils::map(memory_region_size, config.transparent_huge_pages, config.explicit_hugepages_size);
   spdlog::debug("Finished mapping memory region.");
 
-  set_memory_numa_nodes(data, memory_region_size, config.numa_memory_nodes);
-  log_numa_nodes(spdlog::level::debug, "Finished binding the memory region to ", config.numa_memory_nodes);
+  const auto region_page_count = memory_region_size / utils::PAGE_SIZE;
+  const auto first_node_page_count =
+      static_cast<uint32_t>((config.percentage_pages_first_node / 100.f) * region_page_count);
+
+  const auto first_partition_length = first_node_page_count * utils::PAGE_SIZE;
+  bind_memory_interleaved(data, first_partition_length, {config.numa_memory_nodes[0]});
+  const auto second_partition_start = data + first_partition_length;
+  const auto second_partition_length = (region_page_count - first_node_page_count) * utils::PAGE_SIZE;
+  bind_memory_interleaved(second_partition_start, second_partition_length, {config.numa_memory_nodes[1]});
 
   utils::populate_memory(data, memory_region_size);
   spdlog::debug("Finished populating/pre-faulting the memory region.");
@@ -142,7 +186,16 @@ char* Benchmark::prepare_data(const BenchmarkConfig& config, const size_t memory
     spdlog::debug("Finished generating read data.");
   }
 
-  spdlog::debug("Finished preparing memory range.");
+  // Place pages.
+  auto page_locations = PageLocations{};
+  fill_page_locations_partitioned(page_locations, memory_region_size, config.numa_memory_nodes,
+                                  config.percentage_pages_first_node);
+  if (!verify_partitioned_page_placement(data, memory_region_size, page_locations)) {
+    spdlog::critical("Page verification for partitioned memory region failed.");
+    utils::crash_exit();
+  }
+
+  spdlog::info("Finished preparing partitioned data.");
   return data;
 }
 
@@ -471,7 +524,7 @@ nlohmann::json BenchmarkResult::get_result_as_json() const {
 
     spdlog::debug("Thread {}: Per-Thread Information", thread_idx);
     spdlog::debug(" ├─ Bandwidth (GiB/s): {:.5f}", thread_bandwidth);
-    spdlog::debug(" ├─ Total Access Size (MiB): {}", thread_op_size / MEBIBYTES_IN_BYTES);
+    spdlog::debug(" ├─ Total Access Size (MiB): {}", thread_op_size / MiB);
     spdlog::debug(" └─ Duration (s): {:.5f}", thread_duration_s);
 
     total_size += thread_op_size;

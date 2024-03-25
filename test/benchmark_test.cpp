@@ -16,8 +16,8 @@ namespace mema {
 
 using ::testing::ElementsAre;
 
-constexpr size_t TEST_DATA_SIZE = 1 * MEBIBYTES_IN_BYTES;  // 1 MiB
-constexpr size_t TEST_CHUNK_SIZE = TEST_DATA_SIZE / 8;     // 128 KiB
+constexpr size_t TEST_DATA_SIZE = 1 * MiB;              // 1 MiB
+constexpr size_t TEST_CHUNK_SIZE = TEST_DATA_SIZE / 8;  // 128 KiB
 
 class BenchmarkTest : public BaseTest {
  protected:

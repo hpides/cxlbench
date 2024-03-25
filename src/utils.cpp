@@ -22,6 +22,8 @@ namespace mema::utils {
 
 char* map(const uint64_t expected_length, const bool use_transparent_huge_pages,
           const uint64_t explicit_hugepages_size) {
+  spdlog::debug("Mapping memory region of size {}, explicit huge page size {}, use transparent huge pages {}.",
+                expected_length, explicit_hugepages_size, use_transparent_huge_pages);
   // Do not mmap any data if length is 0
   if (expected_length == 0) {
     return nullptr;
@@ -39,8 +41,10 @@ char* map(const uint64_t expected_length, const bool use_transparent_huge_pages,
 
   if (addr == MAP_FAILED || addr == nullptr) {
     spdlog::critical(
-        "Could not map anonymous memory region. Error: {}. If using explicit hugepages, ensure that you have enough "
-        "pages allocated.",
+        "Could not map anonymous memory region. Error: {}. (1) If using explicit hugepages, ensure that you have "
+        "enough "
+        "pages allocated. (2) If using transparent huge pages, you might need to increase /proc/sys/vm/nr_hugepages. "
+        "(3) Check if the allocation works with smaller memory regions.",
         std::strerror(errno));
     crash_exit();
   }
@@ -79,25 +83,6 @@ void populate_memory(char* addr, const uint64_t memory_size) {
   }
 }
 
-void verify_memory_location(char* const start_addr, size_t memory_region_size, const NumaNodeIDs& expected_node_ids) {
-  if (expected_node_ids.empty()) {
-    spdlog::warn("Skipped memory location verification since no expected NUMA node ID was given.");
-    return;
-  }
-
-  const auto region_page_count = memory_region_size / utils::PAGE_SIZE;
-  for (auto page_idx = uint64_t{0}; page_idx < region_page_count; ++page_idx) {
-    auto* const addr = start_addr + page_idx * utils::PAGE_SIZE;
-    const auto page_node_id = get_numa_node_index_by_address(addr);
-    if (std::find(expected_node_ids.begin(), expected_node_ids.end(), page_node_id) == expected_node_ids.end()) {
-      spdlog::critical(
-          "Page of memory region at address {} is located on NUMA node {}, which is not a configured NUMA node.",
-          static_cast<void*>(addr), page_node_id);
-      utils::crash_exit();
-    }
-  }
-}
-
 int mmap_page_size_mask(const uint32_t page_size) {
   if (((page_size) & (page_size - 1)) != 0) {
     spdlog::critical("Given page size {} is not a power of 2.", page_size);
@@ -115,18 +100,19 @@ void generate_read_data(char* addr, const uint64_t memory_size) {
   }
 
   spdlog::debug("Generating {} GB of random data to read.", memory_size / ONE_GB);
-  std::vector<std::thread> thread_pool;
+  auto thread_pool = std::vector<std::thread>{};
   thread_pool.reserve(DATA_GEN_THREAD_COUNT - 1);
-  uint64_t thread_memory_size = memory_size / DATA_GEN_THREAD_COUNT;
+  auto thread_memory_size = memory_size / DATA_GEN_THREAD_COUNT;
+
   for (uint8_t thread_count = 0; thread_count < DATA_GEN_THREAD_COUNT - 1; thread_count++) {
     char* from = addr + thread_count * thread_memory_size;
     const char* to = addr + (thread_count + 1) * thread_memory_size;
-    thread_pool.emplace_back(rw_ops::write_data, from, to);
+    thread_pool.emplace_back(rw_ops::write_data_scalar, from, to);
   }
 
   // Since DATA_GEN_THREAD_COUNT - 1 already started writing data, we use the time to write the last partition of the
   // memory region.
-  rw_ops::write_data(addr + (DATA_GEN_THREAD_COUNT - 1) * thread_memory_size, addr + memory_size);
+  rw_ops::write_data_scalar(addr + (DATA_GEN_THREAD_COUNT - 1) * thread_memory_size, addr + memory_size);
 
   // wait for all threads
   for (std::thread& thread : thread_pool) {

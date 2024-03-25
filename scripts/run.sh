@@ -2,6 +2,7 @@
 
 # Exit the script immediately if an error occurs.
 set -e
+BUILD_TYPE=Release
 
 SCRIPTNAME="$(basename "$0")"
 if [ -z "$1" ] || [ -z "$2" ] ; then
@@ -28,10 +29,10 @@ BUILD_DIR="$ROOT_DIR"/"$BUILD_DIR_NAME"
 
 echo "Workload: $2"
 # Workload-specific flags
-if [[ "$2" =~ ^bw_expansion_.* ]]; then
-  WORKLOAD_FLAGS=-e
-  echo "Workload-specific flags: $WORKLOAD_FLAGS"
-fi
+# if [[ "$2" =~ ^bw_expansion_.* ]]; then
+#   WORKLOAD_FLAGS=-e
+#   echo "Workload-specific flags: $WORKLOAD_FLAGS"
+# fi
 
 mkdir -p "$BUILD_DIR"
 echo "Build directory: \""$BUILD_DIR"\""
@@ -42,7 +43,7 @@ echo "Copying workload "$WORKLOAD" to the build dir's workload directory."
 ../scripts/reset_workload.sh "$WORKLOAD"
 
 echo "CMake setup..."
-CMAKE_CMD="cmake -S "$ROOT_DIR" -B "$BUILD_DIR" -DBUILD_TEST=ON -DCMAKE_C_COMPILER=gcc-12 -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_BUILD_TYPE=Release"
+CMAKE_CMD="cmake -S "$ROOT_DIR" -B "$BUILD_DIR" -DBUILD_TEST=ON -DCMAKE_C_COMPILER=gcc-12 -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_BUILD_TYPE="$BUILD_TYPE
 if echo "ninja version:" && ninja --version; then
   CMAKE_CMD="${CMAKE_CMD} -GNinja"
   BUILD_CMD="ninja"
@@ -69,6 +70,5 @@ mkdir -p "$RESULT_DIR"
 echo "All results are written to $RESULT_DIR."
 echo "If you want to copy the data to your dev machine, the following command might help:"
 echo "./scripts/scp.sh $(hostname) $RESULT_DIR ./results/$WORKLOAD/$TAG"
-"$SCRIPT_DIR"/plot.sh "$RESULT_DIR"
 
 exit 0

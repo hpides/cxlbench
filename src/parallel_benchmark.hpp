@@ -24,6 +24,8 @@ class ParallelBenchmark : public Benchmark {
 
   void set_up() final;
 
+  void verify_page_locations() final;
+
   nlohmann::json get_result_as_json() final;
 
   const std::string& get_benchmark_name_one() const;

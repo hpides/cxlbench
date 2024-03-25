@@ -96,7 +96,7 @@ bool get_size_if_present(YAML::Node& data, const std::string& name, const std::u
 }
 
 template <typename T>
-bool get_uints_if_present(YAML::Node& data, const std::string& name, std::vector<T>& values) {
+bool get_sequence_if_present(YAML::Node& data, const std::string& name, std::vector<T>& values) {
   auto entry = data[name];
   if (!entry) {
     return false;
@@ -109,7 +109,7 @@ bool get_uints_if_present(YAML::Node& data, const std::string& name, std::vector
 
   values.reserve(entry.size());
   for (const auto value : entry) {
-    values.push_back(value.as<uint64_t>());
+    values.push_back(value.as<T>());
   }
   entry.SetTag(VISITED_TAG);
   return true;
@@ -139,6 +139,7 @@ BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
     found_count += get_if_present(node, "zipf_alpha", &bm_config.zipf_alpha);
     found_count += get_if_present(node, "latency_sample_frequency", &bm_config.latency_sample_frequency);
     found_count += get_if_present(node, "transparent_huge_pages", &bm_config.transparent_huge_pages);
+    found_count += get_if_present(node, "percentage_pages_first_node", &bm_config.percentage_pages_first_node);
     found_count += get_size_if_present(node, "explicit_hugepages_size", ConfigEnums::scale_suffix_to_factor,
                                        &bm_config.explicit_hugepages_size);
 
@@ -148,8 +149,8 @@ BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
                                        &bm_config.random_distribution);
     found_count += get_enum_if_present(node, "flush_instruction", ConfigEnums::str_to_flush_instruction,
                                        &bm_config.flush_instruction);
-    found_count += get_uints_if_present(node, "numa_memory_nodes", bm_config.numa_memory_nodes);
-    found_count += get_uints_if_present(node, "numa_task_nodes", bm_config.numa_task_nodes);
+    found_count += get_sequence_if_present(node, "numa_memory_nodes", bm_config.numa_memory_nodes);
+    found_count += get_sequence_if_present(node, "numa_task_nodes", bm_config.numa_task_nodes);
 
     std::string custom_ops;
     const bool has_custom_ops = get_if_present(node, "custom_operations", &custom_ops);
@@ -195,6 +196,15 @@ void BenchmarkConfig::validate() const {
   const bool is_at_least_one_thread = number_threads > 0;
   CHECK_ARGUMENT(is_at_least_one_thread, "Number threads must be at least 1.");
 
+  // Check if share of pages on first node has a valid value if set.
+  if (percentage_pages_first_node != -1) {
+    const bool has_memory_share_correct_value = percentage_pages_first_node >= 0 && percentage_pages_first_node <= 100;
+    CHECK_ARGUMENT(has_memory_share_correct_value, "Share of pages located on first node must be in range [0, 100].");
+    const bool has_two_numa_memory_nodes = numa_memory_nodes.size() == 2;
+    CHECK_ARGUMENT(has_two_numa_memory_nodes,
+                   "When a share of pages located on first node is specified, data can only be placed on two nodes.");
+  }
+
   // Assumption: number_threads is multiple of number_partitions
   const bool is_number_threads_multiple_of_number_partitions =
       (number_partitions == 0) || (number_threads % number_partitions) == 0;
@@ -227,7 +237,7 @@ void BenchmarkConfig::validate() const {
                      std::to_string(min_required_number_ops) + " ops for this workload.");
 
   const uint64_t total_accessed_memory = number_operations * access_size;
-  if (total_accessed_memory < 5 * GIBIBYTES_IN_BYTES) {
+  if (total_accessed_memory < 5 * GiB) {
     spdlog::warn(
         "Accessing less then 5 GiB of data. This short run may lead to inaccurate results due to the very short "
         "execution.");
@@ -301,6 +311,13 @@ std::string BenchmarkConfig::to_string(const std::string sep) const {
   stream << sep << "thread count: " << number_threads;
   stream << sep << "min io chunk size: " << min_io_chunk_size;
 
+  stream << sep << "page placement: ";
+  if (percentage_pages_first_node == -1) {
+    stream << "round robin";
+  } else {
+    stream << "partitioned with " << percentage_pages_first_node << "% on first node";
+  }
+
   if (exec_mode != Mode::Custom) {
     stream << sep << "access size: " << access_size;
     stream << sep << "operation: " << utils::get_enum_as_string(ConfigEnums::str_to_operation, operation);
@@ -334,15 +351,16 @@ std::string BenchmarkConfig::to_string(const std::string sep) const {
 
 nlohmann::json BenchmarkConfig::as_json() const {
   nlohmann::json config;
-  config["memory_region_size"] = memory_region_size;
   config["exec_mode"] = utils::get_enum_as_string(ConfigEnums::str_to_mode, exec_mode);
+  config["explicit_hugepages_size"] = explicit_hugepages_size;
+  config["memory_region_size"] = memory_region_size;
+  config["min_io_chunk_size"] = min_io_chunk_size;
   config["numa_memory_nodes"] = numa_memory_nodes;
   config["numa_task_nodes"] = numa_task_nodes;
   config["number_partitions"] = number_partitions;
   config["number_threads"] = number_threads;
-  config["min_io_chunk_size"] = min_io_chunk_size;
+  config["percentage_pages_first_node"] = percentage_pages_first_node;
   config["transparent_huge_pages"] = transparent_huge_pages;
-  config["explicit_hugepages_size"] = explicit_hugepages_size;
 
   if (exec_mode != Mode::Custom) {
     config["access_size"] = access_size;

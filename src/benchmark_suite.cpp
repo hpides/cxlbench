@@ -306,12 +306,12 @@ void BenchmarkSuite::run_benchmarks(const MemaOptions& options) {
     auto& benchmark = *benchmarks[bench_idx];
     const auto is_parallel = benchmark.get_benchmark_type() == BenchmarkType::Parallel;
 
-    spdlog::info("Executing benchmark {0}, {1}:", bench_idx + 1, benchmark.benchmark_name());
+    spdlog::info("Starting benchmark {0} ({1}):", bench_idx + 1, benchmark.benchmark_name());
     if (is_parallel) {
-      spdlog::info("Worklaod 0: {0}", benchmark.get_benchmark_configs()[0].to_string());
-      spdlog::info("Worklaod 1: {0}", benchmark.get_benchmark_configs()[1].to_string());
+      spdlog::info("Parallel worklaod 0: {0}", benchmark.get_benchmark_configs()[0].to_string());
+      spdlog::info("Parallel worklaod 1: {0}", benchmark.get_benchmark_configs()[1].to_string());
     } else {
-      spdlog::info("{0}", benchmark.get_benchmark_configs()[0].to_string());
+      spdlog::info("Single workload: {0}", benchmark.get_benchmark_configs()[0].to_string());
     }
 
     if (previous_bm && previous_bm->benchmark_name() != benchmark.benchmark_name()) {
@@ -332,16 +332,19 @@ void BenchmarkSuite::run_benchmarks(const MemaOptions& options) {
       spdlog::debug("Preparing parallel benchmark #{} with two configs: {} AND {}", benchmark_count,
                     to_string(benchmark.get_json_config(0)), to_string(benchmark.get_json_config(1)));
     } else {
-      spdlog::debug("Preparing benchmark #{} with config: {}", benchmark_count,
+      spdlog::debug("Preparing single benchmark #{} with config: {}", benchmark_count,
                     to_string(benchmark.get_json_config(0)));
     }
 
+    spdlog::info("Starting data generation.");
     benchmark.generate_data();
-    spdlog::debug("Finished generating data.");
+    spdlog::info("Finished generating data. Starting set up.");
     benchmark.set_up();
-    spdlog::debug("Finished setting up benchmark.");
+    spdlog::info("Finished setting up benchmark. Starting benchmark execution.");
     const bool success = benchmark.run();
-    spdlog::debug("Finished running benchmark.");
+    spdlog::info("Finished running benchmark. Starting page location verification.");
+    benchmark.verify_page_locations();
+    spdlog::info("Finished verifying page locations.");
     previous_bm = &benchmark;
 
     if (!success) {

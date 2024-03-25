@@ -4,8 +4,6 @@
 #include <numaif.h>
 #include <string.h>
 
-#include <iostream>
-
 #include "gtest/gtest.h"
 #include "test_utils.hpp"
 #include "utils.hpp"
@@ -46,13 +44,81 @@ TEST_F(NumaTest, MemoryAllocationOnNode) {
     }
 
     char* data = utils::map(memory_region_size, true, 0);
-    set_memory_numa_nodes(data, memory_region_size, {node_id});
+    bind_memory_interleaved(data, memory_region_size, {node_id});
     utils::populate_memory(data, memory_region_size);
 
     for (size_t page_idx = 0; page_idx < region_page_count; ++page_idx) {
       auto addr = data + page_idx * utils::PAGE_SIZE;
       ASSERT_EQ(get_numa_node_index_by_address(addr), node_id);
     }
+  }
+}
+
+TEST_F(NumaTest, FillPageLocationsPartitioned) {
+  auto page_locations = PageLocations{};
+  constexpr auto memory_region_size = size_t{10 * 1024 * 1024};
+  const auto target_nodes = NumaNodeIDs{0, 1};
+  constexpr auto percentage_first_node = 25u;
+
+  fill_page_locations_partitioned(page_locations, memory_region_size, target_nodes, percentage_first_node);
+
+  const auto region_page_count = memory_region_size / utils::PAGE_SIZE;
+  const auto expected_first_node_page_count =
+      static_cast<uint32_t>((percentage_first_node / 100.f) * region_page_count);
+  auto page_idx = uint32_t{0};
+  for (; page_idx < expected_first_node_page_count; ++page_idx) {
+    ASSERT_EQ(page_locations[page_idx], target_nodes[0]);
+  }
+  for (; page_idx < region_page_count; ++page_idx) {
+    ASSERT_EQ(page_locations[page_idx], target_nodes[1]);
+  }
+}
+
+TEST_F(NumaTest, FillPageLocationsPartitionedFailure) {
+  auto page_locations = PageLocations{};
+  auto memory_region_size = size_t{10 * 1024 * 1024};
+  auto one_target_node = NumaNodeIDs{0};
+  auto three_target_nodes = NumaNodeIDs{0, 1, 2};
+  auto percentage_first_node = 25;
+
+  // Expect throw since exactly two nodes are required.
+  EXPECT_THROW(
+      fill_page_locations_partitioned(page_locations, memory_region_size, one_target_node, percentage_first_node),
+      MemaException);
+  EXPECT_THROW(
+      fill_page_locations_partitioned(page_locations, memory_region_size, three_target_nodes, percentage_first_node),
+      MemaException);
+}
+
+TEST_F(NumaTest, FillPageLocationsRoundRobin) {
+  auto page_locations = PageLocations{};
+  constexpr auto memory_region_size = size_t{10 * 1024 * 1024};
+  const auto region_page_count = memory_region_size / utils::PAGE_SIZE;
+  auto target_nodes = NumaNodeIDs{};
+
+  auto assert_page_locations = [&] {
+    const auto node_count = target_nodes.size();
+    for (auto page_idx = uint32_t{0}; page_idx < region_page_count; ++page_idx) {
+      ASSERT_EQ(page_locations[page_idx], target_nodes[page_idx % node_count]);
+    }
+  };
+
+  {
+    target_nodes = NumaNodeIDs{0};
+    fill_page_locations_round_robin(page_locations, memory_region_size, target_nodes);
+    assert_page_locations();
+  }
+
+  {
+    target_nodes = NumaNodeIDs{0, 1};
+    fill_page_locations_round_robin(page_locations, memory_region_size, target_nodes);
+    assert_page_locations();
+  }
+
+  {
+    target_nodes = NumaNodeIDs{0, 1, 2};
+    fill_page_locations_round_robin(page_locations, memory_region_size, target_nodes);
+    assert_page_locations();
   }
 }
 

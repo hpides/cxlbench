@@ -80,4 +80,29 @@ TEST_F(ReadWriteTest, MultiSIMDNonTemporalWrite_256) { run_multi_write_test(rw_o
 TEST_F(ReadWriteTest, MultiSIMDNonTemporalWrite_512) { run_multi_write_test(rw_ops::simd_write_nt_512, 512); }
 #endif
 
+TEST_F(ReadWriteTest, ScalarWriteTest) {
+  constexpr auto thread_count = uint32_t{4};
+  auto thread_pool = std::vector<std::thread>{};
+  thread_pool.reserve(thread_count);
+  auto thread_memory_size = MEMORY_REGION_SIZE / thread_count;
+
+  // Write data.
+  for (auto thread_idx = uint8_t{0}; thread_idx < thread_count; thread_idx++) {
+    char* from = addr + thread_idx * thread_memory_size;
+    const char* to = addr + (thread_idx + 1) * thread_memory_size;
+    thread_pool.emplace_back(rw_ops::write_data_scalar, from, to);
+  }
+  // Wait for all threads.
+  for (auto& thread : thread_pool) {
+    thread.join();
+  }
+  // Verify data.
+  constexpr auto cache_line_count = MEMORY_REGION_SIZE / rw_ops::CACHE_LINE_SIZE;
+  for (auto thread_idx = uint8_t{0}; thread_idx < thread_count; thread_idx++) {
+    auto cache_line_address = addr + thread_idx * rw_ops::CACHE_LINE_SIZE;
+    auto compare_result = std::memcmp(cache_line_address, rw_ops::WRITE_DATA, rw_ops::CACHE_LINE_SIZE);
+    ASSERT_EQ(compare_result, 0);
+  }
+}
+
 }  // namespace mema
