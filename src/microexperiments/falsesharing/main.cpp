@@ -102,7 +102,7 @@ std::vector<DurationNs> run_benchmark(u32 thread_count, u32 size_factor_per_thre
     if (affinity_result != 0) {
       std::cerr << "pthread_attr_setaffinity_np failed (error code: " + std::to_string(affinity_result) + ")."
                 << std::endl;
-      std::exit(1);
+      std::quick_exit(1);
     }
 
     perform_operations(thread_idx * size_factor_per_thread, thread_idx);
@@ -127,7 +127,7 @@ std::vector<DurationNs> run_benchmark(u32 thread_count, u32 size_factor_per_thre
     if (affinity_result != 0) {
       std::cerr << "pthread_attr_setaffinity_np failed (error code: " + std::to_string(affinity_result) + ")."
                 << std::endl;
-      std::exit(1);
+      std::quick_exit(1);
     }
 
     // perform atomic operations
@@ -145,14 +145,14 @@ std::vector<DurationNs> run_benchmark(u32 thread_count, u32 size_factor_per_thre
         (size_factor_per_thread != 0 && values[0].load() != OP_COUNT)) {
       std::cerr << "values[0] wrong: " << values[0].load() << " instead of "
                 << (size_factor_per_thread == 0 ? thread_count * OP_COUNT : OP_COUNT) << std::endl;
-      std::exit(1);
+      std::quick_exit(1);
     }
 
     for (auto thread_idx = u64{1}; thread_idx < thread_count; ++thread_idx) {
       if (size_factor_per_thread != 0 && values[thread_idx * size_factor_per_thread].load() != OP_COUNT) {
         std::cerr << "values[" << thread_idx << "] wrong: " << values[thread_idx * size_factor_per_thread].load()
                   << " instead of " << OP_COUNT;
-        std::exit(1);
+        std::quick_exit(1);
       }
     }
   }
@@ -160,7 +160,7 @@ std::vector<DurationNs> run_benchmark(u32 thread_count, u32 size_factor_per_thre
   return durations_ns;
 }
 // -- main -------------------------------------------------------------------------------------------------------------
-int main(int argc, char* argv[]) {
+int main() {
   std::cout << "op count: " << OP_COUNT << std::endl;
   std::cout << "iter count: " << ITER_COUNT << std::endl;
 
