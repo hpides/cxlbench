@@ -153,6 +153,10 @@ void print_summary(nlohmann::json result, const std::string& bm_name, const bool
         mema::utils::crash_exit();
       }
 
+      if (!bm_result["results"].contains("latency")) {
+        continue;
+      }
+
       const auto latency = bm_result["results"]["latency"]["avg"].get<double>();
       avg_latency += latency;
       if (latency < min_latency) {
@@ -343,7 +347,7 @@ void BenchmarkSuite::run_benchmarks(const MemaOptions& options) {
     spdlog::info("Finished setting up benchmark. Starting benchmark execution.");
     const bool success = benchmark.run();
     spdlog::info("Finished running benchmark. Starting page location verification.");
-    benchmark.verify_page_locations();
+    benchmark.verify();
     spdlog::info("Finished verifying page locations.");
     previous_bm = &benchmark;
 

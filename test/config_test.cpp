@@ -45,6 +45,11 @@ class ConfigTest : public BaseTest {
         BenchmarkFactory::get_config_files(test_config_path / TEST_INVALID_NUMA_MEMORY_NODES);
     config_invalid_numa_task_nodes =
         BenchmarkFactory::get_config_files(test_config_path / TEST_INVALID_NUMA_TASK_NODES);
+
+    // Set required NUMA nodes.
+    bm_config.memory_regions[0].node_ids = {42};
+    bm_config.memory_regions[1].node_ids = {1337};
+    bm_config.numa_task_nodes = {0};
   }
 
   void TearDown() override { std::ofstream empty_log(test_logger_path, std::ostream::trunc); }
@@ -81,6 +86,13 @@ class ConfigTest : public BaseTest {
 
 std::filesystem::path ConfigTest::test_logger_path;
 
+TEST_F(ConfigTest, PlacementMode) {
+  bm_config.memory_regions[0].percentage_pages_first_node = 42;
+  bm_config.memory_regions[1].percentage_pages_first_node = std::nullopt;
+  EXPECT_EQ(bm_config.memory_regions[0].placement_mode(), PagePlacementMode::Partitioned);
+  EXPECT_EQ(bm_config.memory_regions[1].placement_mode(), PagePlacementMode::Interleaved);
+}
+
 TEST_F(ConfigTest, SingleDecodeSequential) {
   std::vector<SingleBenchmark> single_bms = BenchmarkFactory::create_single_benchmarks(config_single_sequential);
   std::vector<ParallelBenchmark> parallel_benchmarks =
@@ -91,7 +103,7 @@ TEST_F(ConfigTest, SingleDecodeSequential) {
 
   BenchmarkConfig bm_config_default{};
 
-  EXPECT_EQ(bm_config.memory_region_size, 67108864);
+  EXPECT_EQ(bm_config.memory_regions[0].size, 67108864);
   EXPECT_EQ(bm_config.access_size, 256);
   EXPECT_EQ(bm_config.exec_mode, Mode::Sequential);
 
@@ -107,9 +119,9 @@ TEST_F(ConfigTest, SingleDecodeSequential) {
   EXPECT_EQ(bm_config.number_partitions, bm_config_default.number_partitions);
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
-  EXPECT_EQ(bm_config.numa_memory_nodes, (NumaNodeIDs{0, 1}));
   EXPECT_EQ(bm_config.numa_task_nodes, NumaNodeIDs{0});
-  EXPECT_EQ(bm_config.percentage_pages_first_node, 37);
+  EXPECT_EQ(bm_config.memory_regions[0].node_ids, (NumaNodeIDs{0, 1}));
+  EXPECT_EQ(bm_config.memory_regions[0].percentage_pages_first_node, 37);
 }
 
 TEST_F(ConfigTest, DecodeRandom) {
@@ -126,7 +138,11 @@ TEST_F(ConfigTest, DecodeRandom) {
 
   EXPECT_EQ(bm_config.operation, Operation::Write);
 
-  EXPECT_EQ(bm_config.memory_region_size, bm_config_default.memory_region_size);
+  EXPECT_EQ(bm_config.memory_regions[0].size, bm_config_default.memory_regions[0].size);
+  EXPECT_EQ(bm_config.memory_regions[0].node_ids, NumaNodeIDs{1});
+  EXPECT_EQ(bm_config.memory_regions[0].percentage_pages_first_node,
+            bm_config_default.memory_regions[0].percentage_pages_first_node);
+  EXPECT_EQ(bm_config.numa_task_nodes, NumaNodeIDs{0});
   EXPECT_EQ(bm_config.access_size, bm_config_default.access_size);
   EXPECT_EQ(bm_config.number_operations, bm_config_default.number_operations);
   EXPECT_EQ(bm_config.flush_instruction, bm_config_default.flush_instruction);
@@ -135,9 +151,6 @@ TEST_F(ConfigTest, DecodeRandom) {
   EXPECT_EQ(bm_config.min_io_chunk_size, bm_config_default.min_io_chunk_size);
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
-  EXPECT_EQ(bm_config.numa_memory_nodes, NumaNodeIDs{1});
-  EXPECT_EQ(bm_config.numa_task_nodes, NumaNodeIDs{0});
-  EXPECT_EQ(bm_config.percentage_pages_first_node, bm_config_default.percentage_pages_first_node);
 }
 
 TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
@@ -154,7 +167,9 @@ TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
 
   BenchmarkConfig bm_config_default{};
 
-  EXPECT_EQ(bm_config.memory_region_size, 10737418240);
+  EXPECT_EQ(bm_config.memory_regions[0].size, 10737418240);
+  EXPECT_EQ(bm_config.memory_regions[0].node_ids, (NumaNodeIDs{0}));
+  EXPECT_EQ(bm_config.numa_task_nodes, (NumaNodeIDs{0, 1}));
   EXPECT_EQ(bm_config.access_size, 4096);
   EXPECT_EQ(bm_config.exec_mode, Mode::Random);
   EXPECT_EQ(bm_config.number_operations, 10000000);
@@ -169,12 +184,12 @@ TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
   EXPECT_EQ(bm_config.number_partitions, bm_config_default.number_partitions);
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
-  EXPECT_EQ(bm_config.numa_memory_nodes, (NumaNodeIDs{0}));
-  EXPECT_EQ(bm_config.numa_task_nodes, (NumaNodeIDs{0, 1}));
 
   bm_config = parallel_bms.at(0).get_benchmark_configs()[1];
 
-  EXPECT_EQ(bm_config.memory_region_size, 10737418240);
+  EXPECT_EQ(bm_config.memory_regions[0].size, 10737418240);
+  EXPECT_EQ(bm_config.memory_regions[0].node_ids, (NumaNodeIDs{2, 3}));
+  EXPECT_EQ(bm_config.numa_task_nodes, (NumaNodeIDs{0, 1}));
   EXPECT_EQ(bm_config.access_size, 256);
   EXPECT_EQ(bm_config.exec_mode, Mode::Sequential);
   EXPECT_EQ(bm_config.flush_instruction, FlushInstruction::None);
@@ -188,11 +203,10 @@ TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
   EXPECT_EQ(bm_config.zipf_alpha, bm_config_default.zipf_alpha);
   EXPECT_EQ(bm_config.number_partitions, bm_config_default.number_partitions);
   EXPECT_EQ(bm_config.min_io_chunk_size, bm_config_default.min_io_chunk_size);
-  EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
-  EXPECT_EQ(bm_config.numa_memory_nodes, (NumaNodeIDs{2, 3}));
-  EXPECT_EQ(bm_config.numa_task_nodes, (NumaNodeIDs{0, 1}));
-  EXPECT_EQ(bm_config.percentage_pages_first_node, bm_config_default.percentage_pages_first_node);
+  EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
+  EXPECT_EQ(bm_config.memory_regions[0].percentage_pages_first_node,
+            bm_config_default.memory_regions[0].percentage_pages_first_node);
 }
 
 TEST_F(ConfigTest, DecodeMatrix) {
@@ -215,14 +229,16 @@ TEST_F(ConfigTest, DecodeMatrix) {
   EXPECT_EQ(single_bms[5].get_benchmark_configs()[0].access_size, 4096);
 
   BenchmarkConfig bm_config_default{};
-  for (size_t i = 0; i < bm_count; ++i) {
-    const SingleBenchmark& bm = single_bms[i];
+  for (size_t bm_index = 0; bm_index < bm_count; ++bm_index) {
+    const SingleBenchmark& bm = single_bms[bm_index];
     const BenchmarkConfig& config = bm.get_benchmark_configs()[0];
 
     // Other args are identical for all configs
-    EXPECT_EQ(config.memory_region_size, 536870912);
+    EXPECT_EQ(config.memory_regions[0].size, 536870912);
+    EXPECT_EQ(config.memory_regions[0].node_ids, (NumaNodeIDs{0, 3}));
     EXPECT_EQ(config.exec_mode, Mode::Sequential);
     EXPECT_EQ(config.operation, Operation::Read);
+    EXPECT_EQ(config.numa_task_nodes, NumaNodeIDs{0});
 
     EXPECT_EQ(config.number_operations, bm_config_default.number_operations);
     EXPECT_EQ(config.random_distribution, bm_config_default.random_distribution);
@@ -232,9 +248,8 @@ TEST_F(ConfigTest, DecodeMatrix) {
     EXPECT_EQ(config.min_io_chunk_size, bm_config_default.min_io_chunk_size);
     EXPECT_EQ(config.run_time, bm_config_default.run_time);
     EXPECT_EQ(config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
-    EXPECT_EQ(config.numa_memory_nodes, (NumaNodeIDs{0, 3}));
-    EXPECT_EQ(config.numa_task_nodes, NumaNodeIDs{0});
-    EXPECT_EQ(bm_config.percentage_pages_first_node, bm_config_default.percentage_pages_first_node);
+    EXPECT_EQ(config.memory_regions[0].percentage_pages_first_node,
+              bm_config_default.memory_regions[0].percentage_pages_first_node);
   }
 }
 
@@ -244,38 +259,49 @@ TEST_F(ConfigTest, DecodeCustomOperationsMatrix) {
 
   ASSERT_EQ(single_bms.size(), bm_count);
   EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations.size(), 3);
+  EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[0].memory_type, MemoryType::Primary);
   EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[0].type, Operation::Read);
   EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[0].size, 64);
+  EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[1].memory_type, MemoryType::Primary);
   EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[1].type, Operation::Write);
   EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[1].size, 64);
   EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[1].flush, FlushInstruction::NoCache);
+  EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[2].memory_type, MemoryType::Secondary);
   EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[2].type, Operation::Read);
   EXPECT_EQ(single_bms[0].get_benchmark_configs()[0].custom_operations[2].size, 128);
 
   EXPECT_EQ(single_bms[1].get_benchmark_configs()[0].custom_operations.size(), 2);
+  EXPECT_EQ(single_bms[1].get_benchmark_configs()[0].custom_operations[0].memory_type, MemoryType::Primary);
   EXPECT_EQ(single_bms[1].get_benchmark_configs()[0].custom_operations[0].type, Operation::Read);
   EXPECT_EQ(single_bms[1].get_benchmark_configs()[0].custom_operations[0].size, 256);
+  EXPECT_EQ(single_bms[1].get_benchmark_configs()[0].custom_operations[1].memory_type, MemoryType::Primary);
   EXPECT_EQ(single_bms[1].get_benchmark_configs()[0].custom_operations[1].type, Operation::Write);
   EXPECT_EQ(single_bms[1].get_benchmark_configs()[0].custom_operations[1].size, 256);
   EXPECT_EQ(single_bms[1].get_benchmark_configs()[0].custom_operations[1].flush, FlushInstruction::None);
 
   EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].custom_operations.size(), 2);
+  EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].custom_operations[0].memory_type, MemoryType::Secondary);
   EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].custom_operations[0].type, Operation::Read);
   EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].custom_operations[0].size, 1024);
+  EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].custom_operations[1].memory_type, MemoryType::Secondary);
   EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].custom_operations[1].type, Operation::Write);
   EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].custom_operations[1].size, 128);
   EXPECT_EQ(single_bms[2].get_benchmark_configs()[0].custom_operations[1].flush, FlushInstruction::Cache);
 
   BenchmarkConfig bm_config_default{};
-  for (size_t i = 0; i < bm_count; ++i) {
-    const SingleBenchmark& bm = single_bms[i];
+  for (size_t bm_idx = 0; bm_idx < bm_count; ++bm_idx) {
+    const SingleBenchmark& bm = single_bms[bm_idx];
     const BenchmarkConfig& config = bm.get_benchmark_configs()[0];
 
     // Other args are identical for all configs
-    EXPECT_EQ(config.memory_region_size, 2147483648);
+    EXPECT_EQ(config.memory_regions[0].size, 2147483648);
+    EXPECT_EQ(config.memory_regions[1].size, 1073741824);
+    EXPECT_EQ(config.memory_regions[0].node_ids, NumaNodeIDs{1});
+    EXPECT_EQ(config.memory_regions[1].node_ids, NumaNodeIDs{2});
     EXPECT_EQ(config.exec_mode, Mode::Custom);
     EXPECT_EQ(config.number_operations, 100000000);
     EXPECT_EQ(config.number_threads, 16);
+    EXPECT_EQ(config.numa_task_nodes, NumaNodeIDs{0});
 
     EXPECT_EQ(config.random_distribution, bm_config_default.random_distribution);
     EXPECT_EQ(config.zipf_alpha, bm_config_default.zipf_alpha);
@@ -283,9 +309,8 @@ TEST_F(ConfigTest, DecodeCustomOperationsMatrix) {
     EXPECT_EQ(config.min_io_chunk_size, bm_config_default.min_io_chunk_size);
     EXPECT_EQ(config.run_time, bm_config_default.run_time);
     EXPECT_EQ(config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
-    EXPECT_TRUE(bm_config.numa_memory_nodes.empty());
-    EXPECT_TRUE(bm_config.numa_task_nodes.empty());
-    EXPECT_EQ(bm_config.percentage_pages_first_node, bm_config_default.percentage_pages_first_node);
+    EXPECT_EQ(config.memory_regions[0].percentage_pages_first_node,
+              bm_config_default.memory_regions[0].percentage_pages_first_node);
   }
 }
 
@@ -309,17 +334,19 @@ TEST_F(ConfigTest, ParallelDecodeMatrix) {
   EXPECT_EQ(parallel_bms[3].get_benchmark_configs()[1].access_size, 256);
 
   BenchmarkConfig bm_config_default{};
-  for (size_t i = 0; i < bm_count; ++i) {
-    const ParallelBenchmark& bm = parallel_bms[i];
+  for (size_t bm_idx = 0; bm_idx < bm_count; ++bm_idx) {
+    const ParallelBenchmark& bm = parallel_bms[bm_idx];
     const BenchmarkConfig& config_one = bm.get_benchmark_configs()[0];
     const BenchmarkConfig& config_two = bm.get_benchmark_configs()[1];
 
     // Other args are identical for all configs
-    EXPECT_EQ(config_one.memory_region_size, 10737418240);
+    EXPECT_EQ(config_one.memory_regions[0].size, 10737418240);
+    EXPECT_EQ(config_one.memory_regions[0].node_ids, NumaNodeIDs{1});
     EXPECT_EQ(config_one.access_size, 4096);
     EXPECT_EQ(config_one.exec_mode, Mode::Random);
     EXPECT_EQ(config_one.number_operations, 10000000);
     EXPECT_EQ(config_one.operation, Operation::Read);
+    EXPECT_EQ(config_one.numa_task_nodes, NumaNodeIDs{0});
 
     EXPECT_EQ(config_one.random_distribution, bm_config_default.random_distribution);
     EXPECT_EQ(config_one.zipf_alpha, bm_config_default.zipf_alpha);
@@ -328,14 +355,14 @@ TEST_F(ConfigTest, ParallelDecodeMatrix) {
     EXPECT_EQ(config_one.min_io_chunk_size, bm_config_default.min_io_chunk_size);
     EXPECT_EQ(config_one.run_time, bm_config_default.run_time);
     EXPECT_EQ(config_one.latency_sample_frequency, bm_config_default.latency_sample_frequency);
-    EXPECT_TRUE(bm_config.numa_memory_nodes.empty());
-    EXPECT_TRUE(bm_config.numa_task_nodes.empty());
 
-    EXPECT_EQ(config_two.memory_region_size, 10737418240);
+    EXPECT_EQ(config_two.memory_regions[0].size, 10737418240);
+    EXPECT_EQ(config_two.memory_regions[0].node_ids, NumaNodeIDs{1});
     EXPECT_EQ(config_two.exec_mode, Mode::Sequential);
     EXPECT_EQ(config_two.operation, Operation::Write);
     EXPECT_EQ(config_two.number_threads, 16);
     EXPECT_EQ(config_two.flush_instruction, FlushInstruction::None);
+    EXPECT_EQ(config_two.numa_task_nodes, NumaNodeIDs{0});
 
     EXPECT_EQ(config_two.number_operations, bm_config_default.number_operations);
     EXPECT_EQ(config_two.random_distribution, bm_config_default.random_distribution);
@@ -344,9 +371,8 @@ TEST_F(ConfigTest, ParallelDecodeMatrix) {
     EXPECT_EQ(config_two.min_io_chunk_size, bm_config_default.min_io_chunk_size);
     EXPECT_EQ(config_two.run_time, bm_config_default.run_time);
     EXPECT_EQ(config_two.latency_sample_frequency, bm_config_default.latency_sample_frequency);
-    EXPECT_TRUE(bm_config.numa_memory_nodes.empty());
-    EXPECT_TRUE(bm_config.numa_task_nodes.empty());
-    EXPECT_EQ(bm_config.percentage_pages_first_node, bm_config_default.percentage_pages_first_node);
+    EXPECT_EQ(config_two.memory_regions[0].percentage_pages_first_node,
+              bm_config_default.memory_regions[0].percentage_pages_first_node);
   }
 }
 
@@ -373,7 +399,7 @@ TEST_F(ConfigTest, InvalidPowerAccessSize) {
 }
 
 TEST_F(ConfigTest, InvalidMemoryRangeAccessSizeMultiple) {
-  bm_config.memory_region_size = 100000;
+  bm_config.memory_regions[0].size = 100000;
   EXPECT_THROW(bm_config.validate(), MemaException);
   check_log_for_critical("multiple of access size");
 }
@@ -396,6 +422,65 @@ TEST_F(ConfigTest, InvalidLargeThreadPartitionRatio) {
   bm_config.number_threads = 1;
   EXPECT_THROW(bm_config.validate(), MemaException);
   check_log_for_critical("threads must be a multiple of number partitions");
+}
+
+TEST_F(ConfigTest, InvalidMemoryRegionSize) {
+  bm_config.access_size = 1024;
+
+  bm_config.memory_regions[0].size = 1 * GiB + 42;
+  EXPECT_THROW(bm_config.validate(), MemaException);
+  check_log_for_critical("range must be a multiple of access size");
+  bm_config.memory_regions[0].size = 1 * GiB;
+  EXPECT_NO_THROW(bm_config.validate());
+
+  bm_config.memory_regions[1].size = 1 * GiB + 42;
+  EXPECT_THROW(bm_config.validate(), MemaException);
+  check_log_for_critical("range must be a multiple of access size");
+  bm_config.memory_regions[1].size = 1 * GiB;
+  EXPECT_NO_THROW(bm_config.validate());
+}
+
+TEST_F(ConfigTest, InvalidMissingMemoryNodes) {
+  bm_config.memory_regions[0].size = 1 * GiB;
+  bm_config.memory_regions[0].node_ids = {};
+  EXPECT_THROW(bm_config.validate(), MemaException);
+  check_log_for_critical("memory nodes must be specified");
+  bm_config.memory_regions[0].node_ids = {0};
+  EXPECT_NO_THROW(bm_config.validate());
+
+  bm_config.memory_regions[1].size = 1 * GiB;
+  bm_config.memory_regions[1].node_ids = {};
+  EXPECT_THROW(bm_config.validate(), MemaException);
+  check_log_for_critical("memory nodes must be specified");
+  bm_config.memory_regions[1].node_ids = {0};
+  EXPECT_NO_THROW(bm_config.validate());
+}
+
+TEST_F(ConfigTest, InvalidPercentageOnFirstNode) {
+  bm_config.memory_regions[0].node_ids = {0, 1};
+
+  bm_config.memory_regions[0].percentage_pages_first_node = 101;
+  EXPECT_THROW(bm_config.validate(), MemaException);
+  check_log_for_critical("Share of pages located on first node must be in range [0, 100]");
+  bm_config.memory_regions[0].percentage_pages_first_node = 100;
+  EXPECT_NO_THROW(bm_config.validate());
+  bm_config.memory_regions[0].percentage_pages_first_node = 0;
+  EXPECT_NO_THROW(bm_config.validate());
+
+  // Require two numa nodes when percentage is set.
+  bm_config.memory_regions[0].node_ids = {0};
+  EXPECT_THROW(bm_config.validate(), MemaException);
+  check_log_for_critical("two nodes need to be specified");
+}
+
+TEST_F(ConfigTest, InvalidSecondaryMemoryRegion) {
+  bm_config.exec_mode = Mode::Custom;
+  bm_config.custom_operations = {CustomOp{.memory_type = MemoryType::Secondary, .type = Operation::Read, .size = 64}};
+  bm_config.memory_regions[1].size = 0;
+  EXPECT_THROW(bm_config.validate(), MemaException);
+  check_log_for_critical("secondary_memory_region_size > 0 if the benchmark contains secondary memory operations");
+  bm_config.memory_regions[1].size = 1 * GiB;
+  EXPECT_NO_THROW(bm_config.validate());
 }
 
 TEST_F(ConfigTest, BadNumberPartitionSplit) {
@@ -431,26 +516,36 @@ TEST_F(ConfigTest, AsJsonReadSequential) {
   bm_config.exec_mode = Mode::Sequential;
 
   const auto json = bm_config.as_json();
-  ASSERT_JSON_TRUE(json, contains("memory_region_size"));
-  EXPECT_EQ(json["memory_region_size"].get<uint64_t>(), bm_config.memory_region_size);
+  ASSERT_JSON_TRUE(json, contains("m0_region_size"));
+  EXPECT_EQ(json["m0_region_size"].get<uint64_t>(), bm_config.memory_regions[0].size);
+  ASSERT_JSON_TRUE(json, contains("m0_numa_nodes"));
+  EXPECT_EQ(json["m0_numa_nodes"].get<NumaNodeIDs>(), bm_config.memory_regions[0].node_ids);
+  ASSERT_JSON_TRUE(json, contains("m0_percentage_pages_first_node"));
+  EXPECT_EQ(json["m0_percentage_pages_first_node"].get<uint64_t>(), -1);
+  ASSERT_JSON_TRUE(json, contains("m0_transparent_huge_pages"));
+  EXPECT_EQ(json["m0_transparent_huge_pages"].get<bool>(), bm_config.memory_regions[0].transparent_huge_pages);
+  ASSERT_JSON_TRUE(json, contains("m0_explicit_hugepages_size"));
+  EXPECT_EQ(json["m0_explicit_hugepages_size"].get<uint64_t>(), bm_config.memory_regions[0].explicit_hugepages_size);
+  ASSERT_JSON_TRUE(json, contains("m1_region_size"));
+  EXPECT_EQ(json["m1_region_size"].get<uint64_t>(), bm_config.memory_regions[1].size);
+  ASSERT_JSON_TRUE(json, contains("m1_numa_nodes"));
+  EXPECT_EQ(json["m1_numa_nodes"].get<NumaNodeIDs>(), bm_config.memory_regions[1].node_ids);
+  ASSERT_JSON_TRUE(json, contains("m1_percentage_pages_first_node"));
+  EXPECT_EQ(json["m1_percentage_pages_first_node"].get<uint64_t>(), -1);
+  ASSERT_JSON_TRUE(json, contains("m1_transparent_huge_pages"));
+  EXPECT_EQ(json["m1_transparent_huge_pages"].get<bool>(), bm_config.memory_regions[1].transparent_huge_pages);
+  ASSERT_JSON_TRUE(json, contains("m1_explicit_hugepages_size"));
+  EXPECT_EQ(json["m1_explicit_hugepages_size"].get<uint64_t>(), bm_config.memory_regions[1].explicit_hugepages_size);
   ASSERT_JSON_TRUE(json, contains("exec_mode"));
   EXPECT_EQ(json["exec_mode"], "sequential");
-  ASSERT_JSON_TRUE(json, contains("numa_memory_nodes"));
-  EXPECT_EQ(json["numa_memory_nodes"].get<NumaNodeIDs>(), bm_config.numa_memory_nodes);
   ASSERT_JSON_TRUE(json, contains("numa_task_nodes"));
   EXPECT_EQ(json["numa_task_nodes"].get<NumaNodeIDs>(), bm_config.numa_task_nodes);
-  ASSERT_JSON_TRUE(json, contains("percentage_pages_first_node"));
-  EXPECT_EQ(json["percentage_pages_first_node"].get<int64_t>(), bm_config.percentage_pages_first_node);
   ASSERT_JSON_TRUE(json, contains("number_partitions"));
   EXPECT_EQ(json["number_partitions"].get<uint16_t>(), bm_config.number_partitions);
   ASSERT_JSON_TRUE(json, contains("number_threads"));
   EXPECT_EQ(json["number_threads"].get<uint16_t>(), bm_config.number_threads);
   ASSERT_JSON_TRUE(json, contains("min_io_chunk_size"));
   EXPECT_EQ(json["min_io_chunk_size"].get<uint64_t>(), bm_config.min_io_chunk_size);
-  ASSERT_JSON_TRUE(json, contains("transparent_huge_pages"));
-  EXPECT_EQ(json["transparent_huge_pages"].get<bool>(), bm_config.transparent_huge_pages);
-  ASSERT_JSON_TRUE(json, contains("explicit_hugepages_size"));
-  EXPECT_EQ(json["explicit_hugepages_size"].get<uint64_t>(), bm_config.explicit_hugepages_size);
   // Relevant for non-custom operations
   ASSERT_JSON_TRUE(json, contains("access_size"));
   EXPECT_EQ(json["access_size"].get<uint32_t>(), bm_config.access_size);
@@ -474,26 +569,36 @@ TEST_F(ConfigTest, AsJsonWriteCustom) {
   bm_config.exec_mode = Mode::Custom;
 
   const auto json = bm_config.as_json();
-  ASSERT_JSON_TRUE(json, contains("memory_region_size"));
-  EXPECT_EQ(json["memory_region_size"].get<uint64_t>(), bm_config.memory_region_size);
+  ASSERT_JSON_TRUE(json, contains("m0_region_size"));
+  EXPECT_EQ(json["m0_region_size"].get<uint64_t>(), bm_config.memory_regions[0].size);
+  ASSERT_JSON_TRUE(json, contains("m0_numa_nodes"));
+  EXPECT_EQ(json["m0_numa_nodes"].get<NumaNodeIDs>(), bm_config.memory_regions[0].node_ids);
+  ASSERT_JSON_TRUE(json, contains("m0_percentage_pages_first_node"));
+  EXPECT_EQ(json["m0_percentage_pages_first_node"].get<uint64_t>(), -1);
+  ASSERT_JSON_TRUE(json, contains("m0_transparent_huge_pages"));
+  EXPECT_EQ(json["m0_transparent_huge_pages"].get<bool>(), bm_config.memory_regions[0].transparent_huge_pages);
+  ASSERT_JSON_TRUE(json, contains("m0_explicit_hugepages_size"));
+  EXPECT_EQ(json["m0_explicit_hugepages_size"].get<uint64_t>(), bm_config.memory_regions[0].explicit_hugepages_size);
+  ASSERT_JSON_TRUE(json, contains("m1_region_size"));
+  EXPECT_EQ(json["m1_region_size"].get<uint64_t>(), bm_config.memory_regions[1].size);
+  ASSERT_JSON_TRUE(json, contains("m1_numa_nodes"));
+  EXPECT_EQ(json["m1_numa_nodes"].get<NumaNodeIDs>(), bm_config.memory_regions[1].node_ids);
+  ASSERT_JSON_TRUE(json, contains("m1_percentage_pages_first_node"));
+  EXPECT_EQ(json["m1_percentage_pages_first_node"].get<uint64_t>(), -1);
+  ASSERT_JSON_TRUE(json, contains("m1_transparent_huge_pages"));
+  EXPECT_EQ(json["m1_transparent_huge_pages"].get<bool>(), bm_config.memory_regions[1].transparent_huge_pages);
+  ASSERT_JSON_TRUE(json, contains("m1_explicit_hugepages_size"));
+  EXPECT_EQ(json["m1_explicit_hugepages_size"].get<uint64_t>(), bm_config.memory_regions[1].explicit_hugepages_size);
   ASSERT_JSON_TRUE(json, contains("exec_mode"));
   EXPECT_EQ(json["exec_mode"], "custom");
-  ASSERT_JSON_TRUE(json, contains("numa_memory_nodes"));
-  EXPECT_EQ(json["numa_memory_nodes"].get<NumaNodeIDs>(), bm_config.numa_memory_nodes);
   ASSERT_JSON_TRUE(json, contains("numa_task_nodes"));
   EXPECT_EQ(json["numa_task_nodes"].get<NumaNodeIDs>(), bm_config.numa_task_nodes);
-  ASSERT_JSON_TRUE(json, contains("percentage_pages_first_node"));
-  EXPECT_EQ(json["percentage_pages_first_node"].get<int64_t>(), bm_config.percentage_pages_first_node);
   ASSERT_JSON_TRUE(json, contains("number_partitions"));
   EXPECT_EQ(json["number_partitions"].get<uint16_t>(), bm_config.number_partitions);
   ASSERT_JSON_TRUE(json, contains("number_threads"));
   EXPECT_EQ(json["number_threads"].get<uint16_t>(), bm_config.number_threads);
   ASSERT_JSON_TRUE(json, contains("min_io_chunk_size"));
   EXPECT_EQ(json["min_io_chunk_size"].get<uint64_t>(), bm_config.min_io_chunk_size);
-  ASSERT_JSON_TRUE(json, contains("transparent_huge_pages"));
-  EXPECT_EQ(json["transparent_huge_pages"].get<bool>(), bm_config.transparent_huge_pages);
-  ASSERT_JSON_TRUE(json, contains("explicit_hugepages_size"));
-  EXPECT_EQ(json["explicit_hugepages_size"].get<uint64_t>(), bm_config.explicit_hugepages_size);
   // Relevant for non-custom operations
   ASSERT_JSON_FALSE(json, contains("access_size"));
   ASSERT_JSON_FALSE(json, contains("operation"));
@@ -517,47 +622,6 @@ TEST_F(ConfigTest, AsJsonWithRuntime) {
   const auto json = bm_config.as_json();
   ASSERT_JSON_TRUE(json, contains("run_time"));
   EXPECT_EQ(json["run_time"].get<uint64_t>(), 42);
-}
-
-TEST_F(ConfigTest, ToString) {
-  auto bm_config = BenchmarkConfig{};
-
-  // bm_config.
-  bm_config.memory_region_size = 40 * GiB;
-  bm_config.exec_mode = Mode::Random;
-  bm_config.numa_memory_nodes = {1, 2};
-  bm_config.numa_task_nodes = {3, 4};
-  bm_config.number_partitions = 8;
-  bm_config.number_threads = 4;
-  bm_config.min_io_chunk_size = 32 * MiB;
-  bm_config.access_size = 512;
-  bm_config.operation = Operation::Write;
-  bm_config.flush_instruction = FlushInstruction::Cache;
-  bm_config.number_operations = 50'000'000;
-  bm_config.random_distribution = RandomDistribution::Zipf;
-  bm_config.zipf_alpha = 0.8;
-  bm_config.percentage_pages_first_node = 42;
-
-  {
-    const std::string expected_output =
-        "memory range: 42949672960, exec mode: random, "
-        "memory numa nodes: [1, 2], task numa nodes: [3, 4], partition count: 8, thread count: 4, min io chunk size: "
-        "33554432, page placement: partitioned with 42% on first node, access size: 512, "
-        "operation: write, flush instruction: cache, number operations: 50000000, random distribution: zipf, "
-        "zipf alpha: 0.8";
-    EXPECT_EQ(bm_config.to_string(), expected_output);
-  }
-
-  {
-    bm_config.percentage_pages_first_node = -1;
-    const std::string expected_output =
-        "memory range: 42949672960, exec mode: random, "
-        "memory numa nodes: [1, 2], task numa nodes: [3, 4], partition count: 8, thread count: 4, min io chunk size: "
-        "33554432, page placement: round robin, access size: 512, "
-        "operation: write, flush instruction: cache, number operations: 50000000, random distribution: zipf, "
-        "zipf alpha: 0.8";
-    EXPECT_EQ(bm_config.to_string(), expected_output);
-  }
 }
 
 }  // namespace mema

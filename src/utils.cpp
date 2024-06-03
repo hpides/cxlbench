@@ -65,7 +65,6 @@ char* map(const uint64_t expected_length, const bool use_transparent_huge_pages,
       spdlog::debug("Enabled Transparent Huge Pages for the given memory region.");
     }
   }
-
   return static_cast<char*>(addr);
 }
 
@@ -107,12 +106,12 @@ void generate_read_data(char* addr, const uint64_t memory_size) {
   for (uint8_t thread_count = 0; thread_count < DATA_GEN_THREAD_COUNT - 1; thread_count++) {
     char* from = addr + thread_count * thread_memory_size;
     const char* to = addr + (thread_count + 1) * thread_memory_size;
-    thread_pool.emplace_back(rw_ops::write_data_scalar, from, to);
+    thread_pool.emplace_back(rw_ops::write_data, from, to);
   }
 
   // Since DATA_GEN_THREAD_COUNT - 1 already started writing data, we use the time to write the last partition of the
   // memory region.
-  rw_ops::write_data_scalar(addr + (DATA_GEN_THREAD_COUNT - 1) * thread_memory_size, addr + memory_size);
+  rw_ops::write_data(addr + (DATA_GEN_THREAD_COUNT - 1) * thread_memory_size, addr + memory_size);
 
   // wait for all threads
   for (std::thread& thread : thread_pool) {
@@ -209,6 +208,8 @@ double rand_val() {
 
 void crash_exit() { throw MemaException{}; }
 
+void crash_exit(const std::string msg) { throw MemaException{msg}; }
+
 std::string get_time_string() {
   auto now = std::chrono::system_clock::now();
   auto in_time_t = std::chrono::system_clock::to_time_t(now);
@@ -230,6 +231,9 @@ std::string get_file_name_from_path(const std::filesystem::path& config_path, co
   }
 
   std::filesystem::path config_dir_name = *(--config_path.end());
+  if (config_dir_name.string().empty()) {
+    return std::string{"result"} + stream.str();
+  }
   return config_dir_name.concat(stream.str());
 }
 

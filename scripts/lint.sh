@@ -65,7 +65,7 @@ do
 done <<< "$namecheck"
 
 # Check that all cpp and hpp files are listed in the CMakeLists.txt
-for file in $(find src -name *.cpp -o -name *.hpp)
+for file in $(find src -name "*.cpp" -o -name "*.hpp")
 do
 	if grep $(basename $file) src/CMakeLists.txt | grep -v '#' > /dev/null
 	then

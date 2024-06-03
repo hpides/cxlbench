@@ -57,26 +57,26 @@ std::string Benchmark::benchmark_type_as_str() const {
 
 BenchmarkType Benchmark::get_benchmark_type() const { return benchmark_type_; }
 
-void Benchmark::single_set_up(const BenchmarkConfig& config, char* data, BenchmarkExecution* execution,
-                              BenchmarkResult* result, std::vector<std::thread>* thread_pool,
-                              std::vector<ThreadRunConfig>* thread_configs) {
-  const size_t total_range_op_count = config.memory_region_size / config.access_size;
+void Benchmark::single_set_up(const BenchmarkConfig& config, MemoryRegions& memory_regions,
+                              BenchmarkExecution* execution, BenchmarkResult* result,
+                              std::vector<std::thread>* thread_pool, std::vector<ThreadRunConfig>* thread_configs) {
+  const size_t total_range_op_count = config.memory_regions[0].size / config.access_size;
   const bool is_custom_execution = config.exec_mode == Mode::Custom;
   const size_t num_operations =
       (config.exec_mode == Mode::Random || is_custom_execution) ? config.number_operations : total_range_op_count;
-  const size_t op_per_thread_count = num_operations / config.number_threads;
+  const size_t op_count_per_thread = num_operations / config.number_threads;
 
   thread_pool->reserve(config.number_threads);
   thread_configs->reserve(config.number_threads);
   result->total_operation_durations.resize(config.number_threads);
   result->total_operation_sizes.resize(config.number_threads, 0);
 
-  uint64_t latency_measurements_count = 0;
+  uint64_t latency_measurement_count = 0;
   if (is_custom_execution) {
     result->custom_operation_latencies.resize(config.number_threads);
 
     if (config.latency_sample_frequency > 0) {
-      latency_measurements_count = (op_per_thread_count / config.latency_sample_frequency) * 2;
+      latency_measurement_count = (op_count_per_thread / config.latency_sample_frequency) * 2;
     }
   }
 
@@ -84,7 +84,10 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, char* data, Benchma
   const uint16_t partition_count = config.number_partitions == 0 ? config.number_threads : config.number_partitions;
 
   const uint16_t thread_count_per_partition = config.number_threads / partition_count;
-  const uint64_t partition_size = config.memory_region_size / partition_count;
+  const uint64_t partition_size = config.memory_regions[0].size / partition_count;
+  MemaAssert(config.memory_regions[1].size == 0 || partition_count == 1,
+             "With a secondary partition size, only one partition is supported.");
+  const auto secondary_partition_size = config.memory_regions[1].size;
 
   // Set up thread synchronization and execution parameters
   const size_t ops_per_chunk =
@@ -101,17 +104,24 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, char* data, Benchma
   execution->io_operations.resize(chunk_count);
   execution->num_custom_chunks_remaining = static_cast<int64_t>(chunk_count);
 
+  auto* primary_region = memory_regions[0];
+  // Assumption: only one partition exists for secondary region. Secondary region is only used for custom operations.
+  MemaAssert(config.memory_regions[1].size == 0 || config.exec_mode == Mode::Custom,
+             "Secondary memory region is only supported with custom operations.");
+  auto* secondary_partition_start = memory_regions[1];
+
   for (uint16_t partition_idx = 0; partition_idx < partition_count; ++partition_idx) {
-    char* partition_start = (config.exec_mode == Mode::Sequential_Desc)
-                                ? data + ((partition_count - partition_idx) * partition_size) - config.access_size
-                                : data + (partition_idx * partition_size);
+    char* partition_start =
+        (config.exec_mode == Mode::Sequential_Desc)
+            ? primary_region + ((partition_count - partition_idx) * partition_size) - config.access_size
+            : primary_region + (partition_idx * partition_size);
 
     for (uint16_t partition_thread_idx = 0; partition_thread_idx < thread_count_per_partition; ++partition_thread_idx) {
-      const uint32_t thread_idx = (partition_idx * thread_count_per_partition) + partition_thread_idx;
+      const auto thread_idx = (partition_idx * thread_count_per_partition) + partition_thread_idx;
 
       // Reserve space for custom operation latency measurements to avoid resizing during benchmark execution.
       if (is_custom_execution) {
-        result->custom_operation_latencies[thread_idx].reserve(latency_measurements_count);
+        result->custom_operation_latencies[thread_idx].reserve(latency_measurement_count);
       }
 
       ExecutionDuration* total_op_duration = &result->total_operation_durations[thread_idx];
@@ -119,40 +129,59 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, char* data, Benchma
       std::vector<uint64_t>* custom_op_latencies =
           is_custom_execution ? &result->custom_operation_latencies[thread_idx] : nullptr;
 
-      thread_configs->emplace_back(partition_start, partition_size, thread_count_per_partition, thread_idx,
-                                   ops_per_chunk, chunk_count, config, execution, total_op_duration, total_op_size,
-                                   custom_op_latencies);
+      thread_configs->emplace_back(partition_start, secondary_partition_start, partition_size, secondary_partition_size,
+                                   thread_count_per_partition, thread_idx, ops_per_chunk, chunk_count, config,
+                                   execution, total_op_duration, total_op_size, custom_op_latencies);
     }
   }
 }
 
-char* Benchmark::prepare_data(const BenchmarkConfig& config, const size_t memory_region_size) {
-  if (config.percentage_pages_first_node == -1) {
-    return prepare_interleaved_data(config, memory_region_size);
+MemoryRegions Benchmark::prepare_data(const BenchmarkConfig& config) {
+  auto region_start_addresses = MemoryRegions(MEM_REGION_COUNT);
+  MemaAssert(config.memory_regions.size() == MEM_REGION_COUNT, "Unexpected number of memory regions.");
+  // Determines if data shall be written to the memory region so that reads can read the data.
+  const auto prepare_read_data = config.contains_read_op();
+  for (auto region_idx = uint64_t{0}; auto& region_definition : config.memory_regions) {
+    if (region_definition.size == 0) {
+      region_start_addresses[region_idx] = nullptr;
+      ++region_idx;
+      continue;
+    }
+    switch (region_definition.placement_mode()) {
+      case PagePlacementMode::Interleaved:
+        region_start_addresses[region_idx] = prepare_interleaved_data(region_definition, prepare_read_data);
+        break;
+      case PagePlacementMode::Partitioned:
+        region_start_addresses[region_idx] = prepare_partitioned_data(region_definition, prepare_read_data);
+        break;
+      default:
+        spdlog::critical("Data preparation mode not handled.");
+        utils::crash_exit();
+    }
+    ++region_idx;
   }
-
-  return prepare_partitioned_data(config, memory_region_size);
+  return region_start_addresses;
 }
 
-char* Benchmark::prepare_interleaved_data(const BenchmarkConfig& config, const size_t memory_region_size) {
+char* Benchmark::prepare_interleaved_data(const MemoryRegionDefinition& region, bool prepare_read_data) {
   spdlog::info("Preparing interleaved data.");
-  auto* data = utils::map(memory_region_size, config.transparent_huge_pages, config.explicit_hugepages_size);
-  bind_memory_interleaved(data, memory_region_size, config.numa_memory_nodes);
+  auto* data = utils::map(region.size, region.transparent_huge_pages, region.explicit_hugepages_size);
+  bind_memory_interleaved(data, region.size, region.node_ids);
   spdlog::debug("Finished mapping memory region.");
-  utils::populate_memory(data, memory_region_size);
+  utils::populate_memory(data, region.size);
   spdlog::debug("Finished populating/pre-faulting the memory region.");
 
-  if (config.contains_read_op()) {
+  if (prepare_read_data) {
     // If we read data in this benchmark, we need to generate it first.
-    utils::generate_read_data(data, memory_region_size);
+    utils::generate_read_data(data, region.size);
     spdlog::debug("Finished generating read data.");
   }
 
-  if (!verify_interleaved_page_placement(data, memory_region_size, config.numa_memory_nodes)) {
+  if (!verify_interleaved_page_placement(data, region.size, region.node_ids)) {
     auto page_locations = PageLocations{};
-    fill_page_locations_round_robin(page_locations, memory_region_size, config.numa_memory_nodes);
-    place_pages(data, memory_region_size, page_locations);
-    if (!verify_interleaved_page_placement(data, memory_region_size, config.numa_memory_nodes)) {
+    fill_page_locations_round_robin(page_locations, region.size, region.node_ids);
+    place_pages(data, region.size, page_locations);
+    if (!verify_interleaved_page_placement(data, region.size, region.node_ids)) {
       spdlog::critical("Verification for interleaved pages failed again. Stopping here.");
       utils::crash_exit();
     }
@@ -162,35 +191,35 @@ char* Benchmark::prepare_interleaved_data(const BenchmarkConfig& config, const s
   return data;
 }
 
-char* Benchmark::prepare_partitioned_data(const BenchmarkConfig& config, const size_t memory_region_size) {
+char* Benchmark::prepare_partitioned_data(const MemoryRegionDefinition& region, bool prepare_read_data) {
   spdlog::info("Preparing partitioned data.");
-  auto* data = utils::map(memory_region_size, config.transparent_huge_pages, config.explicit_hugepages_size);
+  MemaAssert(region.percentage_pages_first_node, "Percentage of pages on first node is not configures.");
+  auto* data = utils::map(region.size, region.transparent_huge_pages, region.explicit_hugepages_size);
   spdlog::debug("Finished mapping memory region.");
 
-  const auto region_page_count = memory_region_size / utils::PAGE_SIZE;
+  const auto region_page_count = region.size / utils::PAGE_SIZE;
   const auto first_node_page_count =
-      static_cast<uint32_t>((config.percentage_pages_first_node / 100.f) * region_page_count);
+      static_cast<uint32_t>((*region.percentage_pages_first_node / 100.f) * region_page_count);
 
   const auto first_partition_length = first_node_page_count * utils::PAGE_SIZE;
-  bind_memory_interleaved(data, first_partition_length, {config.numa_memory_nodes[0]});
+  bind_memory_interleaved(data, first_partition_length, {region.node_ids[0]});
   const auto second_partition_start = data + first_partition_length;
   const auto second_partition_length = (region_page_count - first_node_page_count) * utils::PAGE_SIZE;
-  bind_memory_interleaved(second_partition_start, second_partition_length, {config.numa_memory_nodes[1]});
+  bind_memory_interleaved(second_partition_start, second_partition_length, {region.node_ids[1]});
 
-  utils::populate_memory(data, memory_region_size);
+  utils::populate_memory(data, region.size);
   spdlog::debug("Finished populating/pre-faulting the memory region.");
 
-  if (config.contains_read_op()) {
+  if (prepare_read_data) {
     // If we read data in this benchmark, we need to generate it first.
-    utils::generate_read_data(data, memory_region_size);
+    utils::generate_read_data(data, region.size);
     spdlog::debug("Finished generating read data.");
   }
 
   // Place pages.
   auto page_locations = PageLocations{};
-  fill_page_locations_partitioned(page_locations, memory_region_size, config.numa_memory_nodes,
-                                  config.percentage_pages_first_node);
-  if (!verify_partitioned_page_placement(data, memory_region_size, page_locations)) {
+  fill_page_locations_partitioned(page_locations, region.size, region.node_ids, *region.percentage_pages_first_node);
+  if (!verify_partitioned_page_placement(data, region.size, page_locations)) {
     spdlog::critical("Page verification for partitioned memory region failed.");
     utils::crash_exit();
   }
@@ -199,40 +228,67 @@ char* Benchmark::prepare_partitioned_data(const BenchmarkConfig& config, const s
   return data;
 }
 
-void Benchmark::run_custom_ops_in_thread(ThreadRunConfig* thread_config, const BenchmarkConfig& config) {
-  const std::vector<CustomOp>& operations = config.custom_operations;
-  const size_t num_ops = operations.size();
+void Benchmark::verify_page_locations(const MemoryRegions& memory_regions,
+                                      const MemoryRegionDefinitions& region_definitions) {
+  MemaAssert(memory_regions.size() == MEM_REGION_COUNT, "Number of passed memory regions incorrect.");
+  MemaAssert(region_definitions.size() == MEM_REGION_COUNT, "Number of passed memory region definitions incorrect.");
+  for (auto region_idx = uint64_t{0}; region_idx < MEM_REGION_COUNT; ++region_idx) {
+    auto verified = false;
+    auto& region = memory_regions[region_idx];
+    auto& definition = region_definitions[region_idx];
+    if (definition.placement_mode() == PagePlacementMode::Interleaved) {
+      verified = verify_interleaved_page_placement(region, definition.size, definition.node_ids);
+    } else {
+      MemaAssert(definition.percentage_pages_first_node,
+                 "Percentage for page placement must be set for partitioned verificatiopn");
+      verified = verify_partitioned_page_placement(region, definition.size, definition.node_ids,
+                                                   *definition.percentage_pages_first_node);
+    }
+    if (!verified) {
+      spdlog::critical("Page locations of region {} incorrect.", region_idx);
+    }
+  }
+}
 
-  std::vector<ChainedOperation> operation_chain;
+void Benchmark::run_custom_ops_in_thread(ThreadRunConfig* thread_config, const BenchmarkConfig& config) {
+  const auto& operations = config.custom_operations;
+  const auto num_ops = operations.size();
+
+  auto operation_chain = std::vector<ChainedOperation>{};
   operation_chain.reserve(num_ops);
 
   // Determine maximum access size to ensure that operations don't write beyond the end of the range.
-  size_t max_access_size = 0;
+  auto max_access_size = uint64_t{0};
   for (const CustomOp& op : operations) {
     max_access_size = std::max(op.size, max_access_size);
   }
 
-  const size_t aligned_range_size = thread_config->partition_size - max_access_size;
+  const auto aligned_range_size = uint64_t{thread_config->partition_size - max_access_size};
+  const auto aligned_secondary_range_size = uint64_t{thread_config->secondary_partition_size - max_access_size};
 
-  for (size_t i = 0; i < num_ops; ++i) {
-    const CustomOp& op = operations[i];
+  for (auto op_idx = uint64_t{0}; op_idx < num_ops; ++op_idx) {
+    const CustomOp& op = operations[op_idx];
 
-    operation_chain.emplace_back(op, thread_config->partition_start_addr, aligned_range_size);
+    if (op.memory_type == MemoryType::Primary) {
+      operation_chain.emplace_back(op, thread_config->start_addr, aligned_range_size);
+    } else {
+      operation_chain.emplace_back(op, thread_config->secondary_start_addr, aligned_secondary_range_size);
+    }
 
-    if (i > 0) {
-      operation_chain[i - 1].set_next(&operation_chain[i]);
+    if (op_idx > 0) {
+      operation_chain[op_idx - 1].set_next(&operation_chain[op_idx]);
     }
   }
 
-  const size_t seed = std::chrono::steady_clock::now().time_since_epoch().count() * (thread_config->thread_idx + 1);
+  const auto seed = std::chrono::steady_clock::now().time_since_epoch().count() * (thread_config->thread_idx + 1);
   lehmer64_seed(seed);
   char* start_addr = reinterpret_cast<char*>(seed);
 
   ChainedOperation& start_op = operation_chain[0];
   auto start_ts = std::chrono::steady_clock::now();
 
-  const size_t ops_count_per_chunk = thread_config->ops_count_per_chunk;
-  uint64_t total_num_ops = 0;
+  const auto ops_count_per_chunk = thread_config->ops_count_per_chunk;
+  auto total_num_ops = uint64_t{0};
 
   while (true) {
     if (thread_config->execution->num_custom_chunks_remaining.fetch_sub(1) <= 0) {
@@ -316,8 +372,8 @@ void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkCon
         // Overall offset after x chunks          + offset of this thread for chunk x+1
         (chunk_idx * partition_threads_access_size) + thread_offset_in_partition;
     char* next_op_position = config.exec_mode == Mode::Sequential_Desc
-                                 ? thread_config->partition_start_addr - thread_chunk_offset
-                                 : thread_config->partition_start_addr + thread_chunk_offset;
+                                 ? thread_config->start_addr - thread_chunk_offset
+                                 : thread_config->start_addr + thread_chunk_offset;
 
     std::vector<char*> op_addresses(thread_config->ops_count_per_chunk);
 
@@ -326,7 +382,7 @@ void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkCon
         case Mode::Random: {
           char* partition_start;
           std::function<uint64_t()> random_distribution;
-          partition_start = thread_config->partition_start_addr;
+          partition_start = thread_config->start_addr;
           random_distribution = access_distribution;
 
           uint64_t random_value;
@@ -451,7 +507,7 @@ uint64_t Benchmark::run_duration_based_benchmark(std::vector<IoOperation>* io_op
 
 const std::vector<BenchmarkConfig>& Benchmark::get_benchmark_configs() const { return configs_; }
 
-const std::vector<char*>& Benchmark::get_data() const { return data_; }
+const std::vector<MemoryRegions>& Benchmark::get_memory_regions() const { return memory_regions_; }
 
 const std::vector<std::vector<ThreadRunConfig>>& Benchmark::get_thread_configs() const { return thread_configs_; }
 const std::vector<std::unique_ptr<BenchmarkResult>>& Benchmark::get_benchmark_results() const { return results_; }
@@ -462,10 +518,15 @@ void Benchmark::tear_down(bool force) {
   executions_.clear();
   results_.clear();
 
-  for (size_t index = 0; index < data_.size(); ++index) {
-    if (data_[index] != nullptr) {
-      munmap(data_[index], configs_[index].memory_region_size);
-      data_[index] = nullptr;
+  for (auto workload_idx = uint64_t{0}; workload_idx < memory_regions_.size(); ++workload_idx) {
+    auto& workload_regions = memory_regions_[workload_idx];
+    auto& region_definitions = configs_[workload_idx].memory_regions;
+    MemaAssert(workload_regions.size() == MEM_REGION_COUNT, "Unexpected memory region count.");
+    for (auto region_idx = uint64_t{0}; region_idx < MEM_REGION_COUNT; ++region_idx) {
+      if (workload_regions[region_idx] != nullptr) {
+        munmap(workload_regions[region_idx], region_definitions[region_idx].size);
+        workload_regions[region_idx] = nullptr;
+      }
     }
   }
 }

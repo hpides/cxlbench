@@ -3,6 +3,7 @@
 #include <spdlog/spdlog.h>
 
 #include <charconv>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -15,7 +16,8 @@ namespace {
 #define CHECK_ARGUMENT(exp, txt)                                          \
   if (!(exp)) {                                                           \
     spdlog::critical(txt + std::string("\nUsed config: ") + to_string()); \
-    utils::crash_exit();                                                  \
+    spdlog::default_logger()->flush();                                    \
+    utils::crash_exit(txt);                                               \
   }                                                                       \
   static_assert(true, "Need ; after macro")
 
@@ -30,6 +32,20 @@ void ensure_unique_key(const YAML::Node& entry, const std::string& name) {
 }
 
 template <typename T>
+bool get_optional_if_present(YAML::Node& data, const std::string& name, std::optional<T>* attribute) {
+  YAML::Node entry = data[name];
+  if (!entry) {
+    return false;
+  }
+  ensure_unique_key(entry, name);
+
+  *attribute = entry.as<T>();
+
+  entry.SetTag(VISITED_TAG);
+  return true;
+}
+
+template <typename T>
 bool get_if_present(YAML::Node& data, const std::string& name, T* attribute) {
   YAML::Node entry = data[name];
   if (!entry) {
@@ -38,6 +54,7 @@ bool get_if_present(YAML::Node& data, const std::string& name, T* attribute) {
   ensure_unique_key(entry, name);
 
   *attribute = entry.as<T>();
+
   entry.SetTag(VISITED_TAG);
   return true;
 }
@@ -119,37 +136,53 @@ bool get_sequence_if_present(YAML::Node& data, const std::string& name, std::vec
 
 namespace mema {
 
+PagePlacementMode MemoryRegionDefinition::placement_mode() const {
+  if (percentage_pages_first_node) {
+    return PagePlacementMode::Partitioned;
+  }
+  return PagePlacementMode::Interleaved;
+}
+
 BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
   spdlog::debug("Decoding benchmark config from file: {}", node["config_file"].as<std::string>());
   node.remove("config_file");
   BenchmarkConfig bm_config{};
   size_t found_count = 0;
   try {
+    // Memory region related
     found_count += get_size_if_present(node, "memory_region_size", ConfigEnums::scale_suffix_to_factor,
-                                       &bm_config.memory_region_size);
+                                       &bm_config.memory_regions[0].size);
+    found_count += get_size_if_present(node, "secondary_memory_region_size", ConfigEnums::scale_suffix_to_factor,
+                                       &bm_config.memory_regions[1].size);
+    found_count += get_sequence_if_present(node, "numa_memory_nodes", bm_config.memory_regions[0].node_ids);
+    found_count += get_sequence_if_present(node, "secondary_numa_memory_nodes", bm_config.memory_regions[1].node_ids);
+    found_count += get_if_present(node, "transparent_huge_pages", &bm_config.memory_regions[0].transparent_huge_pages);
+    found_count +=
+        get_if_present(node, "secondary_transparent_huge_pages", &bm_config.memory_regions[1].transparent_huge_pages);
+    found_count += get_size_if_present(node, "explicit_hugepages_size", ConfigEnums::scale_suffix_to_factor,
+                                       &bm_config.memory_regions[0].explicit_hugepages_size);
+    found_count += get_size_if_present(node, "secondary_explicit_hugepages_size", ConfigEnums::scale_suffix_to_factor,
+                                       &bm_config.memory_regions[1].explicit_hugepages_size);
+    // We only set the percentage for the primary memory region
+    found_count += get_optional_if_present(node, "percentage_pages_first_node",
+                                           &bm_config.memory_regions[0].percentage_pages_first_node);
+    found_count += get_if_present(node, "number_partitions", &bm_config.number_partitions);
+
     found_count +=
         get_size_if_present(node, "access_size", ConfigEnums::scale_suffix_to_factor, &bm_config.access_size);
     found_count += get_size_if_present(node, "min_io_chunk_size", ConfigEnums::scale_suffix_to_factor,
                                        &bm_config.min_io_chunk_size);
-
     found_count += get_if_present(node, "number_operations", &bm_config.number_operations);
     found_count += get_if_present(node, "run_time", &bm_config.run_time);
-    found_count += get_if_present(node, "number_partitions", &bm_config.number_partitions);
     found_count += get_if_present(node, "number_threads", &bm_config.number_threads);
     found_count += get_if_present(node, "zipf_alpha", &bm_config.zipf_alpha);
     found_count += get_if_present(node, "latency_sample_frequency", &bm_config.latency_sample_frequency);
-    found_count += get_if_present(node, "transparent_huge_pages", &bm_config.transparent_huge_pages);
-    found_count += get_if_present(node, "percentage_pages_first_node", &bm_config.percentage_pages_first_node);
-    found_count += get_size_if_present(node, "explicit_hugepages_size", ConfigEnums::scale_suffix_to_factor,
-                                       &bm_config.explicit_hugepages_size);
-
     found_count += get_enum_if_present(node, "exec_mode", ConfigEnums::str_to_mode, &bm_config.exec_mode);
     found_count += get_enum_if_present(node, "operation", ConfigEnums::str_to_operation, &bm_config.operation);
     found_count += get_enum_if_present(node, "random_distribution", ConfigEnums::str_to_random_distribution,
                                        &bm_config.random_distribution);
     found_count += get_enum_if_present(node, "flush_instruction", ConfigEnums::str_to_flush_instruction,
                                        &bm_config.flush_instruction);
-    found_count += get_sequence_if_present(node, "numa_memory_nodes", bm_config.numa_memory_nodes);
     found_count += get_sequence_if_present(node, "numa_task_nodes", bm_config.numa_task_nodes);
 
     std::string custom_ops;
@@ -188,36 +221,56 @@ void BenchmarkConfig::validate() const {
   const bool is_access_size_power_of_two = (access_size & (access_size - 1)) == 0;
   CHECK_ARGUMENT(is_access_size_power_of_two, "Access size must be a power of 2.");
 
-  // Check if memory range is multiple of access size
-  const bool is_memory_region_size_multiple_of_access_size = (memory_region_size % access_size) == 0;
-  CHECK_ARGUMENT(is_memory_region_size_multiple_of_access_size, "Memory range must be a multiple of access size.");
-
   // Check if at least one thread
   const bool is_at_least_one_thread = number_threads > 0;
   CHECK_ARGUMENT(is_at_least_one_thread, "Number threads must be at least 1.");
 
-  // Check if share of pages on first node has a valid value if set.
-  if (percentage_pages_first_node != -1) {
-    const bool has_memory_share_correct_value = percentage_pages_first_node >= 0 && percentage_pages_first_node <= 100;
-    CHECK_ARGUMENT(has_memory_share_correct_value, "Share of pages located on first node must be in range [0, 100].");
-    const bool has_two_numa_memory_nodes = numa_memory_nodes.size() == 2;
-    CHECK_ARGUMENT(has_two_numa_memory_nodes,
-                   "When a share of pages located on first node is specified, data can only be placed on two nodes.");
+  // Memory region checks
+  for (auto& region : memory_regions) {
+    // Check if memory range is multiple of access size
+    const bool is_memory_region_size_multiple_of_access_size = (region.size % access_size) == 0;
+    CHECK_ARGUMENT(is_memory_region_size_multiple_of_access_size, "Memory range must be a multiple of access size.");
+
+    // Check if NUMA memory nodes are specified for the memory region.
+    const bool numa_memory_nodes_present = region.size == 0 || region.node_ids.size() > 0;
+    CHECK_ARGUMENT(numa_memory_nodes_present, "NUMA memory nodes must be specified.");
+
+    // Check if share of pages on first node has a valid value if set.
+    if (region.percentage_pages_first_node) {
+      const bool has_memory_share_correct_value = *region.percentage_pages_first_node <= 100;
+      CHECK_ARGUMENT(has_memory_share_correct_value, "Share of pages located on first node must be in range [0, 100].");
+      const bool has_two_numa_memory_nodes = region.node_ids.size() == 2;
+      CHECK_ARGUMENT(has_two_numa_memory_nodes,
+                     "When a share of pages located on first node is specified, two nodes need to be specified.");
+    }
+
+    // Assumption: total memory range must be evenly divisible into number of partitions
+    const bool is_partitionable = (number_partitions == 0 && ((region.size / number_threads) % access_size) == 0) ||
+                                  (number_partitions > 0 && ((region.size / number_partitions) % access_size) == 0);
+    CHECK_ARGUMENT(is_partitionable,
+                   "Total memory range must be evenly divisible into number of partitions. "
+                   "Most likely you can fix this by using 2^x partitions.");
   }
+
+  const bool has_secondary_memory_region_for_operations = !contains_secondary_memory_op() || memory_regions[1].size > 0;
+  CHECK_ARGUMENT(has_secondary_memory_region_for_operations,
+                 "Must set secondary_memory_region_size > 0 if the benchmark contains secondary memory operations.");
+
+  // Assumption: total memory needs to fit into N chunks exactly
+  const bool is_total_memory_chunkable = (memory_regions[0].size % min_io_chunk_size) == 0;
+  CHECK_ARGUMENT(is_total_memory_chunkable,
+                 "The primary memory range needs to be multiple of chunk size " + std::to_string(min_io_chunk_size));
+
+  // Assumption: we chunk operations, so we need enough data to fill at least one chunk
+  const bool is_total_memory_large_enough = (memory_regions[0].size / number_threads) >= min_io_chunk_size;
+  CHECK_ARGUMENT(is_total_memory_large_enough, "Each thread needs at least " + std::to_string(min_io_chunk_size) +
+                                                   " Bytes of memory in primary region.");
 
   // Assumption: number_threads is multiple of number_partitions
   const bool is_number_threads_multiple_of_number_partitions =
       (number_partitions == 0) || (number_threads % number_partitions) == 0;
   CHECK_ARGUMENT(is_number_threads_multiple_of_number_partitions,
                  "Number threads must be a multiple of number partitions.");
-
-  // Assumption: total memory range must be evenly divisible into number of partitions
-  const bool is_partitionable =
-      (number_partitions == 0 && ((memory_region_size / number_threads) % access_size) == 0) ||
-      (number_partitions > 0 && ((memory_region_size / number_partitions) % access_size) == 0);
-  CHECK_ARGUMENT(is_partitionable,
-                 "Total memory range must be evenly divisible into number of partitions. "
-                 "Most likely you can fix this by using 2^x partitions.");
 
   // Assumption: number_operations should only be set for random/custom access. It is ignored in sequential IO.
   const bool is_number_operations_set_random =
@@ -243,16 +296,6 @@ void BenchmarkConfig::validate() const {
         "execution.");
   }
 
-  // Assumption: total memory needs to fit into N chunks exactly
-  const bool is_time_based_seq_total_memory_chunkable = (memory_region_size % min_io_chunk_size) == 0;
-  CHECK_ARGUMENT(is_time_based_seq_total_memory_chunkable,
-                 "The total memory range needs to be multiple of chunk size " + std::to_string(min_io_chunk_size));
-
-  // Assumption: we chunk operations, so we need enough data to fill at least one chunk
-  const bool is_total_memory_large_enough = (memory_region_size / number_threads) >= min_io_chunk_size;
-  CHECK_ARGUMENT(is_total_memory_large_enough,
-                 "Each thread needs at least " + std::to_string(min_io_chunk_size) + " Bytes of memory.");
-
   const bool has_custom_ops = exec_mode != Mode::Custom || !custom_operations.empty();
   CHECK_ARGUMENT(has_custom_ops, "Must specify custom_operations for custom execution.");
 
@@ -261,9 +304,6 @@ void BenchmarkConfig::validate() const {
 
   const bool latency_sample_is_custom = exec_mode == Mode::Custom || latency_sample_frequency == 0;
   CHECK_ARGUMENT(latency_sample_is_custom, "Latency sampling can only be used with custom operations.");
-
-  const bool numa_memory_nodes_present = numa_memory_nodes.size() > 0;
-  CHECK_ARGUMENT(numa_memory_nodes_present, "NUMA memory nodes must be specified.");
 
   const bool numa_task_nodes_present = numa_task_nodes.size() > 0;
   CHECK_ARGUMENT(numa_task_nodes_present, "NUMA task nodes must be specified.");
@@ -293,30 +333,40 @@ bool BenchmarkConfig::contains_write_op() const {
 
 std::string BenchmarkConfig::to_string(const std::string sep) const {
   auto stream = std::stringstream{};
-  stream << "memory range: " << memory_region_size;
-  stream << sep << "exec mode: " << utils::get_enum_as_string(ConfigEnums::str_to_mode, exec_mode);
-  stream << sep << "memory numa nodes: [";
-  auto delim = "";
-  for (const auto& node : numa_memory_nodes) {
-    stream << delim << node;
-    delim = ", ";
+  for (auto region_idx = uint64_t{0}; auto& region : memory_regions) {
+    if (region.size == 0) {
+      continue;
+    }
+    if (region_idx > 0) {
+      stream << sep;
+    }
+    stream << "memory region " << region_idx << " size: " << region.size;
+    stream << sep << "numa nodes: [";
+    auto delim = "";
+    for (const auto& node : region.node_ids) {
+      stream << delim << node;
+      delim = ", ";
+    }
+    stream << "]";
+    stream << sep << "partition count: " << number_partitions;
+    stream << sep << "page placement: ";
+    if (region.percentage_pages_first_node) {
+      stream << "partitioned with " << *region.percentage_pages_first_node << "% on first node";
+    } else {
+      stream << "interleaved";
+    }
+    ++region_idx;
   }
-  stream << "]" << sep << "task numa nodes: [";
-  delim = "";
+  stream << sep << "exec mode: " << utils::get_enum_as_string(ConfigEnums::str_to_mode, exec_mode);
+  stream << sep << "task numa nodes: [";
+  auto delim = "";
   for (const auto& node : numa_task_nodes) {
     stream << delim << node;
     delim = ", ";
   }
-  stream << "]" << sep << "partition count: " << number_partitions;
+  stream << "]";
   stream << sep << "thread count: " << number_threads;
   stream << sep << "min io chunk size: " << min_io_chunk_size;
-
-  stream << sep << "page placement: ";
-  if (percentage_pages_first_node == -1) {
-    stream << "round robin";
-  } else {
-    stream << "partitioned with " << percentage_pages_first_node << "% on first node";
-  }
 
   if (exec_mode != Mode::Custom) {
     stream << sep << "access size: " << access_size;
@@ -349,18 +399,28 @@ std::string BenchmarkConfig::to_string(const std::string sep) const {
   return stream.str();
 }
 
+bool BenchmarkConfig::contains_secondary_memory_op() const {
+  auto find_custom_secondary_memory_op = [](const CustomOp& op) { return op.memory_type == MemoryType::Secondary; };
+  return std::any_of(custom_operations.begin(), custom_operations.end(), find_custom_secondary_memory_op);
+}
+
 nlohmann::json BenchmarkConfig::as_json() const {
   nlohmann::json config;
+  for (auto region_idx = uint64_t{0}; auto& region : memory_regions) {
+    auto prefix = MEM_REGION_PREFIX + std::to_string(region_idx) + "_";
+    config[prefix + "explicit_hugepages_size"] = region.explicit_hugepages_size;
+    config[prefix + "region_size"] = region.size;
+    config[prefix + "numa_nodes"] = region.node_ids;
+    config[prefix + "percentage_pages_first_node"] =
+        region.percentage_pages_first_node ? *region.percentage_pages_first_node : -1;
+    config[prefix + "transparent_huge_pages"] = region.transparent_huge_pages;
+    ++region_idx;
+  }
   config["exec_mode"] = utils::get_enum_as_string(ConfigEnums::str_to_mode, exec_mode);
-  config["explicit_hugepages_size"] = explicit_hugepages_size;
-  config["memory_region_size"] = memory_region_size;
   config["min_io_chunk_size"] = min_io_chunk_size;
-  config["numa_memory_nodes"] = numa_memory_nodes;
   config["numa_task_nodes"] = numa_task_nodes;
   config["number_partitions"] = number_partitions;
   config["number_threads"] = number_threads;
-  config["percentage_pages_first_node"] = percentage_pages_first_node;
-  config["transparent_huge_pages"] = transparent_huge_pages;
 
   if (exec_mode != Mode::Custom) {
     config["access_size"] = access_size;
@@ -406,8 +466,11 @@ CustomOp CustomOp::from_string(const std::string& str) {
     op_str_parts.emplace_back(op_str_part);
   }
 
+  // Determine the offset where
+  auto has_memory_region_idx = str[0] == MEM_REGION_PREFIX;
+
   const size_t op_str_part_count = op_str_parts.size();
-  if (op_str_part_count < 2) {
+  if (op_str_part_count < 2 + has_memory_region_idx) {
     spdlog::critical("Custom operation is too short: '{}'. Expected at least <operation>_<size>", str);
     utils::crash_exit();
   }
@@ -415,8 +478,18 @@ CustomOp CustomOp::from_string(const std::string& str) {
   // Create new custom operation
   CustomOp custom_op;
 
+  // Get memory region if set
+  if (has_memory_region_idx) {
+    const auto region_idx_str = op_str_parts[0].erase(0, 1);
+    const auto region_idx = std::stoul(region_idx_str);
+    if (region_idx > 0) {
+      spdlog::debug("Custom operation with memory region index {}.", region_idx);
+      custom_op.memory_type = MemoryType::Secondary;
+    }
+  }
+
   // Get operation and location
-  const std::string& operation_str = op_str_parts[0];
+  const std::string& operation_str = op_str_parts[0 + has_memory_region_idx];
   auto op_location_it = ConfigEnums::str_to_operation.find(operation_str);
   if (op_location_it == ConfigEnums::str_to_operation.end()) {
     spdlog::critical("Unknown operation: {}", operation_str);
@@ -425,7 +498,7 @@ CustomOp CustomOp::from_string(const std::string& str) {
   custom_op.type = op_location_it->second;
 
   // Get size of access
-  const std::string& size_str = op_str_parts[1];
+  const std::string& size_str = op_str_parts[1 + has_memory_region_idx];
   auto size_result = std::from_chars(size_str.data(), size_str.data() + size_str.size(), custom_op.size);
   if (size_result.ec != std::errc()) {
     spdlog::critical("Could not parse operation size: {}", size_str);
@@ -440,7 +513,7 @@ CustomOp CustomOp::from_string(const std::string& str) {
   const bool is_write = custom_op.type == Operation::Write;
 
   if (!is_write) {
-    if (op_str_part_count > 2) {
+    if (op_str_part_count > 2 + has_memory_region_idx) {
       spdlog::critical("Custom read op must not have further information. Got: '{}'", op_str_part_count);
       utils::crash_exit();
     }
@@ -448,12 +521,12 @@ CustomOp CustomOp::from_string(const std::string& str) {
     return custom_op;
   }
 
-  if (op_str_part_count < 3) {
+  if (op_str_part_count < 3 + has_memory_region_idx) {
     spdlog::critical("Custom write op must have '_<flush_instruction>' after size, e.g., w64_cache. Got: '{}'", str);
     utils::crash_exit();
   }
 
-  const std::string& flush_str = op_str_parts[2];
+  const std::string& flush_str = op_str_parts[2 + has_memory_region_idx];
   auto flush_it = ConfigEnums::str_to_flush_instruction.find(flush_str);
   if (flush_it == ConfigEnums::str_to_flush_instruction.end()) {
     spdlog::critical("Could not parse the flush instruction in write op: '{}'", flush_str);
@@ -462,9 +535,9 @@ CustomOp CustomOp::from_string(const std::string& str) {
 
   custom_op.flush = flush_it->second;
 
-  const bool has_offset_information = op_str_part_count == 4;
+  const bool has_offset_information = op_str_part_count == 4 + has_memory_region_idx;
   if (has_offset_information) {
-    const std::string& offset_str = op_str_parts[3];
+    const std::string& offset_str = op_str_parts[3 + has_memory_region_idx];
     auto offset_result = std::from_chars(offset_str.data(), offset_str.data() + offset_str.size(), custom_op.offset);
     if (offset_result.ec != std::errc()) {
       spdlog::critical("Could not parse operation offset: {}", offset_str);
@@ -502,6 +575,7 @@ std::vector<CustomOp> CustomOp::all_from_string(const std::string& str) {
 
 std::string CustomOp::to_string() const {
   std::stringstream out;
+  out << MEM_REGION_PREFIX << (memory_type == MemoryType::Primary ? 0 : 1) << '_';
   out << utils::get_enum_as_string(ConfigEnums::str_to_operation, type, true);
   out << '_' << size;
   if (type == Operation::Write) {
@@ -532,6 +606,17 @@ void CustomOp::validate(const std::vector<CustomOp>& operations) {
   if (operations[0].type != Operation::Read) {
     spdlog::critical("First custom operation must be a read");
     utils::crash_exit();
+  }
+
+  // Check if write is to same memory region type
+  auto current_memory_type = operations[0].memory_type;
+  for (const CustomOp& op : operations) {
+    if ((op.type == Operation::Write) && (current_memory_type != op.memory_type)) {
+      spdlog::critical("A write must occur after a read to the same memory type.");
+      spdlog::critical("Bad operation: {}", op.to_string());
+      utils::crash_exit();
+    }
+    current_memory_type = op.memory_type;
   }
 }
 

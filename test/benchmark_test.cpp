@@ -22,12 +22,25 @@ constexpr size_t TEST_CHUNK_SIZE = TEST_DATA_SIZE / 8;  // 128 KiB
 class BenchmarkTest : public BaseTest {
  protected:
   void SetUp() override {
-    base_config_.memory_region_size = TEST_DATA_SIZE;
+    base_config_.memory_regions[0].size = TEST_DATA_SIZE;
+    base_config_.memory_regions[0].node_ids = {0};
     base_config_.min_io_chunk_size = TEST_CHUNK_SIZE;
-    base_config_.numa_memory_nodes = {0};
     base_config_.numa_task_nodes = {0};
+
+    const auto numa_max_node_id = numa_max_node();
+    auto* const allowed_memory_nodes_mask = numa_get_mems_allowed();
+    valid_node_ids.reserve(numa_max_node_id);
+
+    for (auto node_id = NumaNodeID{0}; node_id <= numa_max_node_id; ++node_id) {
+      if (!numa_bitmask_isbitset(allowed_memory_nodes_mask, node_id)) {
+        continue;
+      }
+      valid_node_ids.push_back(node_id);
+    }
+    valid_node_ids.shrink_to_fit();
   }
 
+  NumaNodeIDs valid_node_ids{};
   BenchmarkConfig base_config_{};
   std::vector<std::unique_ptr<BenchmarkExecution>> base_executions_{};
   std::vector<std::unique_ptr<BenchmarkResult>> base_results_{};
@@ -64,7 +77,7 @@ TEST_F(BenchmarkTest, SetUpSingleThread) {
   EXPECT_EQ(thread_config.partition_size, TEST_DATA_SIZE);
   EXPECT_EQ(thread_config.ops_count_per_chunk, TEST_CHUNK_SIZE / 256);
   EXPECT_EQ(thread_config.chunk_count, 8);
-  EXPECT_EQ(thread_config.partition_start_addr, bm.get_data()[0]);
+  EXPECT_EQ(thread_config.start_addr, bm.get_memory_regions()[0][0]);
   EXPECT_EQ(&thread_config.config, &bm.get_benchmark_configs()[0]);
 
   const std::vector<ExecutionDuration>& op_durations = bm.get_benchmark_results()[0]->total_operation_durations;
@@ -105,10 +118,10 @@ TEST_F(BenchmarkTest, SetUpMultiThreadCustomPartition) {
   EXPECT_EQ(thread_config2.thread_idx, 2);
   EXPECT_EQ(thread_config3.thread_idx, 3);
 
-  EXPECT_EQ(thread_config0.partition_start_addr, bm.get_data()[0]);
-  EXPECT_EQ(thread_config1.partition_start_addr, bm.get_data()[0]);
-  EXPECT_EQ(thread_config2.partition_start_addr, bm.get_data()[0] + partition_size);
-  EXPECT_EQ(thread_config3.partition_start_addr, bm.get_data()[0] + partition_size);
+  EXPECT_EQ(thread_config0.start_addr, bm.get_memory_regions()[0][0]);
+  EXPECT_EQ(thread_config1.start_addr, bm.get_memory_regions()[0][0]);
+  EXPECT_EQ(thread_config2.start_addr, bm.get_memory_regions()[0][0] + partition_size);
+  EXPECT_EQ(thread_config3.start_addr, bm.get_memory_regions()[0][0] + partition_size);
 
   const std::vector<ExecutionDuration>& op_durations = bm.get_benchmark_results()[0]->total_operation_durations;
   ASSERT_EQ(op_durations.size(), thread_count);
@@ -162,10 +175,10 @@ TEST_F(BenchmarkTest, SetUpMultiThreadDefaultPartition) {
   EXPECT_EQ(thread_config2.thread_idx, 2);
   EXPECT_EQ(thread_config3.thread_idx, 3);
 
-  EXPECT_EQ(thread_config0.partition_start_addr, bm.get_data()[0] + (0 * partition_size));
-  EXPECT_EQ(thread_config1.partition_start_addr, bm.get_data()[0] + (1 * partition_size));
-  EXPECT_EQ(thread_config2.partition_start_addr, bm.get_data()[0] + (2 * partition_size));
-  EXPECT_EQ(thread_config3.partition_start_addr, bm.get_data()[0] + (3 * partition_size));
+  EXPECT_EQ(thread_config0.start_addr, bm.get_memory_regions()[0][0] + (0 * partition_size));
+  EXPECT_EQ(thread_config1.start_addr, bm.get_memory_regions()[0][0] + (1 * partition_size));
+  EXPECT_EQ(thread_config2.start_addr, bm.get_memory_regions()[0][0] + (2 * partition_size));
+  EXPECT_EQ(thread_config3.start_addr, bm.get_memory_regions()[0][0] + (3 * partition_size));
 
   const std::vector<ExecutionDuration>& op_durations = bm.get_benchmark_results()[0]->total_operation_durations;
   ASSERT_EQ(op_durations.size(), thread_count);
@@ -192,12 +205,12 @@ TEST_F(BenchmarkTest, SetUpMultiThreadDefaultPartition) {
   bm.get_benchmark_results()[0]->config.validate();
 }
 
-TEST_F(BenchmarkTest, RunSingeThreadRead) {
+TEST_F(BenchmarkTest, RunSingleThreadRead) {
   const size_t num_ops = TEST_DATA_SIZE / 256;
   base_config_.number_threads = 1;
   base_config_.access_size = 256;
   base_config_.operation = Operation::Read;
-  base_config_.memory_region_size = 256 * num_ops;
+  base_config_.memory_regions[0].size = 256 * num_ops;
 
   base_executions_.reserve(1);
   base_executions_.push_back(std::make_unique<BenchmarkExecution>());
@@ -229,7 +242,7 @@ TEST_F(BenchmarkTest, RunSingleThreadWrite) {
   base_config_.number_threads = 1;
   base_config_.access_size = 64;
   base_config_.operation = Operation::Write;
-  base_config_.memory_region_size = total_size;
+  base_config_.memory_regions[0].size = total_size;
 
   base_executions_.reserve(1);
   base_executions_.push_back(std::make_unique<BenchmarkExecution>());
@@ -261,7 +274,7 @@ TEST_F(BenchmarkTest, RunMultiThreadRead) {
   base_config_.number_threads = thread_count;
   base_config_.access_size = 1024;
   base_config_.operation = Operation::Read;
-  base_config_.memory_region_size = 1024 * num_ops;
+  base_config_.memory_regions[0].size = 1024 * num_ops;
 
   base_executions_.reserve(1);
   base_executions_.push_back(std::make_unique<BenchmarkExecution>());
@@ -300,7 +313,7 @@ TEST_F(BenchmarkTest, RunMultiThreadWrite) {
   base_config_.number_threads = thread_count;
   base_config_.access_size = 512;
   base_config_.operation = Operation::Read;
-  base_config_.memory_region_size = total_size;
+  base_config_.memory_regions[0].size = total_size;
 
   base_executions_.reserve(1);
   base_executions_.push_back(std::make_unique<BenchmarkExecution>());
@@ -338,7 +351,7 @@ TEST_F(BenchmarkTest, RunMultiThreadReadDesc) {
   base_config_.number_threads = thread_count;
   base_config_.access_size = 1024;
   base_config_.operation = Operation::Read;
-  base_config_.memory_region_size = 1024 * num_ops;
+  base_config_.memory_regions[0].size = 1024 * num_ops;
 
   base_config_.exec_mode = Mode::Sequential_Desc;
   base_executions_.reserve(1);
@@ -379,7 +392,7 @@ TEST_F(BenchmarkTest, RunMultiThreadWriteDesc) {
   base_config_.number_threads = thread_count;
   base_config_.access_size = 512;
   base_config_.operation = Operation::Read;
-  base_config_.memory_region_size = total_size;
+  base_config_.memory_regions[0].size = total_size;
 
   base_config_.exec_mode = Mode::Sequential_Desc;
   base_executions_.reserve(1);
@@ -418,7 +431,7 @@ TEST_F(BenchmarkTest, ResultsSingleThreadRead) {
   base_config_.number_threads = 1;
   base_config_.access_size = 256;
   base_config_.operation = Operation::Read;
-  base_config_.memory_region_size = TEST_DATA_SIZE;
+  base_config_.memory_regions[0].size = TEST_DATA_SIZE;
 
   BenchmarkResult bm_result{base_config_};
 
@@ -437,7 +450,7 @@ TEST_F(BenchmarkTest, ResultsSingleThreadWrite) {
   base_config_.number_threads = 1;
   base_config_.access_size = 256;
   base_config_.operation = Operation::Write;
-  base_config_.memory_region_size = TEST_DATA_SIZE;
+  base_config_.memory_regions[0].size = TEST_DATA_SIZE;
 
   BenchmarkResult bm_result{base_config_};
   const uint64_t total_op_duration = 2000000;
@@ -457,7 +470,7 @@ TEST_F(BenchmarkTest, ResultsMultiThreadRead) {
   base_config_.number_threads = thread_count;
   base_config_.access_size = 1024;
   base_config_.operation = Operation::Read;
-  base_config_.memory_region_size = TEST_DATA_SIZE;
+  base_config_.memory_regions[0].size = TEST_DATA_SIZE;
 
   BenchmarkResult bm_result{base_config_};
   const auto start = std::chrono::steady_clock::now();
@@ -479,7 +492,7 @@ TEST_F(BenchmarkTest, ResultsMultiThreadWrite) {
   base_config_.number_threads = thread_count;
   base_config_.access_size = 512;
   base_config_.operation = Operation::Write;
-  base_config_.memory_region_size = TEST_DATA_SIZE;
+  base_config_.memory_regions[0].size = TEST_DATA_SIZE;
 
   BenchmarkResult bm_result{base_config_};
   const auto start = std::chrono::steady_clock::now();
@@ -499,7 +512,7 @@ TEST_F(BenchmarkTest, RunParallelSingleThreadRead) {
   base_config_.number_threads = 1;
   base_config_.access_size = 256;
   base_config_.operation = Operation::Read;
-  base_config_.memory_region_size = 256 * num_ops;
+  base_config_.memory_regions[0].size = 256 * num_ops;
   base_config_.min_io_chunk_size = TEST_CHUNK_SIZE;
   base_config_.run_time = 1;
 
@@ -548,7 +561,7 @@ TEST_F(BenchmarkTest, ResultsParallelSingleThreadMixed) {
   const size_t num_ops = TEST_DATA_SIZE / 256;
   base_config_.number_threads = 1;
   base_config_.access_size = 256;
-  base_config_.memory_region_size = TEST_DATA_SIZE;
+  base_config_.memory_regions[0].size = TEST_DATA_SIZE;
   base_config_.min_io_chunk_size = TEST_CHUNK_SIZE;
   base_config_.run_time = 1;
 
@@ -596,30 +609,102 @@ TEST_F(BenchmarkTest, ResultsParallelSingleThreadMixed) {
   EXPECT_EQ(all_sizes_two[0] % TEST_CHUNK_SIZE, 0);
 }
 
-TEST_F(BenchmarkTest, PrepareDataMemoryNumaLocation) {
-  const auto numa_max_node_id = numa_max_node();
-  auto* const allowed_memory_nodes_mask = numa_get_mems_allowed();
-
-  for (auto node_id = NumaNodeID{0}; node_id <= numa_max_node_id; ++node_id) {
-    if (!numa_bitmask_isbitset(allowed_memory_nodes_mask, node_id)) {
-      continue;
-    }
+TEST_F(BenchmarkTest, PrepareDataMemoryLocationInterleaved) {
+  // Assume two regions. Store for each reagion the previously checked memory nodes.
+  auto last_nodes = std::array<std::optional<NumaNodeIDs>, 2>{};
+  for (auto node_id : valid_node_ids) {
+    SCOPED_TRACE("NUMA node index: " + std::to_string(node_id));
 
     auto config = base_config_;
-    config.memory_region_size = 1 * GIB_IN_BYTES;
-    config.numa_memory_nodes = NumaNodeIDs{node_id};
+    config.memory_regions[0].size = 10 * MiB;
+    config.memory_regions[0].node_ids = NumaNodeIDs{node_id};
+    config.memory_regions[1].size = 10 * MiB;
+    config.memory_regions[1].node_ids = NumaNodeIDs{node_id};
+    EXPECT_EQ(config.memory_regions[0].placement_mode(), PagePlacementMode::Interleaved);
+    EXPECT_EQ(config.memory_regions[1].placement_mode(), PagePlacementMode::Interleaved);
+
     SingleBenchmark bm{bm_name_, config, {}, {}};
 
     // Generate data creates the memory mapping and populates the memory based on the given numa_memory_nodes.
     bm.generate_data();
-    const auto bm_data = bm.get_data()[0];
 
-    const auto region_page_count = config.memory_region_size / utils::PAGE_SIZE;
-    for (auto page_idx = uint64_t{0}; page_idx < region_page_count; ++page_idx) {
-      auto* addr = bm_data + page_idx * utils::PAGE_SIZE;
-      ASSERT_EQ(get_numa_node_index_by_address(addr), node_id);
+    const auto& regions = bm.get_memory_regions()[0];
+    ASSERT_EQ(regions.size(), 2u);
+    for (auto region_idx = uint64_t{0}; auto& region : regions) {
+      const auto definition = config.memory_regions[region_idx];
+      const auto region_page_count = config.memory_regions[region_idx].size / utils::PAGE_SIZE;
+      ASSERT_TRUE(verify_interleaved_page_placement(region, definition.size, definition.node_ids));
+      if (last_nodes[region_idx]) {
+        ASSERT_FALSE(verify_interleaved_page_placement(region, definition.size, *last_nodes[region_idx]));
+      }
+      last_nodes[region_idx] = definition.node_ids;
+      ++region_idx;
     }
   }
+}
+
+TEST_F(BenchmarkTest, PrepareDataMemoryLocationPartitioned) {
+  if (valid_node_ids.size() < 2) {
+    GTEST_SKIP() << "Skipping test: system has " << valid_node_ids.size() << " but test requires at least 2.";
+  }
+
+  auto config = base_config_;
+  config.memory_regions[0].size = 10 * MiB;
+  config.memory_regions[0].node_ids = NumaNodeIDs{valid_node_ids[0], valid_node_ids[1]};
+  config.memory_regions[0].percentage_pages_first_node = 60;
+  EXPECT_EQ(config.memory_regions[0].placement_mode(), PagePlacementMode::Partitioned);
+
+  config.memory_regions[1].size = 0;
+
+  SingleBenchmark bm{bm_name_, config, {}, {}};
+
+  // Generate data creates the memory mapping and populates the memory based on the given numa_memory_nodes.
+  bm.generate_data();
+
+  const auto& regions = bm.get_memory_regions()[0];
+  ASSERT_EQ(regions.size(), 2u);
+
+  const auto& definition = config.memory_regions[0];
+  ASSERT_TRUE(verify_partitioned_page_placement(regions[0], definition.size, definition.node_ids,
+                                                *definition.percentage_pages_first_node));
+  ASSERT_FALSE(verify_interleaved_page_placement(regions[0], definition.size, definition.node_ids));
+
+  ASSERT_EQ(regions[1], nullptr);
+}
+
+TEST_F(BenchmarkTest, PrepareDataMemoryLocationInterleavedPartitioned) {
+  if (valid_node_ids.size() < 2) {
+    GTEST_SKIP() << "Skipping test: system has " << valid_node_ids.size() << " but test requires at least 2.";
+  }
+
+  const auto percentage_first_node = 60u;
+  auto config = base_config_;
+  config.memory_regions[0].size = 10 * MiB;
+  config.memory_regions[0].node_ids = NumaNodeIDs{valid_node_ids[0], valid_node_ids[1]};
+  ASSERT_EQ(config.memory_regions[0].placement_mode(), PagePlacementMode::Interleaved);
+
+  config.memory_regions[1].size = 20 * MiB;
+  config.memory_regions[1].node_ids = NumaNodeIDs{valid_node_ids[0], valid_node_ids[1]};
+  config.memory_regions[1].percentage_pages_first_node = 60;
+  ASSERT_EQ(config.memory_regions[1].placement_mode(), PagePlacementMode::Partitioned);
+
+  SingleBenchmark bm{bm_name_, config, {}, {}};
+
+  // Generate data creates the memory mapping and populates the memory based on the given numa_memory_nodes.
+  bm.generate_data();
+
+  const auto& regions = bm.get_memory_regions()[0];
+  ASSERT_EQ(regions.size(), 2u);
+
+  const auto& definitions = config.memory_regions;
+  // Region 0
+  ASSERT_FALSE(verify_partitioned_page_placement(regions[0], definitions[0].size, definitions[0].node_ids,
+                                                 percentage_first_node));
+  ASSERT_TRUE(verify_interleaved_page_placement(regions[0], definitions[0].size, definitions[0].node_ids));
+  // Region 1
+  ASSERT_TRUE(verify_partitioned_page_placement(regions[1], definitions[1].size, definitions[1].node_ids,
+                                                percentage_first_node));
+  ASSERT_FALSE(verify_interleaved_page_placement(regions[1], definitions[1].size, definitions[1].node_ids));
 }
 
 }  // namespace mema

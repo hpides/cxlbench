@@ -17,7 +17,7 @@
 
 namespace mema {
 
-enum BenchmarkType { Single, Parallel };
+enum class BenchmarkType : uint8_t { Single, Parallel };
 
 struct BenchmarkEnums {
   static const std::unordered_map<std::string, BenchmarkType> str_to_benchmark_type;
@@ -46,8 +46,12 @@ struct BenchmarkExecution {
 };
 
 struct ThreadRunConfig {
-  char* partition_start_addr;
+  // Partition start addresses
+  char* start_addr;
+  char* secondary_start_addr;
+
   const uint64_t partition_size;
+  const uint64_t secondary_partition_size;
   const uint64_t thread_count_per_partition;
   const uint64_t thread_idx;
   const uint64_t ops_count_per_chunk;
@@ -61,13 +65,16 @@ struct ThreadRunConfig {
   ExecutionDuration* total_operation_duration;
   std::vector<uint64_t>* custom_op_latencies;
 
-  ThreadRunConfig(char* partition_start_addr, const uint64_t partition_size, const uint64_t thread_count_per_partition,
+  ThreadRunConfig(char* partition_start_addr, char* secondary_partition_start_addr, const uint64_t partition_size,
+                  const uint64_t secondary_partition_size, const uint64_t thread_count_per_partition,
                   const uint64_t thread_idx, const uint64_t ops_count_per_chunk, const uint64_t chunk_count,
                   const BenchmarkConfig& config, BenchmarkExecution* execution,
                   ExecutionDuration* total_operation_duration, uint64_t* total_operation_size,
                   std::vector<uint64_t>* custom_op_latencies)
-      : partition_start_addr{partition_start_addr},
+      : start_addr{partition_start_addr},
+        secondary_start_addr{secondary_partition_start_addr},
         partition_size{partition_size},
+        secondary_partition_size{secondary_partition_size},
         thread_count_per_partition{thread_count_per_partition},
         thread_idx{thread_idx},
         ops_count_per_chunk{ops_count_per_chunk},
@@ -126,10 +133,11 @@ class Benchmark {
    */
   virtual void generate_data() = 0;
 
-  /** Create all the IO addresses ahead of time to avoid unnecessary ops during the actual benchmark. */
+  /** Create all the IO addresses ahead of time to avoid unnecessary ops during the actual benchmark. Prepare worker
+   * thread configurations. */
   virtual void set_up() = 0;
 
-  virtual void verify_page_locations() = 0;
+  virtual void verify() = 0;
 
   /** Return the results as a JSON to be exported to the user and visualization. */
   virtual nlohmann::json get_result_as_json() = 0;
@@ -146,7 +154,8 @@ class Benchmark {
   // Return the benchmark Type.
   BenchmarkType get_benchmark_type() const;
 
-  const std::vector<char*>& get_data() const;
+  // Returns the memory regions (inner vector) for the different workloads (outer vector).
+  const std::vector<MemoryRegions>& get_memory_regions() const;
 
   const std::vector<BenchmarkConfig>& get_benchmark_configs() const;
   const std::vector<std::vector<ThreadRunConfig>>& get_thread_configs() const;
@@ -155,19 +164,23 @@ class Benchmark {
   nlohmann::json get_json_config(uint8_t config_index);
 
  protected:
-  static void single_set_up(const BenchmarkConfig& config, char* data, BenchmarkExecution* execution,
+  static void single_set_up(const BenchmarkConfig& config, MemoryRegions& memory_regions, BenchmarkExecution* execution,
                             BenchmarkResult* result, std::vector<std::thread>* pool,
                             std::vector<ThreadRunConfig>* thread_config);
 
-  static char* prepare_data(const BenchmarkConfig& config, const size_t memory_region_size);
+  // Pepares the memory regions and returns the start pointer. A start address is nullptr if the corresponding memory
+  // region has a size of 0.
+  static MemoryRegions prepare_data(const BenchmarkConfig& config);
 
   // Prepares the memory region with pages interleaved accross the given NUMA nodes.
-  static char* prepare_interleaved_data(const BenchmarkConfig& config, const size_t memory_region_size);
+  static char* prepare_interleaved_data(const MemoryRegionDefinition& region, bool prepare_read_data);
 
   // Prepares the memory region with two partitions each being located on a different NUMA nodes.
-  static char* prepare_partitioned_data(const BenchmarkConfig& config, const size_t memory_region_size);
+  static char* prepare_partitioned_data(const MemoryRegionDefinition& region, bool prepare_read_data);
 
-  static char* verify_page_placement(const BenchmarkConfig& config);
+  // Verifies the page locations
+  static void verify_page_locations(const MemoryRegions& memory_regions,
+                                    const MemoryRegionDefinitions& region_definitions);
 
   static void run_custom_ops_in_thread(ThreadRunConfig* thread_config, const BenchmarkConfig& config);
   static void run_in_thread(ThreadRunConfig* thread_config, const BenchmarkConfig& config);
@@ -181,7 +194,8 @@ class Benchmark {
 
   const BenchmarkType benchmark_type_;
 
-  std::vector<char*> data_;
+  // Data for different workloads.
+  std::vector<MemoryRegions> memory_regions_;
   const std::vector<BenchmarkConfig> configs_;
   std::vector<std::unique_ptr<BenchmarkResult>> results_;
   std::vector<std::unique_ptr<BenchmarkExecution>> executions_;

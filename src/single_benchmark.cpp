@@ -35,35 +35,22 @@ bool SingleBenchmark::run() {
 }
 
 void SingleBenchmark::generate_data() {
-  if (!data_.empty()) {
+  if (!memory_regions_.empty()) {
     spdlog::critical("generate_data() called more than once for the same benchmark.");
     utils::crash_exit();
   }
-  data_.push_back(prepare_data(configs_[0], configs_[0].memory_region_size));
+  memory_regions_.resize(1);
+  memory_regions_[0] = prepare_data(configs_[0]);
 }
 
 void SingleBenchmark::set_up() {
   thread_pools_.resize(1);
   thread_configs_.resize(1);
-  single_set_up(configs_[0], data_[0], executions_[0].get(), results_[0].get(), &thread_pools_[0], &thread_configs_[0]);
+  single_set_up(configs_[0], memory_regions_[0], executions_[0].get(), results_[0].get(), &thread_pools_[0],
+                &thread_configs_[0]);
 }
 
-void SingleBenchmark::verify_page_locations() {
-  auto& config = configs_[0];
-  auto* data = data_[0];
-
-  auto page_locations_verified = false;
-  if (config.percentage_pages_first_node == -1) {
-    page_locations_verified =
-        verify_interleaved_page_placement(data, config.memory_region_size, config.numa_memory_nodes);
-  } else {
-    page_locations_verified = verify_partitioned_page_placement(
-        data, config.memory_region_size, config.numa_memory_nodes, config.percentage_pages_first_node);
-  }
-  if (!page_locations_verified) {
-    spdlog::critical("Page locations are incorrect.");
-  }
-}
+void SingleBenchmark::verify() { verify_page_locations(memory_regions_[0], configs_[0].memory_regions); }
 
 nlohmann::json SingleBenchmark::get_result_as_json() {
   nlohmann::json result;

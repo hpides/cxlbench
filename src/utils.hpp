@@ -15,7 +15,7 @@
 #define MemaAssert(expr, msg)     \
   if (!static_cast<bool>(expr)) { \
     spdlog::critical(msg);        \
-    utils::crash_exit();          \
+    utils::crash_exit(msg);       \
   }                               \
   static_assert(true, "End call of macro with a semicolon")
 
@@ -23,7 +23,12 @@ namespace mema {
 
 class MemaException : public std::exception {
  public:
-  const char* what() const noexcept override { return "Execution failed. Check logs for more details."; }
+  explicit MemaException(const std::string message = "Execution failed. Check logs for more details.")
+      : message(message) {}
+  const char* what() const noexcept override { return message.c_str(); }
+
+ private:
+  std::string message;
 };
 
 namespace utils {
@@ -59,6 +64,7 @@ uint64_t zipf(const double alpha, const uint64_t n);
 double rand_val();
 
 void crash_exit();
+void crash_exit(const std::string msg);
 void print_segfault_error();
 
 std::string get_time_string();
@@ -74,9 +80,7 @@ std::string get_enum_as_string(const std::unordered_map<std::string, T>& enum_ma
   for (auto it = enum_map.cbegin(); it != enum_map.cend(); ++it) {
     if (it->second == value) {
       const auto is_short_char = it->first.size() == SHORT_STRING_SIZE;
-      if (short_result && is_short_char) {
-        return it->first;
-      } else if (!(short_result || is_short_char)) {
+      if ((short_result && is_short_char) || (!short_result && !is_short_char)) {
         return it->first;
       }
     }

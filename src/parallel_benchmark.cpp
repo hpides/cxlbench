@@ -16,10 +16,10 @@ namespace mema {
 bool ParallelBenchmark::run() {
   signal(SIGSEGV, thread_error_handler);
 
-  for (auto bm_idx = uint64_t{0}; bm_idx < configs_.size(); ++bm_idx) {
-    for (auto thread_index = uint64_t{0}; thread_index < configs_[bm_idx].number_threads; thread_index++) {
-      thread_pools_[bm_idx].emplace_back(&run_in_thread, &thread_configs_[bm_idx][thread_index],
-                                         std::ref(configs_[bm_idx]));
+  for (auto workload_idx = uint64_t{0}; workload_idx < configs_.size(); ++workload_idx) {
+    for (auto thread_idx = uint64_t{0}; thread_idx < configs_[workload_idx].number_threads; thread_idx++) {
+      thread_pools_[workload_idx].emplace_back(&run_in_thread, &thread_configs_[workload_idx][thread_idx],
+                                               std::ref(configs_[workload_idx]));
     }
   }
 
@@ -38,32 +38,28 @@ bool ParallelBenchmark::run() {
 }
 
 void ParallelBenchmark::generate_data() {
-  if (!data_.empty()) {
+  if (!memory_regions_.empty()) {
     spdlog::critical("generate_data() called more than once for the same benchmark.");
     utils::crash_exit();
   }
-  data_.push_back(prepare_data(configs_[0], configs_[0].memory_region_size));
-  data_.push_back(prepare_data(configs_[1], configs_[1].memory_region_size));
+  memory_regions_.resize(PAR_WORKLOAD_COUNT);
+  for (auto workload_idx = uint64_t{0}; workload_idx < PAR_WORKLOAD_COUNT; ++workload_idx) {
+    memory_regions_[workload_idx] = prepare_data(configs_[workload_idx]);
+  }
 }
 
 void ParallelBenchmark::set_up() {
-  thread_pools_.resize(2);
-  thread_configs_.resize(2);
-  single_set_up(configs_[0], data_[0], executions_[0].get(), results_[0].get(), &thread_pools_[0], &thread_configs_[0]);
-  single_set_up(configs_[1], data_[1], executions_[1].get(), results_[1].get(), &thread_pools_[1], &thread_configs_[1]);
+  thread_pools_.resize(PAR_WORKLOAD_COUNT);
+  thread_configs_.resize(PAR_WORKLOAD_COUNT);
+  for (auto workload_idx = uint64_t{0}; workload_idx < PAR_WORKLOAD_COUNT; ++workload_idx) {
+    single_set_up(configs_[workload_idx], memory_regions_[workload_idx], executions_[workload_idx].get(),
+                  results_[workload_idx].get(), &thread_pools_[workload_idx], &thread_configs_[workload_idx]);
+  }
 }
 
-void ParallelBenchmark::verify_page_locations() {
-  for (auto benchmark_idx = uint32_t{0}; benchmark_idx < 2; ++benchmark_idx) {
-    auto& config = configs_[benchmark_idx];
-    auto* data = data_[benchmark_idx];
-
-    if (config.percentage_pages_first_node == -1) {
-      verify_interleaved_page_placement(data, config.memory_region_size, config.numa_memory_nodes);
-    } else {
-      verify_partitioned_page_placement(data, config.memory_region_size, config.numa_memory_nodes,
-                                        config.percentage_pages_first_node);
-    }
+void ParallelBenchmark::verify() {
+  for (auto workload_idx = uint32_t{0}; workload_idx < PAR_WORKLOAD_COUNT; ++workload_idx) {
+    verify_page_locations(memory_regions_[workload_idx], configs_[workload_idx].memory_regions);
   }
 }
 

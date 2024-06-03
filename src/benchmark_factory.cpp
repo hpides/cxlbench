@@ -150,7 +150,6 @@ std::vector<BenchmarkConfig> BenchmarkFactory::create_benchmark_matrix(YAML::Nod
       // We need to copy here to keep the tags clean in the YAML.
       // Otherwise, everything is 'visited' after the first iteration and decoding fails.
       YAML::Node clean_config = YAML::Clone(current_config);
-
       auto benchmark_config = BenchmarkConfig::decode(clean_config);
       benchmark_config.matrix_args = {matrix_arg_names.begin(), matrix_arg_names.end()};
 

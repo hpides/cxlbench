@@ -1,14 +1,16 @@
 test_custom_ops:
   matrix:
     custom_operations:
-      - "r_64,w_64_nocache,r_128"
-      - "r_256,w_256_none"
-      - "r_1024,w_128_cache"
+      - "r_64,m0_w_64_nocache,m1_r_128"
+      - "r_256,m0_w_256_none"
+      - "m1_r_1024,m1_w_128_cache"
 
   args:
     number_threads: 16
     memory_region_size: 2G
+    secondary_memory_region_size: 1G
     numa_memory_nodes: [ 1 ]
+    secondary_numa_memory_nodes: [ 2 ]
     numa_task_nodes: [ 0 ]
     number_operations: 100000000
     exec_mode: custom

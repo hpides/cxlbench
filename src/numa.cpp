@@ -262,7 +262,7 @@ bool verify_interleaved_page_placement(char* const start_addr, size_t memory_reg
                                        const NumaNodeIDs& target_nodes) {
   spdlog::debug("Check page placement errors.");
   if (target_nodes.empty()) {
-    spdlog::warn("Skipped page placement verification.");
+    spdlog::warn("Skipped interleaved page placement verification.");
     return true;
   }
 
@@ -340,11 +340,11 @@ bool verify_interleaved_page_placement(char* const start_addr, size_t memory_reg
   return incorrect_placement_count <= PAGE_ERROR_LIMIT * region_page_count;
 }
 
-bool verify_partitioned_page_placement(char* const start_addr, size_t memory_region_size,
+bool verify_partitioned_page_placement(char* const start_addr, uint64_t memory_region_size,
                                        const PageLocations& expected_page_locations) {
   spdlog::debug("Check page placement errors.");
   if (expected_page_locations.empty()) {
-    spdlog::warn("Skipped page placement verification.");
+    spdlog::warn("Skipped partitioned page placement verification.");
     return true;
   }
 

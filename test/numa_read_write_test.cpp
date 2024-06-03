@@ -19,7 +19,7 @@ namespace mema {
 class NumaReadWriteTest : public BaseTest {};
 
 TEST_F(NumaReadWriteTest, SimpleWriteRead) {
-  const auto memory_region_size = 100 * MIB_IN_BYTES;
+  const auto memory_region_size = 100 * MiB;
   const auto max_node_id = numa_max_node();
   const auto* const memory_nodes_mask = numa_get_mems_allowed();
   for (auto node_id = NumaNodeID{0}; node_id <= max_node_id; ++node_id) {
@@ -62,7 +62,7 @@ TEST_F(NumaReadWriteTest, SimpleWriteRead) {
 }
 
 TEST_F(NumaReadWriteTest, IntrinsicsWriteRead) {
-  const auto memory_region_size = 100 * MIB_IN_BYTES;
+  const auto memory_region_size = 100 * MiB;
   const auto max_node_id = numa_max_node();
   const auto* const memory_nodes_mask = numa_get_mems_allowed();
   for (auto node_id = NumaNodeID{0}; node_id <= max_node_id; ++node_id) {

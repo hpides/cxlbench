@@ -3,11 +3,12 @@
 #include <unistd.h>
 
 #include <fstream>
-#include <read_write_ops.hpp>
-#include <utils.hpp>
+#include <thread>
 
 #include "gtest/gtest.h"
+#include "read_write_ops.hpp"
 #include "test_utils.hpp"
+#include "utils.hpp"
 
 namespace mema {
 
