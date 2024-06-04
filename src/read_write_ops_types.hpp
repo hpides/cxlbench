@@ -32,6 +32,8 @@ using CharVec __attribute__((vector_size(VECTOR_SIZE))) = char;
 
 using flush_fn = void(char*, const size_t);
 using barrier_fn = void();
+using write_fn = void(char*, flush_fn, barrier_fn);
+using simd_write_nt_fn = void(char*);
 
 /** no explicit cache line flush is used. */
 inline void no_flush(char* addr, const size_t len) {}
