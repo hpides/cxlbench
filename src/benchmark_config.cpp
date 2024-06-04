@@ -452,6 +452,14 @@ nlohmann::json BenchmarkConfig::as_json() const {
   return config;
 }
 
+uint64_t CustomOp::cumulative_size(const std::vector<CustomOp>& ops) {
+  auto size = uint64_t{0};
+  for (const auto& op : ops) {
+    size += op.size;
+  }
+  return size;
+}
+
 CustomOp CustomOp::from_string(const std::string& str) {
   if (str.empty()) {
     spdlog::critical("Custom operation cannot be empty!");

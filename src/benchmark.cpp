@@ -90,8 +90,9 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, MemoryRegions& memo
   const auto secondary_partition_size = config.memory_regions[1].size;
 
   // Set up thread synchronization and execution parameters
-  const size_t ops_per_chunk =
-      config.access_size < config.min_io_chunk_size ? config.min_io_chunk_size / config.access_size : 1;
+  const auto& access_size =
+      is_custom_execution ? CustomOp::cumulative_size(config.custom_operations) : config.access_size;
+  const uint64_t ops_per_chunk = access_size < config.min_io_chunk_size ? config.min_io_chunk_size / access_size : 1;
 
   // Add one chunk for random execution and non-divisible numbers so that we perform at least number_operations ops and
   // not fewer. Adding a chunk in sequential access exceeds the memory range and segfaults.
@@ -111,10 +112,9 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, MemoryRegions& memo
   auto* secondary_partition_start = memory_regions[1];
 
   for (uint16_t partition_idx = 0; partition_idx < partition_count; ++partition_idx) {
-    char* partition_start =
-        (config.exec_mode == Mode::Sequential_Desc)
-            ? primary_region + ((partition_count - partition_idx) * partition_size) - config.access_size
-            : primary_region + (partition_idx * partition_size);
+    char* partition_start = (config.exec_mode == Mode::Sequential_Desc)
+                                ? primary_region + ((partition_count - partition_idx) * partition_size) - access_size
+                                : primary_region + (partition_idx * partition_size);
 
     for (uint16_t partition_thread_idx = 0; partition_thread_idx < thread_count_per_partition; ++partition_thread_idx) {
       const auto thread_idx = (partition_idx * thread_count_per_partition) + partition_thread_idx;

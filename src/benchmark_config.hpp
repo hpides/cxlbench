@@ -66,6 +66,7 @@ struct CustomOp {
   static std::vector<CustomOp> all_from_string(const std::string& str);
   static std::string all_to_string(const std::vector<CustomOp>& ops);
   static std::string to_string(const CustomOp& op);
+  static uint64_t cumulative_size(const std::vector<CustomOp>& ops);
   std::string to_string() const;
 
   static void validate(const std::vector<CustomOp>& operations);
@@ -108,7 +109,8 @@ using MemoryRegionDefinitions = std::array<MemoryRegionDefinition, 2>;
  */
 struct BenchmarkConfig {
   /** Represent the memory region that one workload can use. Currently limited to two.*/
-  MemoryRegionDefinitions memory_regions = {MemoryRegionDefinition{}, MemoryRegionDefinition{.size = 0}};
+  MemoryRegionDefinitions memory_regions = {MemoryRegionDefinition{.size = 10 * GiB},
+                                            MemoryRegionDefinition{.size = 0}};
 
   /** Represents the size of an individual memory access in Byte. Must be a power of two. */
   uint32_t access_size = 256;

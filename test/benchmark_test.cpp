@@ -205,6 +205,46 @@ TEST_F(BenchmarkTest, SetUpMultiThreadDefaultPartition) {
   bm.get_benchmark_results()[0]->config.validate();
 }
 
+TEST_F(BenchmarkTest, SetUpSingleThreadCustomOps) {
+  // Cumulative size is 960.
+  base_config_.custom_operations =
+      std::vector<CustomOp>{CustomOp::from_string("m0_r_64"), CustomOp::from_string("m0_r_128"),
+                            CustomOp::from_string("m0_r_256"), CustomOp::from_string("m0_r_512")};
+  base_config_.number_threads = 1;
+  base_config_.exec_mode = Mode::Custom;
+  base_config_.number_operations = 10000;
+
+  base_executions_.reserve(1);
+  base_executions_.push_back(std::make_unique<BenchmarkExecution>());
+  base_results_.reserve(1);
+  base_results_.push_back(std::make_unique<BenchmarkResult>(base_config_));
+  SingleBenchmark bm{bm_name_, base_config_, std::move(base_executions_), std::move(base_results_)};
+  bm.generate_data();
+  bm.set_up();
+
+  const std::vector<ThreadRunConfig>& thread_configs = bm.get_thread_configs()[0];
+  ASSERT_EQ(thread_configs.size(), 1);
+  const ThreadRunConfig& thread_config = thread_configs[0];
+
+  EXPECT_EQ(thread_config.thread_idx, 0);
+  EXPECT_EQ(thread_config.thread_count_per_partition, 1);
+  EXPECT_EQ(thread_config.partition_size, TEST_DATA_SIZE);
+  EXPECT_EQ(thread_config.ops_count_per_chunk, 136 /* = 128 KiB / 960*/);
+  EXPECT_EQ(thread_config.chunk_count, 74 /* = 10000 / 136 + 1 extra chunk */);
+  EXPECT_EQ(thread_config.start_addr, bm.get_memory_regions()[0][0]);
+  EXPECT_EQ(&thread_config.config, &bm.get_benchmark_configs()[0]);
+
+  const std::vector<ExecutionDuration>& op_durations = bm.get_benchmark_results()[0]->total_operation_durations;
+  ASSERT_EQ(op_durations.size(), 1);
+  EXPECT_EQ(thread_config.total_operation_duration, &op_durations[0]);
+
+  const std::vector<uint64_t>& op_sizes = bm.get_benchmark_results()[0]->total_operation_sizes;
+  ASSERT_EQ(op_sizes.size(), 1);
+  EXPECT_EQ(thread_config.total_operation_size, &op_sizes[0]);
+
+  bm.get_benchmark_results()[0]->config.validate();
+}
+
 TEST_F(BenchmarkTest, RunSingleThreadRead) {
   const size_t num_ops = TEST_DATA_SIZE / 256;
   base_config_.number_threads = 1;
