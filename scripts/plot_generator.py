@@ -572,19 +572,22 @@ class PlotGenerator:
         thread_count = len(df[KEY_THREAD_COUNT].unique())
         access_size_count = len(df[KEY_ACCESS_SIZE].unique())
         padding = 2
+        x_scale = 0.6
+        y_scale = 0.2
+        minimum = 4
         plt.figure(
             figsize=(
-                max(thread_count * 0.6 + padding, 4 + padding),
-                max(access_size_count * 0.4 + padding, 4 + padding),
+                max(thread_count * x_scale, minimum) + padding,
+                max(access_size_count * y_scale, minimum / 2) + padding
             )
         )
         heatmap = sns.heatmap(
             df_heatmap,
             annot=True,
-            annot_kws={"fontsize": 6, "va": "center_baseline"},
+            annot_kws={"fontsize": 7, "va": "center_baseline"},
             fmt=".2f",
             cmap="magma",
-            cbar_kws={"label": "Throughput in GB/s"},
+            cbar_kws={"label": "Throughput in GB/s", "pad": 0.02}
         )
 
         heatmap.set_xlabel("Thread Count")
