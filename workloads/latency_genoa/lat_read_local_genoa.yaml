@@ -1,0 +1,25 @@
+lat_read:
+  matrix:
+    number_threads: [ 1 ]
+    custom_operations:
+      - "r_64"
+      - "r_128"
+      - "r_256"
+      - "r_512"
+      - "r_1024"
+      - "r_2048"
+      # - "r_4096"
+      # - "r_8192"
+      # - "r_16384"
+      # - "r_32768"
+      # - "r_65536"
+
+  args:
+    numa_memory_nodes: [0]
+    numa_task_nodes: [0]
+    memory_region_size: 10G
+    number_operations: 10000000
+    latency_sample_frequency: 5000
+    exec_mode: custom
+    explicit_hugepages_size: 0
+    transparent_huge_pages: False

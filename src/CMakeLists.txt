@@ -59,26 +59,19 @@ target_link_libraries(check_move_pages ${NUMA_LIBRARIES})
 set_target_properties(check_move_pages PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 
 # Microbenchmark false sharing (Ulrich Drepper)
-set(
-        FALSE_SHARING_DREPPER_SOURCES
-
-        microexperiments/falsesharing_drepper/main.cpp
-)
-
-add_executable(false-sharing-drepper ${FALSE_SHARING_DREPPER_SOURCES})
+add_executable(false-sharing-drepper microexperiments/falsesharing_drepper/main.cpp)
 target_link_libraries(false-sharing-drepper)
 set_target_properties(false-sharing-drepper PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 
 # Microbenchmark false sharing (based on Drepper with modern C++)
-set(
-        FALSE_SHARING_SOURCES
-
-        microexperiments/falsesharing/main.cpp
-)
-
-add_executable(false-sharing ${FALSE_SHARING_SOURCES})
+add_executable(false-sharing microexperiments/falsesharing/main.cpp)
 target_link_libraries(false-sharing)
 set_target_properties(false-sharing PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+
+# Playground
+add_executable(playground playground/main.cpp)
+target_link_libraries(playground mema)
+set_target_properties(playground PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 
 # Clang tidy
 if(MEMATIDY)

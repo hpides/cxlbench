@@ -1,0 +1,25 @@
+lat_write_cache:
+  matrix:
+    number_threads: [ 1 ]
+    custom_operations:
+      - "r_64,w_64_cache"
+      - "r_128,w_128_cache"
+      - "r_256,w_256_cache"
+      - "r_512,w_512_cache"
+      - "r_1024,w_1024_cache"
+      - "r_2048,w_2048_cache"
+      # - "r_4096,w_4096_cache"
+      # - "r_8192,w_8192_cache"
+      # - "r_16384,w_16384_cache"
+      # - "r_32768,w_32768_cache"
+      # - "r_65536,w_65536_cache"
+
+  args:
+    numa_memory_nodes: [0]
+    numa_task_nodes: [0]
+    memory_region_size: 10G
+    number_operations: 10000000
+    latency_sample_frequency: 5000
+    exec_mode: custom
+    explicit_hugepages_size: 0
+    transparent_huge_pages: False
