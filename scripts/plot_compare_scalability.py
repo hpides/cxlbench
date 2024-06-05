@@ -101,16 +101,10 @@ def parse_matrix_jsons(results):
             path_parts = path.split(FILE_TAG_SUBSTRING)
             assert (
                 len(path_parts) == 2
-            ), "Make sure that the substring {} appears only once in a result file name.".format(
-                FILE_TAG_SUBSTRING
-            )
+            ), "Make sure that the substring {} appears only once in a result file name.".format(FILE_TAG_SUBSTRING)
             tag_part = path_parts[-1]
-            assert (
-                "-" not in tag_part
-            ), "Make sure that the tag is the last part of the name before the file extension."
-            assert (
-                "_" not in tag_part
-            ), "Make sure that the tag is the last part of the name before the file extension."
+            assert "-" not in tag_part, "Make sure that the tag is the last part of the name before the file extension."
+            assert "_" not in tag_part, "Make sure that the tag is the last part of the name before the file extension."
             tag = tag_part.split(".")[0]
 
         df = pd.read_json(path)
@@ -128,9 +122,7 @@ def parse_matrix_jsons(results):
     ]
     print("Supported BM groups: {}".format(selected_bm_groups))
 
-    df = df[
-        (df[Keys.BM_GROUP].isin(selected_bm_groups)) & (df[Keys.BM_TYPE] == "single")
-    ]
+    df = df[(df[Keys.BM_GROUP].isin(selected_bm_groups)) & (df[Keys.BM_TYPE] == "single")]
     df = json_util.flatten_nested_json_df(
         df,
         [
@@ -160,12 +152,8 @@ def parse_matrix_jsons(results):
 
 
 def flatten_df(df):
-    df[Keys.NUMA_MEMORY_NODES] = df[Keys.NUMA_MEMORY_NODES].transform(
-        lambda x: ",".join(str(i) for i in x)
-    )
-    df[Keys.NUMA_TASK_NODES] = df[Keys.NUMA_TASK_NODES].transform(
-        lambda x: ",".join(str(i) for i in x)
-    )
+    df[Keys.NUMA_MEMORY_NODES] = df[Keys.NUMA_MEMORY_NODES].transform(lambda x: ",".join(str(i) for i in x))
+    df[Keys.NUMA_TASK_NODES] = df[Keys.NUMA_TASK_NODES].transform(lambda x: ",".join(str(i) for i in x))
     return df
 
 
@@ -237,12 +225,8 @@ def create_scalability_plots(dfs, names, output_dir, access_sizes):
 
             # Since we check for certain flush instructions, the data frame is empty for read and
             # operation latency benchmark results if the flush instruction is not `none`.
-            if flush_type != FLUSH_INSTR_NONE and (
-                "read" in bm_group or bm_group == "operation_latency"
-            ):
-                assert (
-                    df_sub.empty
-                ), "Flush instruction must be none for read and latency benchmarks."
+            if flush_type != FLUSH_INSTR_NONE and ("read" in bm_group or bm_group == "operation_latency"):
+                assert df_sub.empty, "Flush instruction must be none for read and latency benchmarks."
 
             if df_sub.empty:
                 continue

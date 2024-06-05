@@ -578,7 +578,7 @@ class PlotGenerator:
         plt.figure(
             figsize=(
                 max(thread_count * x_scale, minimum) + padding,
-                max(access_size_count * y_scale, minimum / 2) + padding
+                max(access_size_count * y_scale, minimum / 2) + padding,
             )
         )
         heatmap = sns.heatmap(
@@ -587,7 +587,7 @@ class PlotGenerator:
             annot_kws={"fontsize": 7, "va": "center_baseline"},
             fmt=".2f",
             cmap="magma",
-            cbar_kws={"label": "Throughput in GB/s", "pad": 0.02}
+            cbar_kws={"label": "Throughput in GB/s", "pad": 0.02},
         )
 
         heatmap.set_xlabel("Thread Count")
