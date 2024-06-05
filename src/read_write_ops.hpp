@@ -7,9 +7,12 @@
 #include "benchmark/benchmark.h"
 #include "read_write_ops_avx2.hpp"
 #include "read_write_ops_avx512.hpp"
-
 #if !(defined(USE_AVX_2) || defined(USE_AVX_512))
 #include "read_write_ops_types.hpp"
+#endif
+#if defined(__powerpc__)
+// VSX intrinsics header
+#include <altivec.h>
 #endif
 
 namespace mema::rw_ops {
@@ -30,12 +33,12 @@ inline void flush_clwb(char* addr, const size_t len) {
  * #####################################################
  */
 
-template <int LOOP_COUNT>
+template <int ACCESS_COUNT_64B>
 inline CharVec read_64B_accesses(char* address) {
   volatile CharVec* volatile_addr = reinterpret_cast<CharVec*>(address);
   auto result = CharVec{0};
   // clang-format off
-  unroll<CACHE_LINE_FACTOR * LOOP_COUNT>([&](size_t loop_index) {
+  unroll<VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B>([&](size_t loop_index) {
     result = volatile_addr[loop_index];
   });
   // clang-format on
@@ -73,7 +76,7 @@ inline CharVec read(char* addr, const size_t access_size) {
     volatile CharVec* volatile_addr = reinterpret_cast<CharVec*>(addr);
     // 1x 64k access (1024x 64B access)
     // clang-format off
-    unroll<CACHE_LINE_FACTOR * 1024>([&](size_t loop_index) {
+    unroll<VECTOR_SIZE_FACTOR * 1024>([&](size_t loop_index) {
       result = volatile_addr[loop_index];
     });
     // clang-format on
@@ -81,12 +84,12 @@ inline CharVec read(char* addr, const size_t access_size) {
   return result;
 }
 
-template <int LOOP_COUNT>
+template <int ACCESS_COUNT_64B>
 inline void read_64B_accesses(const std::vector<char*>& addresses) {
   for (char* addr : addresses) {
     volatile CharVec* volatile_addr = reinterpret_cast<CharVec*>(addr);
     // clang-format off
-    unroll<CACHE_LINE_FACTOR * LOOP_COUNT>([&](size_t loop_index) {
+    unroll<VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B>([&](size_t loop_index) {
       auto result = volatile_addr[loop_index];
     });
     // clang-format on
@@ -134,8 +137,8 @@ inline void read(const std::vector<char*>& addresses, const size_t access_size) 
  */
 
 inline void write_data_scalar(char* start_address, const char* end_address) {
-  for (char* mem_addr = start_address; mem_addr < end_address; mem_addr += 64) {
-    std::memcpy(mem_addr, WRITE_DATA, 64);
+  for (char* mem_addr = start_address; mem_addr < end_address; mem_addr += BASE_ACCESS_SIZE) {
+    std::memcpy(mem_addr, WRITE_DATA, BASE_ACCESS_SIZE);
   }
 }
 
@@ -145,21 +148,38 @@ inline void write_data_scalar(char* start_address, const char* end_address) {
  * #####################################################
  */
 
-template <int LOOP_COUNT>
+#if defined(__powerpc__)
+// Power9 is not consistently optimizing all access sizes for writes, so we provide the intrinsic
+
+#define WRITE_SIMD_PPC(mem_addr, loop_index, data) \
+  vec_xst(data, VECTOR_SIZE* loop_index, reinterpret_cast<vector signed char*>(mem_addr))
+
+template <int ACCESS_COUNT_64B>
+inline void write_64B_accesses(char* address) {
+  const auto* data = reinterpret_cast<const vector signed char*>(WRITE_DATA);
+  // clang-format off
+  unroll<VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B>([&](size_t loop_index) {
+    WRITE_SIMD_PPC(address, loop_index, *data);
+  });
+  // clang-format on
+}
+#else
+template <int ACCESS_COUNT_64B>
 inline void write_64B_accesses(char* address) {
   const CharVec* write_data = reinterpret_cast<const CharVec*>(WRITE_DATA);
   CharVec* target_address = reinterpret_cast<CharVec*>(address);
   // clang-format off
-  unroll<CACHE_LINE_FACTOR * LOOP_COUNT>([&](size_t loop_index) {
+  unroll<VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B>([&](size_t loop_index) {
     target_address[loop_index] = write_data[0];
   });
   // clang-format on
 }
+#endif
 
-template <int LOOP_COUNT>
+template <int ACCESS_COUNT_64B>
 inline void write_64B_accesses(char* address, flush_fn flush, barrier_fn barrier) {
-  write_64B_accesses<LOOP_COUNT>(address);
-  flush(address, 64 * LOOP_COUNT);
+  write_64B_accesses<ACCESS_COUNT_64B>(address);
+  flush(address, 64 * ACCESS_COUNT_64B);
   barrier();
 }
 
@@ -440,5 +460,4 @@ inline void simd_write_nt(const std::vector<char*>& addresses, const size_t acce
 }
 
 #endif  // defined(USE_AVX_2) || defined(USE_AVX_512)
-
 }  // namespace mema::rw_ops

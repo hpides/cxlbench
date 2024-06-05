@@ -8,25 +8,37 @@
 
 namespace mema::rw_ops {
 
-// Exactly 64 characters to write in one cache line.
-static const char WRITE_DATA[] __attribute__((aligned(64))) =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-";
+#if defined(__powerpc__)
+static constexpr auto CACHE_LINE_SIZE = size_t{128};
 
+#else
 static constexpr auto CACHE_LINE_SIZE = size_t{64};
+#endif
+
+// Write data for a base access (e.g., 64 B access). We assume vector sizes of 16/32/64 Bytes. We repeat the write data
+// after 16 characters for a simpler write logic with vector sizes of 16/32 Bytes.
+static const char WRITE_DATA[] __attribute__((aligned(64))) =
+    "AbcdefghijklmnopAbcdefghijklmnopAbcdefghijklmnopAbcdefghijklmnop";
 
 // We use platform-independent vector intrinsics (compiler intrinsics) to avoid writing platform-specific SIMD
 // intrinsics (only for char data type; see definition of CharVec). VECTOR_SIZE defines the vector size and, in the case
-// of type char, the number of Bytes being accessed. 64 B (cache line size) is the base access size in this benchmark
-// tool. We need a certain number of vectorized memory accesses to access 64 B. This number is determined by
-// CACHE_LINE_FACTOR.
+// of type char, the number of Bytes being accessed. 64 B is the base access size in this benchmark tool. We need a
+// certain number of vectorized memory accesses to access 64 B. This number is determined by VECTOR_SIZE_FACTOR.
 
-#ifdef USE_AVX_2
+#if defined(__powerpc__)
+// 128 bit registers
+static constexpr size_t VECTOR_SIZE = 16;
+#elif defined(USE_AVX_2)
+// 256 bit registers
 static constexpr size_t VECTOR_SIZE = 32;
 #else
+// 512 bit registers
 static constexpr size_t VECTOR_SIZE = 64;
 #endif
 
-static constexpr size_t CACHE_LINE_FACTOR = CACHE_LINE_SIZE / VECTOR_SIZE;
+static constexpr size_t BASE_ACCESS_SIZE = 64;
+// This factor needs to be multiplied with the a SIMD instruction's access size to achieve the base access size.
+static constexpr size_t VECTOR_SIZE_FACTOR = BASE_ACCESS_SIZE / VECTOR_SIZE;
 
 using CharVec __attribute__((vector_size(VECTOR_SIZE))) = char;
 
@@ -52,10 +64,10 @@ void unroll_impl(Fn fn, std::index_sequence<indices...>) {
   (fn(indices), ...);
 }
 
-template <int LOOP_COUNT, typename Fn>
+template <int N, typename Fn>
 void unroll(Fn fn) {
-  // Call unroll_impl with passed function and a compile-time sequence of integers [0, ..., LOOP_COUNT].
-  unroll_impl(fn, std::make_index_sequence<LOOP_COUNT>());
+  // Call unroll_impl with passed function and a compile-time sequence of integers [0, ..., N - 1].
+  unroll_impl(fn, std::make_index_sequence<N>());
 }
 
 }  // namespace mema::rw_ops

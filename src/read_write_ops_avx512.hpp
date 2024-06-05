@@ -15,19 +15,19 @@ namespace mema::rw_ops {
  * #####################################################
  */
 
-template <int LOOP_COUNT>
+template <int ACCESS_COUNT_64B>
 inline void simd_write_nt_64B_accesses(char* address) {
   const auto* data = reinterpret_cast<const __m512i*>(WRITE_DATA);
   // clang-format off
-  unroll<LOOP_COUNT>([&](size_t loop_index) {
+  unroll<ACCESS_COUNT_64B>([&](size_t loop_index) {
     WRITE_SIMD_NT_512(address, loop_index, *data);
   });
   // clang-format on
 }
 
-template <int LOOP_COUNT>
+template <int ACCESS_COUNT_64B>
 inline void simd_write_nt_64B_accesses_sfence(char* address) {
-  simd_write_nt_64B_accesses<LOOP_COUNT>(address);
+  simd_write_nt_64B_accesses<ACCESS_COUNT_64B>(address);
   sfence_barrier();
 }
 

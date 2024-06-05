@@ -23,6 +23,19 @@ class ReadWriteTest : public BaseTest {
 
   void TearDown() override { munmap(addr, MEMORY_REGION_SIZE); }
 
+  void verify_data(char* addr, const size_t data_size) {
+    const auto base_access_count = data_size / rw_ops::BASE_ACCESS_SIZE;
+    for (auto base_access_idx = uint32_t{0}; base_access_idx < base_access_count; ++base_access_idx) {
+      auto start_addr = addr + base_access_idx * rw_ops::BASE_ACCESS_SIZE;
+      SCOPED_TRACE(std::string_view(start_addr, rw_ops::BASE_ACCESS_SIZE));
+      SCOPED_TRACE("Actual at base access idx " + std::to_string(base_access_idx) + "");
+      SCOPED_TRACE(rw_ops::WRITE_DATA);
+      SCOPED_TRACE("Expected");
+      auto compare_result = std::memcmp(start_addr, rw_ops::WRITE_DATA, rw_ops::BASE_ACCESS_SIZE);
+      ASSERT_EQ(compare_result, 0);
+    }
+  }
+
   using MultiWriteFn = void(const std::vector<char*>&);
   void run_multi_write_test(MultiWriteFn write_fn, const size_t access_size) {
     const size_t write_count = MEMORY_REGION_SIZE / access_size;
@@ -36,12 +49,17 @@ class ReadWriteTest : public BaseTest {
 
     write_fn(op_addresses);
     ASSERT_EQ(msync(addr, MEMORY_REGION_SIZE, MS_SYNC), 0);
+
+    for (const auto& op_addr : op_addresses) {
+      verify_data(op_addr, access_size);
+    }
   }
 
   using SingleWriteFn = void(char*);
   void run_single_write_test(SingleWriteFn write_fn, const size_t access_size) {
     write_fn(addr);
     ASSERT_EQ(msync(addr, access_size, MS_SYNC), 0);
+    verify_data(addr, access_size);
   }
 
   char* addr;
@@ -85,7 +103,8 @@ TEST_F(ReadWriteTest, ScalarWriteTest) {
   constexpr auto thread_count = uint32_t{4};
   auto thread_pool = std::vector<std::thread>{};
   thread_pool.reserve(thread_count);
-  auto thread_memory_size = MEMORY_REGION_SIZE / thread_count;
+  ASSERT_EQ(MEMORY_REGION_SIZE % thread_count, 0);
+  constexpr auto thread_memory_size = MEMORY_REGION_SIZE / thread_count;
 
   // Write data.
   for (auto thread_idx = uint8_t{0}; thread_idx < thread_count; thread_idx++) {
@@ -98,12 +117,8 @@ TEST_F(ReadWriteTest, ScalarWriteTest) {
     thread.join();
   }
   // Verify data.
-  constexpr auto cache_line_count = MEMORY_REGION_SIZE / rw_ops::CACHE_LINE_SIZE;
-  for (auto thread_idx = uint8_t{0}; thread_idx < thread_count; thread_idx++) {
-    auto cache_line_address = addr + thread_idx * rw_ops::CACHE_LINE_SIZE;
-    auto compare_result = std::memcmp(cache_line_address, rw_ops::WRITE_DATA, rw_ops::CACHE_LINE_SIZE);
-    ASSERT_EQ(compare_result, 0);
-  }
+  ASSERT_EQ(MEMORY_REGION_SIZE % rw_ops::BASE_ACCESS_SIZE, 0);
+  verify_data(addr, MEMORY_REGION_SIZE);
 }
 
 }  // namespace mema

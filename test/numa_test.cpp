@@ -56,18 +56,21 @@ TEST_F(NumaTest, MemoryAllocationOnNode) {
   MemaAssert(memory_region_size % utils::PAGE_SIZE == 0, "Memory region needs to be a multiple of the page size.");
   constexpr auto region_page_count = memory_region_size / utils::PAGE_SIZE;
 
+  SCOPED_TRACE("Max node id: " + std::to_string(numa_max_node_id));
   for (auto node_id = NumaNodeID{0}; node_id <= numa_max_node_id; ++node_id) {
     if (!numa_bitmask_isbitset(allowed_memory_nodes_mask, node_id)) {
       continue;
     }
 
-    char* data = utils::map(memory_region_size, true, 0);
+    char* data = utils::map(memory_region_size, false, 0);
     bind_memory_interleaved(data, memory_region_size, {node_id});
     utils::populate_memory(data, memory_region_size);
 
     for (size_t page_idx = 0; page_idx < region_page_count; ++page_idx) {
       auto addr = data + page_idx * utils::PAGE_SIZE;
-      ASSERT_EQ(get_numa_node_index_by_address(addr), node_id);
+      const auto actual_node_id = get_numa_node_index_by_address(addr);
+      SCOPED_TRACE("Node id of page " + std::to_string(page_idx) + ": " + std::to_string(actual_node_id));
+      ASSERT_EQ(actual_node_id, node_id);
     }
   }
 }
