@@ -10,10 +10,6 @@
 #if !(defined(USE_AVX_2) || defined(USE_AVX_512))
 #include "read_write_ops_types.hpp"
 #endif
-#if defined(__powerpc__)
-// VSX intrinsics header
-#include <altivec.h>
-#endif
 
 namespace mema::rw_ops {
 
@@ -37,11 +33,13 @@ template <int ACCESS_COUNT_64B>
 inline CharVec read_64B_accesses(char* address) {
   volatile CharVec* volatile_addr = reinterpret_cast<CharVec*>(address);
   auto result = CharVec{0};
-  // clang-format off
-  unroll<VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B>([&](size_t loop_index) {
-    result = volatile_addr[loop_index];
-  });
-  // clang-format on
+  constexpr size_t vector_access_count = VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B;
+// The maximum access size is 64 KiB. Wit a 64 B base access size, we need 1024 access. With the smallest supported
+// vector size of 16, the access count gets multiplied with 4, resulting in 4096.
+#pragma GCC unroll 4096
+  for (size_t access_idx = 0; access_idx < vector_access_count; ++access_idx) {
+    result = volatile_addr[access_idx];
+  }
   return result;
 }
 
@@ -75,24 +73,23 @@ inline CharVec read(char* addr, const size_t access_size) {
     // inspecting the assembly instructions again so that we do not introduce overhead that we can avoid.
     volatile CharVec* volatile_addr = reinterpret_cast<CharVec*>(addr);
     // 1x 64k access (1024x 64B access)
-    // clang-format off
-    unroll<VECTOR_SIZE_FACTOR * 1024>([&](size_t loop_index) {
-      result = volatile_addr[loop_index];
-    });
-    // clang-format on
+#pragma GCC unroll 4096
+    for (size_t access_idx = 0; access_idx < VECTOR_SIZE_FACTOR * 1024; ++access_idx) {
+      result = volatile_addr[access_idx];
+    }
   }
   return result;
 }
 
 template <int ACCESS_COUNT_64B>
 inline void read_64B_accesses(const std::vector<char*>& addresses) {
+  constexpr size_t vector_access_count = VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B;
   for (char* addr : addresses) {
     volatile CharVec* volatile_addr = reinterpret_cast<CharVec*>(addr);
-    // clang-format off
-    unroll<VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B>([&](size_t loop_index) {
-      auto result = volatile_addr[loop_index];
-    });
-    // clang-format on
+#pragma GCC unroll 4096
+    for (size_t access_idx = 0; access_idx < vector_access_count; access_idx++) {
+      auto result = volatile_addr[access_idx];
+    }
   }
 }
 
@@ -148,33 +145,16 @@ inline void write_data_scalar(char* start_address, const char* end_address) {
  * #####################################################
  */
 
-#if defined(__powerpc__)
-// Power9 is not consistently optimizing all access sizes for writes, so we provide the intrinsic
-
-#define WRITE_SIMD_PPC(mem_addr, loop_index, data) \
-  vec_xst(data, VECTOR_SIZE* loop_index, reinterpret_cast<vector signed char*>(mem_addr))
-
-template <int ACCESS_COUNT_64B>
-inline void write_64B_accesses(char* address) {
-  const auto* data = reinterpret_cast<const vector signed char*>(WRITE_DATA);
-  // clang-format off
-  unroll<VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B>([&](size_t loop_index) {
-    WRITE_SIMD_PPC(address, loop_index, *data);
-  });
-  // clang-format on
-}
-#else
 template <int ACCESS_COUNT_64B>
 inline void write_64B_accesses(char* address) {
   const CharVec* write_data = reinterpret_cast<const CharVec*>(WRITE_DATA);
   CharVec* target_address = reinterpret_cast<CharVec*>(address);
-  // clang-format off
-  unroll<VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B>([&](size_t loop_index) {
-    target_address[loop_index] = write_data[0];
-  });
-  // clang-format on
+  constexpr size_t vector_access_count = VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B;
+#pragma GCC unroll 4096
+  for (size_t access_idx = 0; access_idx < vector_access_count; access_idx++) {
+    target_address[access_idx] = write_data[0];
+  }
 }
-#endif
 
 template <int ACCESS_COUNT_64B>
 inline void write_64B_accesses(char* address, flush_fn flush, barrier_fn barrier) {
