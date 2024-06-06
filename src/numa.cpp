@@ -3,6 +3,7 @@
 #include <numa.h>
 #include <numaif.h>
 #include <spdlog/spdlog.h>
+#include <unistd.h>
 
 #include <cstring>
 #include <sstream>
@@ -26,22 +27,26 @@ void set_task_numa_nodes(const NumaNodeIDs& node_ids) {
     return;
   }
 
-  const size_t numa_node_count = numa_num_configured_nodes();
-  const size_t max_node_id = numa_max_node();
-
-  const auto* const allowed_run_node_mask = numa_get_run_node_mask();
-  auto* const nodemask = numa_allocate_nodemask();
-  for (const auto node_id : node_ids) {
-    if (!numa_bitmask_isbitset(allowed_run_node_mask, node_id)) {
-      spdlog::critical("Thread is not allowed to run on given node id (given: {}).", node_id);
-      utils::crash_exit();
+  auto set_bits_in_cpu_mask = [&](auto& target_mask, const auto& node_cpu_mask) {
+    static const auto cpu_count = numa_num_configured_cpus();
+    for (auto cpu_idx = uint32_t{0}; cpu_idx < cpu_count; ++cpu_idx) {
+      if (numa_bitmask_isbitset(node_cpu_mask, cpu_idx)) {
+        numa_bitmask_setbit(target_mask, cpu_idx);
+      }
     }
-    numa_bitmask_setbit(nodemask, node_id);
+  };
+
+  auto* cpu_mask = numa_allocate_cpumask();
+  for (const auto& node_id : node_ids) {
+    auto* node_cpu_mask = numa_allocate_cpumask();
+    numa_node_to_cpus(node_id, node_cpu_mask);
+    set_bits_in_cpu_mask(cpu_mask, node_cpu_mask);
+    numa_free_cpumask(node_cpu_mask);
   }
 
-  const auto task_pinned = numa_run_on_node_mask(nodemask) == 0;
+  const auto task_pinned = numa_sched_setaffinity(getpid(), cpu_mask) == 0;
   const auto task_pinning_errno = errno;
-  numa_bitmask_free(nodemask);
+  numa_free_cpumask(cpu_mask);
   if (!task_pinned) {
     spdlog::critical("Pinning the task to NUMA nodes failed. Error: {}", std::strerror(task_pinning_errno));
     utils::crash_exit();
@@ -147,14 +152,25 @@ void log_permissions_for_numa_nodes(spdlog::level::level_enum log_level, const s
 
 NumaNodeIDs get_numa_task_nodes() {
   const auto max_node_id = numa_max_node();
+
+  auto node_affinity = std::vector<bool>(max_node_id + 1, false);
+  // CPU mask of this thread.
+  auto* cpu_mask = numa_allocate_cpumask();
+  numa_sched_getaffinity(getpid(), cpu_mask);
+  const auto cpu_count = numa_num_configured_cpus();
+  for (auto cpu_idx = 0u; cpu_idx < cpu_count; ++cpu_idx) {
+    if (numa_bitmask_isbitset(cpu_mask, cpu_idx)) {
+      const auto node_of_cpu = numa_node_of_cpu(cpu_idx);
+      spdlog::trace("Current thread is allowed to run on CPU {} (node {}).", cpu_idx, node_of_cpu);
+      node_affinity[node_of_cpu] = true;
+    }
+  }
+  numa_free_cpumask(cpu_mask);
+
   auto run_nodes = NumaNodeIDs{};
-
-  // Check which NUMA node the calling thread is allowed to run on.
-  const auto* const allowed_run_node_mask = numa_get_run_node_mask();
-
-  for (auto node_id = NumaNodeID{0}; node_id <= max_node_id; ++node_id) {
-    if (numa_bitmask_isbitset(allowed_run_node_mask, node_id)) {
-      run_nodes.emplace_back(node_id);
+  for (auto node_idx = NumaNodeID{0}; node_idx <= max_node_id; ++node_idx) {
+    if (node_affinity[node_idx]) {
+      run_nodes.push_back(node_idx);
     }
   }
 
@@ -326,7 +342,7 @@ bool verify_interleaved_page_placement(char* const start_addr, size_t memory_reg
     //                 expected_location);
     if (page_status[page_idx] != expected_location) {
       ++incorrect_placement_count;
-      spdlog::debug("Page {} located on NUMA node {} but expected on {}.", page_idx, page_status[page_idx],
+      spdlog::trace("Page {} located on NUMA node {} but expected on {}.", page_idx, page_status[page_idx],
                     expected_location);
     }
   }

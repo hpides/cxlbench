@@ -79,6 +79,13 @@ int main(int argc, char** argv) {
     spdlog::set_level(spdlog::level::debug);
   }
 
+  // Verify Page Size
+  const auto page_size = getpagesize();
+  if (utils::PAGE_SIZE != page_size) {
+    spdlog::critical("System has a page size {}, but the benchmark tool assumes {}.", page_size, utils::PAGE_SIZE);
+    utils::crash_exit();
+  }
+
   // Run the actual benchmarks after parsing and validating them.
   //--------------------------------------------------------------------------------------------------------------------
   spdlog::info("Running benchmarks with config(s) from '{}'.", config_path.string());

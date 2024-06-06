@@ -6,13 +6,12 @@ set -e
 SCRIPTNAME="$(basename "$0")"
 if [ -z "$1" ]; then
   echo "Usage: "$SCRIPTNAME" [build dir tag] <workload tag>"
-  exit 1
-fi
-
-if [ -z "$2" ]; then
+  TAG="$(hostname)"
+  WORKLOAD="Undefined"
+elif [ -z "$2" ]; then
   TAG="$(hostname)"
   WORKLOAD="$1"
-else
+elif [ -z "$3" ]; then
   TAG="$1"
   WORKLOAD="$2"
 fi

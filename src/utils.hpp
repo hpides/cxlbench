@@ -93,5 +93,14 @@ std::string get_enum_as_string(const std::unordered_map<std::string, T>& enum_ma
   return "";
 }
 
+template <typename NumberSequence>
+std::string numbers_to_string(const NumberSequence& numbers) {
+  if (numbers.empty()) {
+    return "";
+  }
+  return std::accumulate(std::next(numbers.begin()), numbers.end(), std::to_string(numbers[0]),
+                         [](std::string str, int number) { return std::move(str) + ',' + std::to_string(number); });
+}
+
 }  // namespace utils
 }  // namespace mema

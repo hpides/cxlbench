@@ -333,7 +333,9 @@ void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkCon
   const auto thread_numa_task_nodes = get_numa_task_nodes();
   if (!config.numa_task_nodes.empty() && !std::equal(config.numa_task_nodes.begin(), config.numa_task_nodes.end(),
                                                      thread_numa_task_nodes.begin(), thread_numa_task_nodes.end())) {
-    spdlog::critical("Thread #{}: Thread not pinned to the configured NUMA nodes.", thread_config->thread_idx);
+    spdlog::critical("Thread #{}: Thread not pinned to the configured NUMA nodes. Expected: [{}], Actual: [{}]",
+                     thread_config->thread_idx, utils::numbers_to_string(config.numa_task_nodes),
+                     utils::numbers_to_string(thread_numa_task_nodes));
     utils::crash_exit();
   }
 
