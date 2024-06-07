@@ -11,6 +11,11 @@
 #include "read_write_ops_types.hpp"
 #endif
 
+/** Neon intrinsics for ARM */
+#if defined(__ARM_NEON)
+#include <arm_neon.h>
+#endif
+
 namespace mema::rw_ops {
 
 /** flush the cache line using clwb. */
@@ -34,8 +39,8 @@ inline CharVec read_64B_accesses(char* address) {
   volatile CharVec* volatile_addr = reinterpret_cast<CharVec*>(address);
   auto result = CharVec{0};
   constexpr size_t vector_access_count = VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B;
-// The maximum access size is 64 KiB. Wit a 64 B base access size, we need 1024 access. With the smallest supported
-// vector size of 16, the access count gets multiplied with 4, resulting in 4096.
+// The maximum access size is 64 KiB. With a 64 B base access size, we need 1024 access. With the smallest supported
+// vector size of 16, the access count gets multiplied by 4, resulting in 4096.
 #pragma GCC unroll 4096
   for (size_t access_idx = 0; access_idx < vector_access_count; ++access_idx) {
     result = volatile_addr[access_idx];
@@ -87,7 +92,7 @@ inline void read_64B_accesses(const std::vector<char*>& addresses) {
   for (char* addr : addresses) {
     volatile CharVec* volatile_addr = reinterpret_cast<CharVec*>(addr);
 #pragma GCC unroll 4096
-    for (size_t access_idx = 0; access_idx < vector_access_count; access_idx++) {
+    for (size_t access_idx = 0; access_idx < vector_access_count; ++access_idx) {
       auto result = volatile_addr[access_idx];
     }
   }
@@ -145,6 +150,19 @@ inline void write_data_scalar(char* start_address, const char* end_address) {
  * #####################################################
  */
 
+#if defined(__ARM_NEON)
+template <int ACCESS_COUNT_64B>
+inline void write_64B_accesses(char* address) {
+  const auto* data = reinterpret_cast<const uint8x16x4_t*>(WRITE_DATA);
+  auto* base_address = reinterpret_cast<uint8_t*>(address);
+  constexpr size_t vector_access_count = VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B;
+#pragma GCC unroll 4096
+  for (size_t access_idx = 0; access_idx < vector_access_count; ++access_idx) {
+    vst1q_u8_x4(base_address + (VECTOR_SIZE * access_idx), *data);
+  }
+}
+
+#else
 template <int ACCESS_COUNT_64B>
 inline void write_64B_accesses(char* address) {
   const CharVec* write_data = reinterpret_cast<const CharVec*>(WRITE_DATA);
@@ -155,6 +173,7 @@ inline void write_64B_accesses(char* address) {
     target_address[access_idx] = write_data[0];
   }
 }
+#endif
 
 template <int ACCESS_COUNT_64B>
 inline void write_64B_accesses(char* address, flush_fn flush, barrier_fn barrier) {
