@@ -324,6 +324,37 @@ void Benchmark::run_custom_ops_in_thread(ThreadRunConfig* thread_config, const B
   *(thread_config->total_operation_size) = total_num_ops;
 }
 
+
+#if defined(__ARM_NEON)
+inline void tuneHardwarePrefetcher() {
+  // Read the current value of IMP_CPUECTLR_EL1
+  uint64_t value;
+  asm volatile("mrs %0, S3_0_C15_C1_4" : "=r"(value));
+
+  // Set bit 15 (PF_DIS) to disable hardware prefetching
+  value |= (1 << 15);
+
+  // Write the modified value back to IMP_CPUECTLR_EL1
+  asm volatile("msr S3_0_C15_C1_4, %0" : : "r"(value));
+}
+#elif defined(__powerpc64__)
+#define __mtspr(spr, value) \
+  __asm__ volatile("mtspr %0,%1" : : "n"(spr), "r"(value))
+
+// Data stream control register
+#define PPC_DSCR 3
+
+// Disable strided prefetch and set maximum prefetch depth
+#define PPC_TUNE_DSCR 1ULL
+
+// Set this once in your function
+inline void tuneHardwarePrefetcher() {
+  __mtspr(PPC_DSCR, PPC_TUNE_DSCR);
+}
+#endif
+
+
+
 void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkConfig& config) {
   // Pin thread to the configured numa nodes.
   set_task_numa_nodes(config.numa_task_nodes);
@@ -445,6 +476,7 @@ void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkCon
     thread_config->execution->generation_done.wait(gen_lock, [&] { return threads_remaining == 0; });
   }
 
+  tuneHardwarePrefetcher();
   // Generation is done in all threads, start execution
   const auto execution_begin_ts = std::chrono::steady_clock::now();
   std::atomic<uint64_t>* io_position = &thread_config->execution->io_position;
