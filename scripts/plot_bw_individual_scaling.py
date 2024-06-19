@@ -12,37 +12,10 @@ import pandas as pd
 import seaborn as sns
 import sys
 
-KEY_ACCESS_SIZE = "access_size"
-KEY_BANDWIDTH_GiB = "bandwidth"
-KEY_BANDWIDTH_GB = "bandwidth_gb"
-KEY_BM_NAME = "bm_name"
-KEY_BM_TYPE = "bm_type"
-KEY_CHUNK_SIZE = "min_io_chunk_size"
-KEY_CUSTOM_OPS = "custom_operations"
-KEY_EXEC_MODE = "exec_mode"
-KEY_EXPLODED_NUMA_MEMORY_NODES = "benchmarks.config.numa_memory_nodes"
-KEY_EXPLODED_NUMA_TASK_NODES = "benchmarks.config.numa_task_nodes"
-KEY_LAT_AVG = "latency.avg"
-KEY_MATRIX_ARGS = "matrix_args"
-KEY_MEMORY_REGION_SIZE = "memory_region_size"
-KEY_NUMA_TASK_NODES = "numa_task_nodes"
-KEY_NUMA_MEMORY_NODES = "numa_memory_nodes"
-KEY_OPERATION = "operation"
-KEY_OPERATION_COUNT = "number_operations"
-KEY_PARTITION_COUNT = "number_partitions"
-KEY_RANDOM_DISTRIBUTION = "random_distribution"
-KEY_RUN_TIME = "run_time"
-KEY_SUB_BM_NAMES = "sub_bm_names"
-KEY_TAG = "tag"
-KEY_THREAD_COUNT = "number_threads"
-KEY_THREADS = "threads"
-KEY_THREADS_LEVELED = "benchmarks.results.threads"
-KEY_FLUSH_INSTRUCTION = "flush_instruction"
-FLUSH_INSTR_NONE = "none"
+from enums.benchmark_keys import BMKeys
+from enums.file_names import PLOT_FILE_PREFIX, FILE_TAG_SUBSTRING
 
-DATA_FILE_PREFIX = "data_"
-PLOT_FILE_PREFIX = "plot_"
-FILE_TAG_SUBSTRING = "TAG_"
+
 MAX_THREAD_COUNT = 40
 
 # benchmark configuration names
@@ -143,19 +116,19 @@ if __name__ == "__main__":
             tag = tag_part.split(".")[0]
 
         df = pd.read_json(path)
-        df[KEY_TAG] = tag
+        df[BMKeys.TAG] = tag
         dfs.append(df)
 
     df = pd.concat(dfs)
-    bm_names = df[KEY_BM_NAME].unique()
+    bm_names = df[BMKeys.BM_NAME].unique()
     print("Existing BM groups: {}".format(bm_names))
 
     # ------------------------------------------------------------------------------------------------------------------
     deny_list_explosion = [
-        KEY_MATRIX_ARGS,
-        KEY_THREADS,
-        KEY_NUMA_TASK_NODES,
-        KEY_NUMA_MEMORY_NODES,
+        BMKeys.MATRIX_ARGS,
+        BMKeys.THREADS,
+        BMKeys.NUMA_TASK_NODES,
+        BMKeys.NUMA_MEMORY_NODES,
     ]
 
     drop_columns = [
@@ -170,16 +143,16 @@ if __name__ == "__main__":
         "sub_bm_names",
     ]
 
-    df = df[(df[KEY_BM_NAME].isin(BM_SUPPORTED_CONFIGS))]
+    df = df[(df[BMKeys.BM_NAME].isin(BM_SUPPORTED_CONFIGS))]
     df = ju.flatten_nested_json_df(df, deny_list_explosion)
     # Transform GiB/s to GB/s
-    df[KEY_BANDWIDTH_GB] = df[KEY_BANDWIDTH_GiB] * (1024**3 / 1e9)
-    KEY_TAG = "Workload"
-    df[KEY_TAG] = df[KEY_EXEC_MODE] + " " + df[KEY_OPERATION]
+    df[BMKeys.BANDWIDTH_GB] = df[BMKeys.BANDWIDTH_GiB] * (1024**3 / 1e9)
+    BMKeys.TAG = "Workload"
+    df[BMKeys.TAG] = df[BMKeys.EXEC_MODE] + " " + df[BMKeys.OPERATION]
     df.to_csv("{}/{}.csv".format(output_dir, "results"))
     df = df.drop(columns=drop_columns, errors="ignore")
     df.to_csv("{}/{}.csv".format(output_dir, "results-reduced"))
-    df = df[(df[KEY_THREAD_COUNT] <= MAX_THREAD_COUNT)]
+    df = df[(df[BMKeys.THREAD_COUNT] <= MAX_THREAD_COUNT)]
     df = df.reset_index(drop=True)
 
     # ------------------------------------------------------------------------------------------------------------------
@@ -196,9 +169,9 @@ if __name__ == "__main__":
         "sequential write": TAG_SEQ_WRITES,
     }
 
-    df[KEY_TAG].replace(tag_replacements, inplace=True)
+    df[BMKeys.TAG].replace(tag_replacements, inplace=True)
 
-    thread_counts = df[KEY_THREAD_COUNT].unique()
+    thread_counts = df[BMKeys.THREAD_COUNT].unique()
     thread_counts.sort()
 
     sns.set_context("paper")
@@ -220,14 +193,14 @@ if __name__ == "__main__":
 
     lineplot = sns.lineplot(
         data=df,
-        x=KEY_THREAD_COUNT,
-        y=KEY_BANDWIDTH_GB,
+        x=BMKeys.THREAD_COUNT,
+        y=BMKeys.BANDWIDTH_GB,
         palette=palette,
-        style=KEY_TAG,
+        style=BMKeys.TAG,
         dashes=dashes,
         markers=markers,
         hue_order=hue_order,
-        hue=KEY_TAG,
+        hue=BMKeys.TAG,
     )
     lineplot.set_xticks(thread_counts)
     lineplot.set_xticklabels(thread_counts)

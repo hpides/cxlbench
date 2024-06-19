@@ -10,36 +10,8 @@ import pandas as pd
 import seaborn as sns
 import sys
 
-KEY_ACCESS_SIZE = "access_size"
-KEY_BANDWIDTH_GiB = "bandwidth"
-KEY_BANDWIDTH_GB = "bandwidth_gb"
-KEY_BM_NAME = "bm_name"
-KEY_BM_TYPE = "bm_type"
-KEY_CHUNK_SIZE = "min_io_chunk_size"
-KEY_CUSTOM_OPS = "custom_operations"
-KEY_EXPLODED_NUMA_MEMORY_NODES = "benchmarks.config.numa_memory_nodes"
-KEY_EXPLODED_NUMA_TASK_NODES = "benchmarks.config.numa_task_nodes"
-KEY_LAT_AVG = "latency.avg"
-KEY_MATRIX_ARGS = "matrix_args"
-KEY_MEMORY_REGION_SIZE = "memory_region_size"
-KEY_NUMA_TASK_NODES = "numa_task_nodes"
-KEY_NUMA_MEMORY_NODES = "numa_memory_nodes"
-KEY_OPERATION = "operation"
-KEY_OPERATION_COUNT = "number_operations"
-KEY_PARTITION_COUNT = "number_partitions"
-KEY_RANDOM_DISTRIBUTION = "random_distribution"
-KEY_RUN_TIME = "run_time"
-KEY_SUB_BM_NAMES = "sub_bm_names"
-KEY_TAG = "tag"
-KEY_THREAD_COUNT = "number_threads"
-KEY_THREADS = "threads"
-KEY_THREADS_LEVELED = "benchmarks.results.threads"
-KEY_FLUSH_INSTRUCTION = "flush_instruction"
-FLUSH_INSTR_NONE = "none"
-
-DATA_FILE_PREFIX = "data_"
-PLOT_FILE_PREFIX = "plot_"
-FILE_TAG_SUBSTRING = "TAG_"
+from enums.benchmark_keys import BMKeys
+from enums.file_names import FILE_TAG_SUBSTRING, PLOT_FILE_PREFIX
 
 # benchmark configuration names
 BM_CONFIG_OS_INTERLEAVING = "interleaved_sequential_reads"
@@ -139,23 +111,23 @@ if __name__ == "__main__":
             tag = tag_part.split(".")[0]
 
         df = pd.read_json(path)
-        df[KEY_TAG] = tag
+        df[BMKeys.TAG] = tag
         dfs.append(df)
 
     df = pd.concat(dfs)
-    bm_names = df[KEY_BM_NAME].unique()
+    bm_names = df[BMKeys.BM_NAME].unique()
     print("Existing BM groups: {}".format(bm_names))
 
     # -------------------------------------------------------------------------------------------------------------------
 
-    df_os = df[(df[KEY_BM_NAME] == BM_CONFIG_OS_INTERLEAVING)]
+    df_os = df[(df[BMKeys.BM_NAME] == BM_CONFIG_OS_INTERLEAVING)]
     df_os = ju.flatten_nested_json_df(
         df_os,
         [
-            KEY_MATRIX_ARGS,
-            KEY_THREADS,
-            KEY_NUMA_TASK_NODES,
-            KEY_NUMA_MEMORY_NODES,
+            BMKeys.MATRIX_ARGS,
+            BMKeys.THREADS,
+            BMKeys.NUMA_TASK_NODES,
+            BMKeys.NUMA_MEMORY_NODES,
             "matrix_args.local_memory_access",
             "matrix_args.device_memory_access",
             "sub_bm_names",
@@ -163,14 +135,14 @@ if __name__ == "__main__":
     )
     df_os.to_csv("{}/interleaving.csv".format(output_dir))
 
-    df_explicit = df[(df[KEY_BM_NAME] == BM_CONFIG_EXPLICIT_PLACEMENT)]
+    df_explicit = df[(df[BMKeys.BM_NAME] == BM_CONFIG_EXPLICIT_PLACEMENT)]
     df_explicit = ju.flatten_nested_json_df(
         df_explicit,
         [
-            KEY_MATRIX_ARGS,
-            KEY_THREADS,
-            KEY_NUMA_TASK_NODES,
-            KEY_NUMA_MEMORY_NODES,
+            BMKeys.MATRIX_ARGS,
+            BMKeys.THREADS,
+            BMKeys.NUMA_TASK_NODES,
+            BMKeys.NUMA_MEMORY_NODES,
             "matrix_args.local_memory_access",
             "matrix_args.device_memory_access",
             "sub_bm_names",

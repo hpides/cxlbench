@@ -1,0 +1,36 @@
+from enum import StrEnum
+
+
+class BMKeys(StrEnum):
+    ACCESS_SIZE = "access_size"
+    BANDWIDTH_GiB = "bandwidth"
+    BANDWIDTH_GB = "bandwidth_gb"
+    BM_GROUP = "bm_name"
+    BM_NAME = "bm_name"
+    BM_SUB_NAMES = "sub_bm_names"
+    BM_TYPE = "bm_type"
+    CHUNK_SIZE = "min_io_chunk_size"
+    CUSTOM_OPS = "custom_operations"
+    EXPLODED_NUMA_MEMORY_NODES = "benchmarks.config.numa_memory_nodes"  # legacy
+    EXPLODED_NUMA_MEMORY_NODES_M0 = "benchmarks.config.m0_numa_nodes"
+    EXPLODED_NUMA_MEMORY_NODES_M1 = "benchmarks.config.m1_numa_nodes"
+    EXPLODED_NUMA_TASK_NODES = "benchmarks.config.numa_task_nodes"
+    LAT_AVG = "latency.avg"
+    MATRIX_ARGS = "matrix_args"
+    MEMORY_REGION_SIZE = "memory_region_size"
+    NUMA_TASK_NODES = "numa_task_nodes"
+    NUMA_MEMORY_NODES = "numa_memory_nodes"  # legacy
+    NUMA_MEMORY_NODES_M0 = "m0_numa_nodes"
+    NUMA_MEMORY_NODES_M1 = "m1_numa_nodes"
+    OPERATION = "operation"
+    OPERATION_COUNT = "number_operations"
+    PARTITION_COUNT = "number_partitions"
+    RANDOM_DISTRIBUTION = "random_distribution"
+    RUN_TIME = "run_time"
+    TAG = "tag"
+    THREAD_COUNT = "number_threads"
+    THREADS = "threads"
+    THREADS_LEVELED = "benchmarks.results.threads"
+    FLUSH_INSTRUCTION = "flush_instruction"
+    EXEC_TIME = "execution_time"
+    LABEL = "label"

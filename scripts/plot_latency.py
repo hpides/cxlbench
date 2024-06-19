@@ -12,11 +12,9 @@ import seaborn as sns
 
 import sys
 
-FLUSH_INSTR_NONE = "none"
+from enums.benchmark_keys import BMKeys
+from enums.file_names import PLOT_FILE_PREFIX, FILE_TAG_SUBSTRING
 
-DATA_FILE_PREFIX = "data_"
-PLOT_FILE_PREFIX = "plot_"
-FILE_TAG_SUBSTRING = "TAG_"
 
 # benchmark configuration names
 BM_SUPPORTED_CONFIGS = ["lat_read", "lat_write_cache", "lat_write_none"]
@@ -26,13 +24,13 @@ PRINT_DEBUG = False
 
 
 def create_plot(df, bench_name, node_names):
-    plot_df = df[df[mplt.KEY_BM_NAME] == bench_name]
-    plot_df["op_size"] = plot_df[mplt.KEY_CUSTOM_OPS].apply(lambda x: x.split(",", 1)[0].rsplit("_", 1)[1])
+    plot_df = df[df[BMKeys.BM_NAME] == bench_name]
+    plot_df["op_size"] = plot_df[BMKeys.CUSTOM_OPS].apply(lambda x: x.split(",", 1)[0].rsplit("_", 1)[1])
 
     LABEL_LOC = "Local"
     LABEL_CXL = "CXL"
     node_names = {0: LABEL_LOC, 1: LABEL_CXL}
-    plot_df["node_names"] = plot_df[mplt.KEY_M0_NUMA_MEMORY_NODES].replace(node_names)
+    plot_df["node_names"] = plot_df[BMKeys.NUMA_MEMORY_NODES_M0].replace(node_names)
 
     sns.set(style="ticks")
     plt.figure(figsize=(5.5, 2.3))
@@ -42,7 +40,7 @@ def create_plot(df, bench_name, node_names):
     ax = sns.barplot(
         data=plot_df,
         x="op_size",
-        y=mplt.KEY_LAT_AVG,
+        y=BMKeys.LAT_AVG,
         palette="colorblind",
         hue="node_names",
         order=order,
@@ -155,28 +153,28 @@ if __name__ == "__main__":
             tag = tag_part.split(".")[0]
 
         df = pd.read_json(path)
-        df[mplt.KEY_TAG] = tag
+        df[BMKeys.TAG] = tag
         dfs.append(df)
 
     df = pd.concat(dfs)
-    bm_names = df[mplt.KEY_BM_NAME].unique()
+    bm_names = df[BMKeys.BM_NAME].unique()
     print("Existing BM groups: {}".format(bm_names))
 
     # -------------------------------------------------------------------------------------------------------------------
 
-    df = df[(df[mplt.KEY_BM_NAME].isin(BM_SUPPORTED_CONFIGS))]
+    df = df[(df[BMKeys.BM_NAME].isin(BM_SUPPORTED_CONFIGS))]
     df = ju.flatten_nested_json_df(
         df,
         [
-            mplt.KEY_MATRIX_ARGS,
-            mplt.KEY_THREADS,
-            mplt.KEY_NUMA_TASK_NODES,
-            mplt.KEY_M0_NUMA_MEMORY_NODES,
-            mplt.KEY_M1_NUMA_MEMORY_NODES,
+            BMKeys.MATRIX_ARGS,
+            BMKeys.THREADS,
+            BMKeys.NUMA_TASK_NODES,
+            BMKeys.NUMA_MEMORY_NODES_M0,
+            BMKeys.NUMA_MEMORY_NODES_M1,
         ],
     )
     df.to_csv("{}/data.csv".format(output_dir))
-    df[mplt.KEY_M0_NUMA_MEMORY_NODES] = df[mplt.KEY_M0_NUMA_MEMORY_NODES].apply(mplt.get_single_list_value)
+    df[BMKeys.NUMA_MEMORY_NODES_M0] = df[BMKeys.NUMA_MEMORY_NODES_M0].apply(mplt.get_single_list_value)
     drop_columns = [
         "index",
         "bm_type",

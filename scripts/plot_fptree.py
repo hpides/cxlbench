@@ -12,11 +12,8 @@ import seaborn as sns
 
 import sys
 
-FLUSH_INSTR_NONE = "none"
+from scripts.enums.file_names import PLOT_FILE_PREFIX, FILE_TAG_SUBSTRING
 
-DATA_FILE_PREFIX = "data_"
-PLOT_FILE_PREFIX = "plot_"
-FILE_TAG_SUBSTRING = "TAG_"
 
 # benchmark configuration names
 BM_REPLACE_OLD_NAMES = {
