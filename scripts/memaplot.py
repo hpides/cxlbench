@@ -28,6 +28,5 @@ def valid_path(path):
     return path if os.path.isfile(path) else dir_path(path)
 
 
-def get_single_list_value(values):
-    assert len(values) == 1
-    return values[0]
+def values_as_string(values):
+    return ", ".join(map(str, values))

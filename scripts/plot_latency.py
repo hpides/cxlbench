@@ -17,14 +17,18 @@ from enums.file_names import PLOT_FILE_PREFIX, FILE_TAG_SUBSTRING
 
 
 # benchmark configuration names
-BM_SUPPORTED_CONFIGS = ["lat_read", "lat_write_cache", "lat_write_none"]
+BM_SUPPORTED_CONFIGS = ["lat_read", "lat_write_cache", "lat_write_none", "operation_latency"]
 BM_NAME_TITLE = {"lat_read": "Read", "lat_write_cache": "Read, Write", "lat_write_none": "Read, Write, CLWB"}
 
 PRINT_DEBUG = False
 
 
-def create_plot(df, bench_name, node_names):
-    plot_df = df[df[BMKeys.BM_NAME] == bench_name]
+def create_plot(df, bench_name, node_names, op_chain):
+    plot_df = df[(df[BMKeys.BM_NAME] == bench_name) & (df[BMKeys.CUSTOM_OPS] == op_chain)]
+    if plot_df.empty:
+            print("DataFrame is empty for bench_name ", bench_name)
+            return
+
     plot_df["op_size"] = plot_df[BMKeys.CUSTOM_OPS].apply(lambda x: x.split(",", 1)[0].rsplit("_", 1)[1])
 
     LABEL_LOC = "Local"
@@ -35,6 +39,8 @@ def create_plot(df, bench_name, node_names):
     sns.set(style="ticks")
     plt.figure(figsize=(5.5, 2.3))
 
+    print(plot_df.to_string())
+
     order = plot_df["op_size"].unique()
     hue_order = [LABEL_LOC, LABEL_CXL]
     ax = sns.barplot(
@@ -42,9 +48,10 @@ def create_plot(df, bench_name, node_names):
         x="op_size",
         y=BMKeys.LAT_AVG,
         palette="colorblind",
-        hue="node_names",
-        order=order,
-        hue_order=hue_order,
+        # hue="node_names",
+        # order=order,
+        # markers="x",
+        # hue_order=hue_order,
     )
     # plot.set_xticks(thread_counts)
     # plot.set_xticklabels(thread_counts)
@@ -78,7 +85,7 @@ def create_plot(df, bench_name, node_names):
     plt.tight_layout()
 
     fig.savefig(
-        "{}/{}{}-{}.pdf".format(output_dir, PLOT_FILE_PREFIX, "latency", bench_name), bbox_inches="tight", pad_inches=0
+        "{}/{}{}-{}-{}.pdf".format(output_dir, PLOT_FILE_PREFIX, "latency", bench_name, op_chain), bbox_inches="tight", pad_inches=0
     )
 
 
@@ -163,6 +170,7 @@ if __name__ == "__main__":
     # -------------------------------------------------------------------------------------------------------------------
 
     df = df[(df[BMKeys.BM_NAME].isin(BM_SUPPORTED_CONFIGS))]
+    assert not df.empty, "DataFrame is empty"
     df = ju.flatten_nested_json_df(
         df,
         [
@@ -174,7 +182,7 @@ if __name__ == "__main__":
         ],
     )
     df.to_csv("{}/data.csv".format(output_dir))
-    df[BMKeys.NUMA_MEMORY_NODES_M0] = df[BMKeys.NUMA_MEMORY_NODES_M0].apply(mplt.get_single_list_value)
+    df[BMKeys.NUMA_MEMORY_NODES_M0] = df[BMKeys.NUMA_MEMORY_NODES_M0].apply(mplt.values_as_string)
     drop_columns = [
         "index",
         "bm_type",
@@ -189,5 +197,8 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------------------------------------------------------
     # create plots
 
+    op_chains = df['custom_operations'].unique()
+
     for bench_name in BM_SUPPORTED_CONFIGS:
-        create_plot(df, bench_name, node_names)
+        for op_chain in op_chains:
+            create_plot(df, bench_name, node_names, op_chain)
