@@ -29,63 +29,42 @@ def create_plot(df, bench_name, node_names, op_chain):
         print("DataFrame is empty for bench_name ", bench_name)
         return
 
-    # Use this if plot for multiple access sizes
-    # plot_df["op_size"] = plot_df[BMKeys.CUSTOM_OPS].apply(lambda x: x.split(",", 1)[0].rsplit("_", 1)[1])
-
-    # LABEL_LOC = "Local"
-    # LABEL_CXL = "CXL"
-    # node_names = {0: LABEL_LOC, 1: LABEL_CXL}
-    # plot_df["node_names"] = plot_df[BMKeys.NUMA_MEMORY_NODES_M0].replace(node_names)
-
     sns.set(style="ticks")
     plt.figure(figsize=(5.5, 2.3))
 
-    # print(plot_df.to_string())
-
-    # order = plot_df["op_size"].unique()
-    # hue_order = [LABEL_LOC, LABEL_CXL]
     ax = sns.lineplot(
         data=plot_df,
         x=BMKeys.THREAD_COUNT,
         y=BMKeys.LAT_AVG,
-        # palette="colorblind",
-        # hue="node_names",
-        # order=order,
         markers=True,
         marker='o',
         markersize=8,
-        # hue_order=hue_order,
+        errorbar=None
     )
-    # plot.set_xticks(thread_counts)
-    # plot.set_xticklabels(thread_counts)
+
+    # Add error bars
+    plt.errorbar(
+        x=plot_df[BMKeys.THREAD_COUNT],
+        y=plot_df[BMKeys.LAT_AVG],
+        yerr=plot_df[BMKeys.LAT_STDDEV],
+        fmt='none',
+        ecolor='gray',
+        elinewidth=1,
+        capsize=3
+    )
+
     ax.yaxis.grid()
     if y_tick_distance is not None:
         ax.yaxis.set_major_locator(ticker.MultipleLocator(y_tick_distance))
 
-    # Add this if hues used
-    # ax.legend(title=None)
-
-    # sns.move_legend(
-    #     ax,
-    #     "lower center",
-    #     bbox_to_anchor=(0.5, 0.92),
-    #     ncol=4,
-    #     frameon=False,
-    #     columnspacing=0.5,
-    #     handlelength=1.2,
-    #     handletextpad=0.5,
-    # )
-
-    # TODO(MW) add error bars, based on
-    # https://stackoverflow.com/questions/62820959/use-precalculated-error-bars-with-seaborn-and-barplot
+    # Set x-axis ticks to the specific thread count values
+    thread_counts = plot_df[BMKeys.THREAD_COUNT].unique()
+    ax.set_xticks(thread_counts)
 
     fig = ax.get_figure()
 
     plt.xlabel("Thread Count")
     plt.ylabel("Latency in ns")
-    # plt.title(BM_NAME_TITLE[bench_name], y=1, x=0.1)
-    # plt.xticks(rotation=45)
-
     plt.tight_layout()
 
     fig.savefig(
@@ -93,6 +72,7 @@ def create_plot(df, bench_name, node_names, op_chain):
         bbox_inches="tight",
         pad_inches=0,
     )
+
 
 
 if __name__ == "__main__":

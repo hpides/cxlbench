@@ -18,6 +18,8 @@ class BMKeys(StrEnum):
     EXPLODED_NUMA_MEMORY_NODES_M1 = "benchmarks.config.m1_numa_nodes"
     EXPLODED_NUMA_TASK_NODES = "benchmarks.config.numa_task_nodes"
     LAT_AVG = "latency.avg"
+    LAT_MEDIAN = "latency.median"
+    LAT_STDDEV = "latency.std_dev"
     MATRIX_ARGS = "matrix_args"
     MEMORY_REGION_SIZE = "memory_region_size"
     NUMA_TASK_NODES = "numa_task_nodes"
