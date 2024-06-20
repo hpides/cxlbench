@@ -41,7 +41,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # get the output directory paths
-    output_dir_string = "./plots"
+    output_dir_string = "heatmaps"
     if args.output_dir is not None:
         output_dir_string = args.output_dir
 

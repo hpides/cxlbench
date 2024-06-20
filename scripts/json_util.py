@@ -8,6 +8,7 @@ import pandas as pd
 from enums.benchmark_keys import BMKeys
 from enums.file_names import FILE_TAG_SUBSTRING
 from memaplot import FLUSH_INSTR_NONE
+from enums.benchmark_groups import BMGroups
 
 PRINT_DEBUG = False
 
@@ -131,7 +132,7 @@ def flatten_nested_json_df(df, deny_explosion_list):
     return df
 
 
-def parse_matrix_jsons(results, supported_bm_groups):
+def parse_matrix_jsons(results, supported_bm_groups: list[BMGroups]):
     # collect jsons containing matrix arguments
     matrix_jsons = None
     if os.path.isfile(results):
@@ -165,7 +166,7 @@ def parse_matrix_jsons(results, supported_bm_groups):
     bm_names = df[BMKeys.BM_GROUP].unique()
     print("Existing BM groups: {}".format(bm_names))
 
-    print("Supported BM groups: {}".format(supported_bm_groups))
+    print("Supported BM groups: {}".format([x.value for x in supported_bm_groups]))
 
     df = df[(df[BMKeys.BM_GROUP].isin(supported_bm_groups)) & (df[BMKeys.BM_TYPE] == "single")]
     df = flatten_nested_json_df(
@@ -194,4 +195,13 @@ def parse_matrix_jsons(results, supported_bm_groups):
     df[BMKeys.FLUSH_INSTRUCTION] = df[BMKeys.FLUSH_INSTRUCTION].fillna(FLUSH_INSTR_NONE)
     if BMKeys.BANDWIDTH_GiB in df.columns:
         df[BMKeys.BANDWIDTH_GB] = df[BMKeys.BANDWIDTH_GiB] * (1024**3 / 1e9)
+
+    df = stringify_nodes(df)
+    return df
+
+
+def stringify_nodes(df):
+    df[BMKeys.NUMA_MEMORY_NODES_M0] = df[BMKeys.NUMA_MEMORY_NODES_M0].transform(lambda x: ",".join(str(i) for i in x))
+    df[BMKeys.NUMA_MEMORY_NODES_M1] = df[BMKeys.NUMA_MEMORY_NODES_M1].transform(lambda x: ",".join(str(i) for i in x))
+    df[BMKeys.NUMA_TASK_NODES] = df[BMKeys.NUMA_TASK_NODES].transform(lambda x: ",".join(str(i) for i in x))
     return df

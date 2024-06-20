@@ -2,6 +2,8 @@ from enum import StrEnum
 
 
 class BMKeys(StrEnum):
+    ACCESSED_BYTES = "accessed_bytes"
+    TOTAL_ACCESSES = "total_accesses"
     ACCESS_SIZE = "access_size"
     BANDWIDTH_GiB = "bandwidth"
     BANDWIDTH_GB = "bandwidth_gb"
@@ -34,3 +36,4 @@ class BMKeys(StrEnum):
     FLUSH_INSTRUCTION = "flush_instruction"
     EXEC_TIME = "execution_time"
     LABEL = "label"
+    AVG_ACCESS_LATENCY = "avg_access_latency"

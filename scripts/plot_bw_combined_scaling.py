@@ -13,8 +13,8 @@ import pandas as pd
 import seaborn as sns
 import sys
 
-from scripts.enums.benchmark_keys import BMKeys
-from scripts.enums.file_names import FILE_TAG_SUBSTRING, PLOT_FILE_PREFIX
+from enums.benchmark_keys import BMKeys
+from enums.file_names import FILE_TAG_SUBSTRING, PLOT_FILE_PREFIX
 
 
 MAX_THREAD_COUNT = 40

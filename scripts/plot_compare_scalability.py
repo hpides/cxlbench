@@ -33,13 +33,6 @@ def format_path(results_path):
     return results_path
 
 
-def flatten_df(df):
-    df[BMKeys.NUMA_MEMORY_NODES_M0] = df[BMKeys.NUMA_MEMORY_NODES_M0].transform(lambda x: ",".join(str(i) for i in x))
-    df[BMKeys.NUMA_MEMORY_NODES_M1] = df[BMKeys.NUMA_MEMORY_NODES_M1].transform(lambda x: ",".join(str(i) for i in x))
-    df[BMKeys.NUMA_TASK_NODES] = df[BMKeys.NUMA_TASK_NODES].transform(lambda x: ",".join(str(i) for i in x))
-    return df
-
-
 def create_scalability_plot(plot_data, title, output_file, access_sizes):
     plt.figure(figsize=(10, 6))
 
@@ -196,17 +189,16 @@ if __name__ == "__main__":
     ]
 
     supported_bm_groups = [
-        BMGroups.SEQUENTIAL_WRITES.value,
-        BMGroups.RANDOM_WRITES.value,
-        BMGroups.RANDOM_READS.value,
-        BMGroups.SEQUENTIAL_READS.value,
+        BMGroups.SEQUENTIAL_WRITES,
+        BMGroups.RANDOM_WRITES,
+        BMGroups.RANDOM_READS,
+        BMGroups.SEQUENTIAL_READS,
     ]
 
     dfs = []
     for i, results in enumerate(results_paths):
         logging.info(f"Parsing {results_paths}")
         df = parse_matrix_jsons(results, supported_bm_groups)
-        df = flatten_df(df)
         df = df[keep_columns]
         dfs.append(df)
 

@@ -12,7 +12,7 @@ import seaborn as sns
 
 import sys
 
-from scripts.enums.file_names import PLOT_FILE_PREFIX, FILE_TAG_SUBSTRING
+from enums.file_names import PLOT_FILE_PREFIX, FILE_TAG_SUBSTRING
 
 
 # benchmark configuration names
@@ -114,8 +114,8 @@ def main():
         ],
     )
     df.to_csv("{}/data.csv".format(output_dir))
-    df[mplt.KEY_M0_NUMA_MEMORY_NODES] = df[mplt.KEY_M0_NUMA_MEMORY_NODES].apply(mplt.values_as_string)
-    df[mplt.KEY_M1_NUMA_MEMORY_NODES] = df[mplt.KEY_M1_NUMA_MEMORY_NODES].apply(mplt.values_as_string)
+    df[mplt.KEY_M0_NUMA_MEMORY_NODES] = df[mplt.KEY_M0_NUMA_MEMORY_NODES].apply(mplt.get_single_list_value)
+    df[mplt.KEY_M1_NUMA_MEMORY_NODES] = df[mplt.KEY_M1_NUMA_MEMORY_NODES].apply(mplt.get_single_list_value)
     drop_columns = [
         "index",
         "bm_type",

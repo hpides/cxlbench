@@ -26,8 +26,8 @@ PRINT_DEBUG = False
 def create_plot(df, bench_name, node_names, op_chain):
     plot_df = df[(df[BMKeys.BM_NAME] == bench_name) & (df[BMKeys.CUSTOM_OPS] == op_chain)]
     if plot_df.empty:
-            print("DataFrame is empty for bench_name ", bench_name)
-            return
+        print("DataFrame is empty for bench_name ", bench_name)
+        return
 
     plot_df["op_size"] = plot_df[BMKeys.CUSTOM_OPS].apply(lambda x: x.split(",", 1)[0].rsplit("_", 1)[1])
 
@@ -41,8 +41,8 @@ def create_plot(df, bench_name, node_names, op_chain):
 
     print(plot_df.to_string())
 
-    order = plot_df["op_size"].unique()
-    hue_order = [LABEL_LOC, LABEL_CXL]
+    # order = plot_df["op_size"].unique()
+    # hue_order = [LABEL_LOC, LABEL_CXL]
     ax = sns.barplot(
         data=plot_df,
         x="op_size",
@@ -85,7 +85,9 @@ def create_plot(df, bench_name, node_names, op_chain):
     plt.tight_layout()
 
     fig.savefig(
-        "{}/{}{}-{}-{}.pdf".format(output_dir, PLOT_FILE_PREFIX, "latency", bench_name, op_chain), bbox_inches="tight", pad_inches=0
+        "{}/{}{}-{}-{}.pdf".format(output_dir, PLOT_FILE_PREFIX, "latency", bench_name, op_chain),
+        bbox_inches="tight",
+        pad_inches=0,
     )
 
 
@@ -197,7 +199,7 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------------------------------------------------------
     # create plots
 
-    op_chains = df['custom_operations'].unique()
+    op_chains = df["custom_operations"].unique()
 
     for bench_name in BM_SUPPORTED_CONFIGS:
         for op_chain in op_chains:
