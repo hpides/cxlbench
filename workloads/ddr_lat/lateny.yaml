@@ -7,7 +7,7 @@
 operation_latency:
   matrix:
     access_size: [ 64 ]
-    number_threads: [ 1 ]
+    number_threads: [ 1, 4, 8, 12, 16, 20, 24, 28, 32]
     custom_operations:
       - "r_64"
       - "r_64,w_64_none"

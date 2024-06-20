@@ -29,28 +29,31 @@ def create_plot(df, bench_name, node_names, op_chain):
         print("DataFrame is empty for bench_name ", bench_name)
         return
 
-    plot_df["op_size"] = plot_df[BMKeys.CUSTOM_OPS].apply(lambda x: x.split(",", 1)[0].rsplit("_", 1)[1])
+    # Use this if plot for multiple access sizes
+    # plot_df["op_size"] = plot_df[BMKeys.CUSTOM_OPS].apply(lambda x: x.split(",", 1)[0].rsplit("_", 1)[1])
 
-    LABEL_LOC = "Local"
-    LABEL_CXL = "CXL"
-    node_names = {0: LABEL_LOC, 1: LABEL_CXL}
-    plot_df["node_names"] = plot_df[BMKeys.NUMA_MEMORY_NODES_M0].replace(node_names)
+    # LABEL_LOC = "Local"
+    # LABEL_CXL = "CXL"
+    # node_names = {0: LABEL_LOC, 1: LABEL_CXL}
+    # plot_df["node_names"] = plot_df[BMKeys.NUMA_MEMORY_NODES_M0].replace(node_names)
 
     sns.set(style="ticks")
     plt.figure(figsize=(5.5, 2.3))
 
-    print(plot_df.to_string())
+    # print(plot_df.to_string())
 
     # order = plot_df["op_size"].unique()
     # hue_order = [LABEL_LOC, LABEL_CXL]
-    ax = sns.barplot(
+    ax = sns.lineplot(
         data=plot_df,
-        x="op_size",
+        x=BMKeys.THREAD_COUNT,
         y=BMKeys.LAT_AVG,
-        palette="colorblind",
+        # palette="colorblind",
         # hue="node_names",
         # order=order,
-        # markers="x",
+        markers=True,
+        marker='o',
+        markersize=8,
         # hue_order=hue_order,
     )
     # plot.set_xticks(thread_counts)
@@ -59,25 +62,26 @@ def create_plot(df, bench_name, node_names, op_chain):
     if y_tick_distance is not None:
         ax.yaxis.set_major_locator(ticker.MultipleLocator(y_tick_distance))
 
-    ax.legend(title=None)
+    # Add this if hues used
+    # ax.legend(title=None)
 
-    sns.move_legend(
-        ax,
-        "lower center",
-        bbox_to_anchor=(0.5, 0.92),
-        ncol=4,
-        frameon=False,
-        columnspacing=0.5,
-        handlelength=1.2,
-        handletextpad=0.5,
-    )
+    # sns.move_legend(
+    #     ax,
+    #     "lower center",
+    #     bbox_to_anchor=(0.5, 0.92),
+    #     ncol=4,
+    #     frameon=False,
+    #     columnspacing=0.5,
+    #     handlelength=1.2,
+    #     handletextpad=0.5,
+    # )
 
     # TODO(MW) add error bars, based on
     # https://stackoverflow.com/questions/62820959/use-precalculated-error-bars-with-seaborn-and-barplot
 
     fig = ax.get_figure()
 
-    plt.xlabel("Access Size")
+    plt.xlabel("Thread Count")
     plt.ylabel("Latency in ns")
     # plt.title(BM_NAME_TITLE[bench_name], y=1, x=0.1)
     # plt.xticks(rotation=45)
