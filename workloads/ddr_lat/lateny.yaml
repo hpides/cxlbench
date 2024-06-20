@@ -20,6 +20,5 @@ operation_latency:
     number_partitions: 1
     numa_memory_nodes: [0]
     numa_task_nodes: [0]
-    number_operations: 110000000
-    latency_sample_frequency: 110000
-    run_time: 10
+    number_operations: 200000000
+    latency_sample_frequency: 20000
