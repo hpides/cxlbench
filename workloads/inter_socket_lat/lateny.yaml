@@ -22,3 +22,4 @@ operation_latency:
     numa_task_nodes: [0]
     number_operations: 200000000
     latency_sample_frequency: 20000
+    run_time: 10
