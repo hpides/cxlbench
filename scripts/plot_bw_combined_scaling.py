@@ -200,9 +200,9 @@ if __name__ == "__main__":
     assert len(df["workload_1_thread_count"].unique()) == 1
 
     # Transform GiB/s to GB/s
-    df["combined_bandwidth_gb"] = df["combined_bandwidth"] * (1024**3 / 1e9)
-    df["workload_1_bandwidth_gb"] = df["workload_1_bandwidth"] * (1024**3 / 1e9)
-    df["workload_2_bandwidth_gb"] = df["workload_2_bandwidth"] * (1024**3 / 1e9)
+    df["combined_bandwidth_gb"] = df["combined_bandwidth"] * (1024 ** 3 / 1e9)
+    df["workload_1_bandwidth_gb"] = df["workload_1_bandwidth"] * (1024 ** 3 / 1e9)
+    df["workload_2_bandwidth_gb"] = df["workload_2_bandwidth"] * (1024 ** 3 / 1e9)
 
     sns.set(style="ticks")
     # hpi_palette = [(0.9609, 0.6563, 0), (0.8633, 0.3789, 0.0313), (0.6914, 0.0234, 0.2265)]

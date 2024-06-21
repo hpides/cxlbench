@@ -146,7 +146,7 @@ if __name__ == "__main__":
     df = df[(df[BMKeys.BM_NAME].isin(BM_SUPPORTED_CONFIGS))]
     df = ju.flatten_nested_json_df(df, deny_list_explosion)
     # Transform GiB/s to GB/s
-    df[BMKeys.BANDWIDTH_GB] = df[BMKeys.BANDWIDTH_GiB] * (1024**3 / 1e9)
+    df[BMKeys.BANDWIDTH_GB] = df[BMKeys.BANDWIDTH_GiB] * (1024 ** 3 / 1e9)
     BMKeys.TAG = "Workload"
     df[BMKeys.TAG] = df[BMKeys.EXEC_MODE] + " " + df[BMKeys.OPERATION]
     df.to_csv("{}/{}.csv".format(output_dir, "results"))

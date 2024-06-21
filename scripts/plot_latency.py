@@ -33,13 +33,7 @@ def create_plot(df, bench_name, node_names, op_chain):
     plt.figure(figsize=(5.5, 2.3))
 
     ax = sns.lineplot(
-        data=plot_df,
-        x=BMKeys.THREAD_COUNT,
-        y=BMKeys.LAT_AVG,
-        markers=True,
-        marker='o',
-        markersize=8,
-        errorbar=None
+        data=plot_df, x=BMKeys.THREAD_COUNT, y=BMKeys.LAT_AVG, markers=True, marker="o", markersize=8, errorbar=None
     )
 
     # Add error bars
@@ -47,10 +41,10 @@ def create_plot(df, bench_name, node_names, op_chain):
         x=plot_df[BMKeys.THREAD_COUNT],
         y=plot_df[BMKeys.LAT_AVG],
         yerr=plot_df[BMKeys.LAT_STDDEV],
-        fmt='none',
-        ecolor='gray',
+        fmt="none",
+        ecolor="gray",
         elinewidth=1,
-        capsize=3
+        capsize=3,
     )
 
     ax.yaxis.grid()
@@ -72,7 +66,6 @@ def create_plot(df, bench_name, node_names, op_chain):
         bbox_inches="tight",
         pad_inches=0,
     )
-
 
 
 if __name__ == "__main__":

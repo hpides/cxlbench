@@ -194,7 +194,7 @@ def parse_matrix_jsons(results, supported_bm_groups: list[BMGroups]):
         df[BMKeys.FLUSH_INSTRUCTION] = FLUSH_INSTR_NONE
     df[BMKeys.FLUSH_INSTRUCTION] = df[BMKeys.FLUSH_INSTRUCTION].fillna(FLUSH_INSTR_NONE)
     if BMKeys.BANDWIDTH_GiB in df.columns:
-        df[BMKeys.BANDWIDTH_GB] = df[BMKeys.BANDWIDTH_GiB] * (1024**3 / 1e9)
+        df[BMKeys.BANDWIDTH_GB] = df[BMKeys.BANDWIDTH_GiB] * (1024 ** 3 / 1e9)
 
     df = stringify_nodes(df)
     return df
