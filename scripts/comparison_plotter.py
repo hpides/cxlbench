@@ -6,22 +6,8 @@ import pandas as pd
 import seaborn as sns
 import sys
 
-KEY_ACCESS_SIZE = "access_size"
-KEY_BANDWIDTH = "bandwidth"
-KEY_BM_GROUP = "bm_name"
-KEY_BM_SUB_NAMES = "sub_bm_names"
-KEY_BM_TYPE = "bm_type"
-KEY_CUSTOM_OPS = "custom_operations"
-KEY_EXEC_TIME = "execution_time"
-KEY_LABEL = "label"
-KEY_LAT_AVG = "latency.avg"
-KEY_MATRIX_ARGS = "matrix_args"
-KEY_OP_COUNT = "number_operations"
-KEY_THREAD_COUNT = "number_threads"
-KEY_THREADS = "threads"
-KEY_THREADS_LEVELED = "benchmarks.results.threads"
-
-PLOT_FILE_PREFIX = "plot_"
+from enums.benchmark_keys import BMKeys
+from enums.file_names import PLOT_FILE_PREFIX
 
 
 class ComparisonPlotter:
@@ -75,7 +61,7 @@ class ComparisonPlotter:
             dfs.append(df)
 
         df = pd.concat(dfs)
-        bm_names = df[KEY_BM_GROUP].unique()
+        bm_names = df[BMKeys.BM_GROUP].unique()
         print("BM groups: {}".format(bm_names))
         selected_bm_groups = [
             "random_writes",
@@ -85,13 +71,13 @@ class ComparisonPlotter:
             "operation_latency",
         ]
         print("Selected BM groups: {}".format(selected_bm_groups))
-        df = df[(df[KEY_BM_GROUP].isin(selected_bm_groups)) & (df[KEY_BM_TYPE] == "single")]
-        df = df.drop(columns=[KEY_BM_TYPE, KEY_BM_SUB_NAMES])
-        df = ju.flatten_nested_json_df(df, [KEY_MATRIX_ARGS, KEY_THREADS_LEVELED])
+        df = df[(df[BMKeys.BM_GROUP].isin(selected_bm_groups)) & (df[BMKeys.BM_TYPE] == "single")]
+        df = df.drop(columns=[BMKeys.BM_TYPE, BMKeys.BM_SUB_NAMES])
+        df = ju.flatten_nested_json_df(df, [BMKeys.MATRIX_ARGS, BMKeys.THREADS_LEVELED])
         df = df.replace("cxl", "CXL-attached")
         df = df.replace("dram", "CPU-attached")
-        df[KEY_ACCESS_SIZE] = df[KEY_ACCESS_SIZE].fillna(-1)
-        df[KEY_ACCESS_SIZE] = df[KEY_ACCESS_SIZE].astype(int)
+        df[BMKeys.ACCESS_SIZE] = df[BMKeys.ACCESS_SIZE].fillna(-1)
+        df[BMKeys.ACCESS_SIZE] = df[BMKeys.ACCESS_SIZE].astype(int)
         df.to_csv("{}/flattened_df.csv".format(self.output_dir))
 
         bm_groups = df["bm_name"].unique()
@@ -109,7 +95,7 @@ class ComparisonPlotter:
             "random_distribution",
         ]
         for column in df.columns:
-            if column in ["index", KEY_MATRIX_ARGS, KEY_THREADS]:
+            if column in ["index", BMKeys.MATRIX_ARGS, BMKeys.THREADS]:
                 continue
             print("{}: {}".format(column, df[column].unique()))
 
@@ -121,15 +107,15 @@ class ComparisonPlotter:
         print(bm_groups)
 
         for bm_group in bm_groups:
-            df_sub = df[df[KEY_BM_GROUP] == bm_group]
+            df_sub = df[df[BMKeys.BM_GROUP] == bm_group]
             self.create_plot(df_sub)
 
         sys.exit("Exit")
 
     def create_plot(self, df):
-        assert KEY_BM_GROUP in df.columns
-        assert len(df[KEY_BM_GROUP].unique()) == 1
-        bm_group = df[KEY_BM_GROUP].unique()[0]
+        assert BMKeys.BM_GROUP in df.columns
+        assert len(df[BMKeys.BM_GROUP].unique()) == 1
+        bm_group = df[BMKeys.BM_GROUP].unique()[0]
         bandwidth_plot_group = ["sequential_reads", "random_reads", "sequential_writes", "random_writes"]
         latency_plot_group = ["operation_latency"]
         if bm_group in bandwidth_plot_group:
@@ -137,43 +123,43 @@ class ComparisonPlotter:
             print("Creating barplot (# threads) for BM group {}".format(bm_group))
             self.create_barplot(
                 df,
-                KEY_THREAD_COUNT,
-                KEY_BANDWIDTH,
+                BMKeys.THREAD_COUNT,
+                BMKeys.BANDWIDTH_GiB,
                 "Number of Threads",
                 "Throughput in GB/s",
-                KEY_LABEL,
+                BMKeys.LABEL,
                 "Memory Type",
                 "{}{}_threads.pdf".format(PLOT_FILE_PREFIX, bm_group),
             )
             # Plot 2 (x: access size, y: throughput)
-            df = df[df[KEY_THREAD_COUNT] == df[KEY_THREAD_COUNT].iloc[0]]
+            df = df[df[BMKeys.THREAD_COUNT] == df[BMKeys.THREAD_COUNT].iloc[0]]
             print("Creating barplot (access sizes) for BM group {}".format(bm_group))
             self.create_barplot(
                 df,
-                KEY_ACCESS_SIZE,
-                KEY_BANDWIDTH,
+                BMKeys.ACCESS_SIZE,
+                BMKeys.BANDWIDTH_GiB,
                 "Access Size in Byte",
                 "Throughput in GB/s",
-                KEY_LABEL,
+                BMKeys.LABEL,
                 "Memory Type",
                 "{}{}_access_sizes.pdf".format(PLOT_FILE_PREFIX, bm_group),
             )
         elif bm_group in latency_plot_group:
-            thread_counts = df[KEY_THREAD_COUNT].unique()
+            thread_counts = df[BMKeys.THREAD_COUNT].unique()
             for thread_count in thread_counts:
                 print(
                     "Creating barplot (latency per operations) for BM group {} and thread count {}".format(
                         bm_group, thread_count
                     )
                 )
-                df_thread = df[df[KEY_THREAD_COUNT] == thread_count]
+                df_thread = df[df[BMKeys.THREAD_COUNT] == thread_count]
                 self.create_barplot(
                     df_thread,
-                    KEY_CUSTOM_OPS,
-                    KEY_LAT_AVG,
+                    BMKeys.CUSTOM_OPS,
+                    BMKeys.LAT_AVG,
                     "Operations",
                     "Latency in ns",
-                    KEY_LABEL,
+                    BMKeys.LABEL,
                     "Memory Type",
                     "{}{}_latency_custom_ops_{}_threads.pdf".format(PLOT_FILE_PREFIX, bm_group, thread_count),
                     True,

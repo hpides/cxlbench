@@ -13,37 +13,10 @@ import pandas as pd
 import seaborn as sns
 import sys
 
-KEY_ACCESS_SIZE = "access_size"
-KEY_BANDWIDTH_GiB = "bandwidth"
-KEY_BANDWIDTH_GB = "bandwidth_gb"
-KEY_BM_NAME = "bm_name"
-KEY_BM_TYPE = "bm_type"
-KEY_CHUNK_SIZE = "min_io_chunk_size"
-KEY_CUSTOM_OPS = "custom_operations"
-KEY_EXEC_MODE = "exec_mode"
-KEY_EXPLODED_NUMA_MEMORY_NODES = "benchmarks.config.numa_memory_nodes"
-KEY_EXPLODED_NUMA_TASK_NODES = "benchmarks.config.numa_task_nodes"
-KEY_LAT_AVG = "latency.avg"
-KEY_MATRIX_ARGS = "matrix_args"
-KEY_MEMORY_REGION_SIZE = "memory_region_size"
-KEY_NUMA_TASK_NODES = "numa_task_nodes"
-KEY_NUMA_MEMORY_NODES = "numa_memory_nodes"
-KEY_OPERATION = "operation"
-KEY_OPERATION_COUNT = "number_operations"
-KEY_PARTITION_COUNT = "number_partitions"
-KEY_RANDOM_DISTRIBUTION = "random_distribution"
-KEY_RUN_TIME = "run_time"
-KEY_SUB_BM_NAMES = "sub_bm_names"
-KEY_TAG = "tag"
-KEY_THREAD_COUNT = "number_threads"
-KEY_THREADS = "threads"
-KEY_THREADS_LEVELED = "benchmarks.results.threads"
-KEY_FLUSH_INSTRUCTION = "flush_instruction"
-FLUSH_INSTR_NONE = "none"
+from enums.benchmark_keys import BMKeys
+from enums.file_names import FILE_TAG_SUBSTRING, PLOT_FILE_PREFIX
 
-DATA_FILE_PREFIX = "data_"
-PLOT_FILE_PREFIX = "plot_"
-FILE_TAG_SUBSTRING = "TAG_"
+
 MAX_THREAD_COUNT = 40
 
 # benchmark configuration names
@@ -147,19 +120,19 @@ if __name__ == "__main__":
             tag = tag_part.split(".")[0]
 
         df = pd.read_json(path)
-        df[KEY_TAG] = tag
+        df[BMKeys.TAG] = tag
         dfs.append(df)
 
     df = pd.concat(dfs)
-    bm_names = df[KEY_BM_NAME].unique()
+    bm_names = df[BMKeys.BM_NAME].unique()
     print("Existing BM groups: {}".format(bm_names))
 
     # ------------------------------------------------------------------------------------------------------------------
     deny_list_explosion = [
-        KEY_MATRIX_ARGS,
-        KEY_THREADS,
-        KEY_NUMA_TASK_NODES,
-        KEY_NUMA_MEMORY_NODES,
+        BMKeys.MATRIX_ARGS,
+        BMKeys.THREADS,
+        BMKeys.NUMA_TASK_NODES,
+        BMKeys.NUMA_MEMORY_NODES,
         "matrix_args.local",
         "matrix_args.device",
         "matrix_args.local1",
@@ -179,17 +152,17 @@ if __name__ == "__main__":
         "sub_bm_names",
     ]
 
-    df = df[(df[KEY_BM_NAME].isin(BM_SUPPORTED_CONFIGS))]
+    df = df[(df[BMKeys.BM_NAME].isin(BM_SUPPORTED_CONFIGS))]
 
     # parallel local device
-    df_local_dev = df[(df[KEY_BM_NAME] == BM_CONFIG_PARALLEL_LOCAL_DEVICE)]
+    df_local_dev = df[(df[BMKeys.BM_NAME] == BM_CONFIG_PARALLEL_LOCAL_DEVICE)]
     df_local_dev = ju.flatten_nested_json_df(df_local_dev, deny_list_explosion)
     df_local_dev.to_csv("{}/{}.csv".format(output_dir, BM_CONFIG_PARALLEL_LOCAL_DEVICE))
     df_local_dev = df_local_dev.drop(columns=drop_columns, errors="ignore")
     df_local_dev.to_csv("{}/{}-reduced.csv".format(output_dir, BM_CONFIG_PARALLEL_LOCAL_DEVICE))
 
     # parallel local only
-    df_local = df[(df[KEY_BM_NAME] == BM_CONFIG_PARALLEL_LOCAL_ONLY)]
+    df_local = df[(df[BMKeys.BM_NAME] == BM_CONFIG_PARALLEL_LOCAL_ONLY)]
     df_local = ju.flatten_nested_json_df(df_local, deny_list_explosion)
     df_local.to_csv("{}/{}.csv".format(output_dir, BM_CONFIG_PARALLEL_LOCAL_ONLY))
     df_local = df_local.drop(columns=drop_columns, errors="ignore")
@@ -227,9 +200,9 @@ if __name__ == "__main__":
     assert len(df["workload_1_thread_count"].unique()) == 1
 
     # Transform GiB/s to GB/s
-    df["combined_bandwidth_gb"] = df["combined_bandwidth"] * (1024**3 / 1e9)
-    df["workload_1_bandwidth_gb"] = df["workload_1_bandwidth"] * (1024**3 / 1e9)
-    df["workload_2_bandwidth_gb"] = df["workload_2_bandwidth"] * (1024**3 / 1e9)
+    df["combined_bandwidth_gb"] = df["combined_bandwidth"] * (1024 ** 3 / 1e9)
+    df["workload_1_bandwidth_gb"] = df["workload_1_bandwidth"] * (1024 ** 3 / 1e9)
+    df["workload_2_bandwidth_gb"] = df["workload_2_bandwidth"] * (1024 ** 3 / 1e9)
 
     sns.set(style="ticks")
     # hpi_palette = [(0.9609, 0.6563, 0), (0.8633, 0.3789, 0.0313), (0.6914, 0.0234, 0.2265)]

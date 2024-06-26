@@ -11,7 +11,7 @@ sequential_writes:
   args:
     exec_mode: sequential
     memory_region_size: 7G
-    numa_memory_nodes: [ 0,1 ]
+    numa_memory_nodes: [ 4 ]
     numa_task_nodes: [ 0,1,2,3 ]
     number_partitions: 1
     operation: write

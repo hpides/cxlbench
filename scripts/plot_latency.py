@@ -12,75 +12,59 @@ import seaborn as sns
 
 import sys
 
-FLUSH_INSTR_NONE = "none"
+from enums.benchmark_keys import BMKeys
+from enums.file_names import PLOT_FILE_PREFIX, FILE_TAG_SUBSTRING
 
-DATA_FILE_PREFIX = "data_"
-PLOT_FILE_PREFIX = "plot_"
-FILE_TAG_SUBSTRING = "TAG_"
 
 # benchmark configuration names
-BM_SUPPORTED_CONFIGS = ["lat_read", "lat_write_cache", "lat_write_none"]
+BM_SUPPORTED_CONFIGS = ["lat_read", "lat_write_cache", "lat_write_none", "operation_latency"]
 BM_NAME_TITLE = {"lat_read": "Read", "lat_write_cache": "Read, Write", "lat_write_none": "Read, Write, CLWB"}
 
 PRINT_DEBUG = False
 
 
-def create_plot(df, bench_name, node_names):
-    plot_df = df[df[mplt.KEY_BM_NAME] == bench_name]
-    plot_df["op_size"] = plot_df[mplt.KEY_CUSTOM_OPS].apply(lambda x: x.split(",", 1)[0].rsplit("_", 1)[1])
-
-    LABEL_LOC = "Local"
-    LABEL_CXL = "CXL"
-    node_names = {0: LABEL_LOC, 1: LABEL_CXL}
-    plot_df["node_names"] = plot_df[mplt.KEY_M0_NUMA_MEMORY_NODES].replace(node_names)
+def create_plot(df, bench_name, node_names, op_chain):
+    plot_df = df[(df[BMKeys.BM_NAME] == bench_name) & (df[BMKeys.CUSTOM_OPS] == op_chain)]
+    if plot_df.empty:
+        print("DataFrame is empty for bench_name ", bench_name)
+        return
 
     sns.set(style="ticks")
     plt.figure(figsize=(5.5, 2.3))
 
-    order = plot_df["op_size"].unique()
-    hue_order = [LABEL_LOC, LABEL_CXL]
-    ax = sns.barplot(
-        data=plot_df,
-        x="op_size",
-        y=mplt.KEY_LAT_AVG,
-        palette="colorblind",
-        hue="node_names",
-        order=order,
-        hue_order=hue_order,
+    ax = sns.lineplot(
+        data=plot_df, x=BMKeys.THREAD_COUNT, y=BMKeys.LAT_AVG, markers=True, marker="o", markersize=8, errorbar=None
     )
-    # plot.set_xticks(thread_counts)
-    # plot.set_xticklabels(thread_counts)
+
+    # Add error bars
+    plt.errorbar(
+        x=plot_df[BMKeys.THREAD_COUNT],
+        y=plot_df[BMKeys.LAT_AVG],
+        yerr=plot_df[BMKeys.LAT_STDDEV],
+        fmt="none",
+        ecolor="gray",
+        elinewidth=1,
+        capsize=3,
+    )
+
     ax.yaxis.grid()
     if y_tick_distance is not None:
         ax.yaxis.set_major_locator(ticker.MultipleLocator(y_tick_distance))
 
-    ax.legend(title=None)
-
-    sns.move_legend(
-        ax,
-        "lower center",
-        bbox_to_anchor=(0.5, 0.92),
-        ncol=4,
-        frameon=False,
-        columnspacing=0.5,
-        handlelength=1.2,
-        handletextpad=0.5,
-    )
-
-    # TODO(MW) add error bars, based on
-    # https://stackoverflow.com/questions/62820959/use-precalculated-error-bars-with-seaborn-and-barplot
+    # Set x-axis ticks to the specific thread count values
+    thread_counts = plot_df[BMKeys.THREAD_COUNT].unique()
+    ax.set_xticks(thread_counts)
 
     fig = ax.get_figure()
 
-    plt.xlabel("Access Size")
+    plt.xlabel("Thread Count")
     plt.ylabel("Latency in ns")
-    # plt.title(BM_NAME_TITLE[bench_name], y=1, x=0.1)
-    # plt.xticks(rotation=45)
-
     plt.tight_layout()
 
     fig.savefig(
-        "{}/{}{}-{}.pdf".format(output_dir, PLOT_FILE_PREFIX, "latency", bench_name), bbox_inches="tight", pad_inches=0
+        "{}/{}{}-{}-{}.pdf".format(output_dir, PLOT_FILE_PREFIX, "latency", bench_name, op_chain),
+        bbox_inches="tight",
+        pad_inches=0,
     )
 
 
@@ -155,28 +139,29 @@ if __name__ == "__main__":
             tag = tag_part.split(".")[0]
 
         df = pd.read_json(path)
-        df[mplt.KEY_TAG] = tag
+        df[BMKeys.TAG] = tag
         dfs.append(df)
 
     df = pd.concat(dfs)
-    bm_names = df[mplt.KEY_BM_NAME].unique()
+    bm_names = df[BMKeys.BM_NAME].unique()
     print("Existing BM groups: {}".format(bm_names))
 
     # -------------------------------------------------------------------------------------------------------------------
 
-    df = df[(df[mplt.KEY_BM_NAME].isin(BM_SUPPORTED_CONFIGS))]
+    df = df[(df[BMKeys.BM_NAME].isin(BM_SUPPORTED_CONFIGS))]
+    assert not df.empty, "DataFrame is empty"
     df = ju.flatten_nested_json_df(
         df,
         [
-            mplt.KEY_MATRIX_ARGS,
-            mplt.KEY_THREADS,
-            mplt.KEY_NUMA_TASK_NODES,
-            mplt.KEY_M0_NUMA_MEMORY_NODES,
-            mplt.KEY_M1_NUMA_MEMORY_NODES,
+            BMKeys.MATRIX_ARGS,
+            BMKeys.THREADS,
+            BMKeys.NUMA_TASK_NODES,
+            BMKeys.NUMA_MEMORY_NODES_M0,
+            BMKeys.NUMA_MEMORY_NODES_M1,
         ],
     )
     df.to_csv("{}/data.csv".format(output_dir))
-    df[mplt.KEY_M0_NUMA_MEMORY_NODES] = df[mplt.KEY_M0_NUMA_MEMORY_NODES].apply(mplt.get_single_list_value)
+    df[BMKeys.NUMA_MEMORY_NODES_M0] = df[BMKeys.NUMA_MEMORY_NODES_M0].apply(mplt.values_as_string)
     drop_columns = [
         "index",
         "bm_type",
@@ -191,5 +176,8 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------------------------------------------------------
     # create plots
 
+    op_chains = df["custom_operations"].unique()
+
     for bench_name in BM_SUPPORTED_CONFIGS:
-        create_plot(df, bench_name, node_names)
+        for op_chain in op_chains:
+            create_plot(df, bench_name, node_names, op_chain)

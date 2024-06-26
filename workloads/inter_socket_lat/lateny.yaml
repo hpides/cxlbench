@@ -7,7 +7,7 @@
 operation_latency:
   matrix:
     access_size: [ 64 ]
-    number_threads: [ 1 ]
+    number_threads: [ 1, 4, 8, 12, 16, 20, 24, 28, 32]
     custom_operations:
       - "r_64"
       - "r_64,w_64_none"
@@ -20,6 +20,6 @@ operation_latency:
     number_partitions: 1
     numa_memory_nodes: [1]
     numa_task_nodes: [0]
-    number_operations: 110000000
-    latency_sample_frequency: 110000
+    number_operations: 200000000
+    latency_sample_frequency: 20000
     run_time: 10

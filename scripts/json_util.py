@@ -1,5 +1,14 @@
+import glob
 import json
+import os
+import sys
+
 import pandas as pd
+
+from enums.benchmark_keys import BMKeys
+from enums.file_names import FILE_TAG_SUBSTRING
+from memaplot import FLUSH_INSTR_NONE
+from enums.benchmark_groups import BMGroups
 
 PRINT_DEBUG = False
 
@@ -120,4 +129,79 @@ def flatten_nested_json_df(df, deny_explosion_list):
 
     print_debug(f"final shape: {df.shape}")
     print_debug(f"final columns: {df.columns}")
+    return df
+
+
+def parse_matrix_jsons(results, supported_bm_groups: list[BMGroups]):
+    # collect jsons containing matrix arguments
+    matrix_jsons = None
+    if os.path.isfile(results):
+        if not results.endswith(".json"):
+            sys.exit("Result path is a single file but is not a .json file.")
+        matrix_jsons = [results]
+    else:
+        matrix_jsons = [path for path in glob.glob(results + "/*.json")]
+
+    # create json file list
+
+    dfs = []
+    for path in matrix_jsons:
+        # Get the tag from the file name.
+        tag = ""
+        if FILE_TAG_SUBSTRING in path:
+            path_parts = path.split(FILE_TAG_SUBSTRING)
+            assert (
+                len(path_parts) == 2
+            ), "Make sure that the substring {} appears only once in a result file name.".format(FILE_TAG_SUBSTRING)
+            tag_part = path_parts[-1]
+            assert "-" not in tag_part, "Make sure that the tag is the last part of the name before the file extension."
+            assert "_" not in tag_part, "Make sure that the tag is the last part of the name before the file extension."
+            tag = tag_part.split(".")[0]
+
+        df = pd.read_json(path)
+        df[BMKeys.TAG] = tag
+        dfs.append(df)
+
+    df = pd.concat(dfs)
+    bm_names = df[BMKeys.BM_GROUP].unique()
+    print("Existing BM groups: {}".format(bm_names))
+
+    print("Supported BM groups: {}".format([x.value for x in supported_bm_groups]))
+
+    df = df[(df[BMKeys.BM_GROUP].isin(supported_bm_groups)) & (df[BMKeys.BM_TYPE] == "single")]
+    df = flatten_nested_json_df(
+        df,
+        [
+            BMKeys.MATRIX_ARGS,
+            BMKeys.THREADS_LEVELED,
+            BMKeys.EXPLODED_NUMA_MEMORY_NODES_M0,
+            BMKeys.EXPLODED_NUMA_MEMORY_NODES_M1,
+            BMKeys.EXPLODED_NUMA_TASK_NODES,
+        ],
+    )
+
+    # If only latency benchnarks have been performed, the dataframe does not have a KEY_ACCESS_SIZE column so it
+    # must be added.
+    if BMKeys.ACCESS_SIZE not in df.columns:
+        df[BMKeys.ACCESS_SIZE] = -1
+    df[BMKeys.ACCESS_SIZE] = df[BMKeys.ACCESS_SIZE].fillna(-1)
+    df[BMKeys.ACCESS_SIZE] = df[BMKeys.ACCESS_SIZE].astype(int)
+
+    # For read benchmarks, an additional flush instruction will never be performed. As 'none' is also one of the
+    # valid flush instructions, we set the corresponding value to 'none'. If only read benchnarks have been
+    # performed, the dataframe does note have a KEY_FLUSH_INSTRUCTION column so it must be added.
+    if BMKeys.FLUSH_INSTRUCTION not in df.columns:
+        df[BMKeys.FLUSH_INSTRUCTION] = FLUSH_INSTR_NONE
+    df[BMKeys.FLUSH_INSTRUCTION] = df[BMKeys.FLUSH_INSTRUCTION].fillna(FLUSH_INSTR_NONE)
+    if BMKeys.BANDWIDTH_GiB in df.columns:
+        df[BMKeys.BANDWIDTH_GB] = df[BMKeys.BANDWIDTH_GiB] * (1024 ** 3 / 1e9)
+
+    df = stringify_nodes(df)
+    return df
+
+
+def stringify_nodes(df):
+    df[BMKeys.NUMA_MEMORY_NODES_M0] = df[BMKeys.NUMA_MEMORY_NODES_M0].transform(lambda x: ",".join(str(i) for i in x))
+    df[BMKeys.NUMA_MEMORY_NODES_M1] = df[BMKeys.NUMA_MEMORY_NODES_M1].transform(lambda x: ",".join(str(i) for i in x))
+    df[BMKeys.NUMA_TASK_NODES] = df[BMKeys.NUMA_TASK_NODES].transform(lambda x: ",".join(str(i) for i in x))
     return df
