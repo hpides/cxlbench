@@ -183,7 +183,10 @@ BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
                                        &bm_config.random_distribution);
     found_count += get_enum_if_present(node, "flush_instruction", ConfigEnums::str_to_flush_instruction,
                                        &bm_config.flush_instruction);
-    found_count += get_sequence_if_present(node, "numa_task_nodes", bm_config.numa_task_nodes);
+    found_count += get_sequence_if_present(node, "numa_task_nodes", bm_config.numa_thread_nodes);
+    found_count +=
+        get_enum_if_present(node, "thread_pin_mode", ConfigEnums::str_to_thread_pin_mode, &bm_config.thread_pin_mode);
+    found_count += get_sequence_if_present(node, "thread_cores", bm_config.thread_core_ids);
 
     std::string custom_ops;
     const bool has_custom_ops = get_if_present(node, "custom_operations", &custom_ops);
@@ -305,8 +308,17 @@ void BenchmarkConfig::validate() const {
   const bool latency_sample_is_custom = exec_mode == Mode::Custom || latency_sample_frequency == 0;
   CHECK_ARGUMENT(latency_sample_is_custom, "Latency sampling can only be used with custom operations.");
 
-  const bool numa_task_nodes_present = numa_task_nodes.size() > 0;
-  CHECK_ARGUMENT(numa_task_nodes_present, "NUMA task nodes must be specified.");
+  const bool numa_thread_nodes_present = numa_thread_nodes.size() > 0;
+  const bool numa_thread_pinning_mode =
+      (thread_pin_mode == ThreadPinMode::AllNumaCores || thread_pin_mode == ThreadPinMode::SingleNumaCoreIncrement);
+  CHECK_ARGUMENT(numa_thread_nodes_present || !numa_thread_pinning_mode,
+                 "NUMA task nodes must be specified with a NUMA-specific thread pinning mode.");
+  CHECK_ARGUMENT(numa_thread_pinning_mode || !thread_core_ids.empty(),
+                 "Core IDs must be specified if thread pinning is not NUMA-specific.");
+
+  if (thread_pin_mode == ThreadPinMode::SingleCoreFixed) {
+    CHECK_ARGUMENT(thread_core_ids.size() == number_threads, "Number of Core IDs and thread count must be equal.");
+  }
 
 #ifdef HAS_CLWB
   const bool clwb_supported_or_not_used = true;
@@ -358,14 +370,11 @@ std::string BenchmarkConfig::to_string(const std::string sep) const {
     ++region_idx;
   }
   stream << sep << "exec mode: " << utils::get_enum_as_string(ConfigEnums::str_to_mode, exec_mode);
-  stream << sep << "task numa nodes: [";
-  auto delim = "";
-  for (const auto& node : numa_task_nodes) {
-    stream << delim << node;
-    delim = ", ";
-  }
-  stream << "]";
+  stream << sep << "thread numa nodes: [" << utils::numbers_to_string(numa_thread_nodes) << "]";
   stream << sep << "thread count: " << number_threads;
+  stream << sep
+         << "thread pinning: " << utils::get_enum_as_string(ConfigEnums::str_to_thread_pin_mode, thread_pin_mode);
+  stream << sep << "thread core IDs: [" << utils::numbers_to_string(thread_core_ids) << "]";
   stream << sep << "min io chunk size: " << min_io_chunk_size;
 
   if (exec_mode != Mode::Custom) {
@@ -418,9 +427,11 @@ nlohmann::json BenchmarkConfig::as_json() const {
   }
   config["exec_mode"] = utils::get_enum_as_string(ConfigEnums::str_to_mode, exec_mode);
   config["min_io_chunk_size"] = min_io_chunk_size;
-  config["numa_task_nodes"] = numa_task_nodes;
+  config["numa_task_nodes"] = numa_thread_nodes;
   config["number_partitions"] = number_partitions;
   config["number_threads"] = number_threads;
+  config["thread_pin_mode"] = utils::get_enum_as_string(ConfigEnums::str_to_thread_pin_mode, thread_pin_mode);
+  config["thread_cores"] = thread_core_ids;
 
   if (exec_mode != Mode::Custom) {
     config["access_size"] = access_size;
@@ -647,6 +658,11 @@ const std::unordered_map<std::string, FlushInstruction> ConfigEnums::str_to_flus
 
 const std::unordered_map<std::string, RandomDistribution> ConfigEnums::str_to_random_distribution{
     {"uniform", RandomDistribution::Uniform}, {"zipf", RandomDistribution::Zipf}};
+
+const std::unordered_map<std::string, ThreadPinMode> ConfigEnums::str_to_thread_pin_mode{
+    {"all-numa", ThreadPinMode::AllNumaCores},
+    {"single-numa", ThreadPinMode::SingleNumaCoreIncrement},
+    {"single-fixed", ThreadPinMode::SingleCoreFixed}};
 
 const std::unordered_map<char, uint64_t> ConfigEnums::scale_suffix_to_factor{{'k', 1024},
                                                                              {'K', 1024},

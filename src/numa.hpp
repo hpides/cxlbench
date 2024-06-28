@@ -17,7 +17,7 @@ using PageLocations = std::vector<int>;
 // Sets the numa policy to strict if numa is available and returns the number of available numa nodes.
 uint8_t init_numa();
 
-void set_task_numa_nodes(const NumaNodeIDs& node_ids);
+CoreIDs core_ids_of_nodes(const NumaNodeIDs& node_ids);
 
 void bind_memory_interleaved(void* addr, const size_t memory_size, const NumaNodeIDs& node_ids);
 
@@ -55,12 +55,9 @@ void log_permissions_for_numa_nodes(spdlog::level::level_enum log_level, uint64_
 
 void log_permissions_for_numa_nodes(spdlog::level::level_enum log_level, std::string thread_description);
 
-// Returns node IDs on which the current thread is allowed to run on.
-NumaNodeIDs get_numa_task_nodes();
-
 // Returns the NumaNodeID of the node on which the memory for a given address is currently allocated. Mind that it's
 // about an actual node, not the nodes on which the memory is allowed to be allocated.
-NumaNodeID get_numa_node_index_by_address(char* const addr);
+NumaNodeID numa_node_index_by_address(char* const addr);
 
 PageLocations get_page_locations(char* const start_addr, size_t memory_region_size);
 

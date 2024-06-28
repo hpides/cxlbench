@@ -22,6 +22,8 @@ set(
         read_write_ops_avx512.hpp
         read_write_ops_types.hpp
         read_write_ops.hpp
+        threads.cpp
+        threads.hpp
         utils.cpp
         utils.hpp
 )

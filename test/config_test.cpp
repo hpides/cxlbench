@@ -20,6 +20,9 @@ constexpr auto TEST_PARALLEL_MATRIX = "test_parallel_matrix.yaml";
 constexpr auto TEST_CUSTOM_OPERATIONS_MATRIX = "test_custom_operations_matrix.yaml";
 constexpr auto TEST_INVALID_NUMA_MEMORY_NODES = "test_invalid_numa_memory_nodes.yaml";
 constexpr auto TEST_INVALID_NUMA_TASK_NODES = "test_invalid_numa_task_nodes.yaml";
+constexpr auto TEST_THREAD_MULTI_CORE_NUMA = "test_thread_multi_core_numa.yaml";
+constexpr auto TEST_THREAD_SINGLE_CORE_NUMA = "test_thread_single_core_numa.yaml";
+constexpr auto TEST_THREAD_SINGLE_CORE = "test_thread_single_core.yaml";
 
 class ConfigTest : public BaseTest {
  protected:
@@ -45,11 +48,15 @@ class ConfigTest : public BaseTest {
         BenchmarkFactory::get_config_files(test_config_path / TEST_INVALID_NUMA_MEMORY_NODES);
     config_invalid_numa_task_nodes =
         BenchmarkFactory::get_config_files(test_config_path / TEST_INVALID_NUMA_TASK_NODES);
+    config_thread_multi_core_numa = BenchmarkFactory::get_config_files(test_config_path / TEST_THREAD_MULTI_CORE_NUMA);
+    config_thread_single_core_numa =
+        BenchmarkFactory::get_config_files(test_config_path / TEST_THREAD_SINGLE_CORE_NUMA);
+    config_thread_single_core = BenchmarkFactory::get_config_files(test_config_path / TEST_THREAD_SINGLE_CORE);
 
     // Set required NUMA nodes.
     bm_config.memory_regions[0].node_ids = {42};
     bm_config.memory_regions[1].node_ids = {1337};
-    bm_config.numa_task_nodes = {0};
+    bm_config.numa_thread_nodes = {0};
   }
 
   void TearDown() override { std::ofstream empty_log(test_logger_path, std::ostream::trunc); }
@@ -80,6 +87,9 @@ class ConfigTest : public BaseTest {
   std::vector<YAML::Node> config_custom_operations_matrix;
   std::vector<YAML::Node> config_invalid_numa_memory_nodes;
   std::vector<YAML::Node> config_invalid_numa_task_nodes;
+  std::vector<YAML::Node> config_thread_multi_core_numa;
+  std::vector<YAML::Node> config_thread_single_core_numa;
+  std::vector<YAML::Node> config_thread_single_core;
   BenchmarkConfig bm_config;
   static std::filesystem::path test_logger_path;
 };
@@ -119,7 +129,7 @@ TEST_F(ConfigTest, SingleDecodeSequential) {
   EXPECT_EQ(bm_config.number_partitions, bm_config_default.number_partitions);
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
-  EXPECT_EQ(bm_config.numa_task_nodes, NumaNodeIDs{0});
+  EXPECT_EQ(bm_config.numa_thread_nodes, NumaNodeIDs{0});
   EXPECT_EQ(bm_config.memory_regions[0].node_ids, (NumaNodeIDs{0, 1}));
   EXPECT_EQ(bm_config.memory_regions[0].percentage_pages_first_node, 37);
 }
@@ -142,7 +152,7 @@ TEST_F(ConfigTest, DecodeRandom) {
   EXPECT_EQ(bm_config.memory_regions[0].node_ids, NumaNodeIDs{1});
   EXPECT_EQ(bm_config.memory_regions[0].percentage_pages_first_node,
             bm_config_default.memory_regions[0].percentage_pages_first_node);
-  EXPECT_EQ(bm_config.numa_task_nodes, NumaNodeIDs{0});
+  EXPECT_EQ(bm_config.numa_thread_nodes, NumaNodeIDs{0});
   EXPECT_EQ(bm_config.access_size, bm_config_default.access_size);
   EXPECT_EQ(bm_config.number_operations, bm_config_default.number_operations);
   EXPECT_EQ(bm_config.flush_instruction, bm_config_default.flush_instruction);
@@ -169,7 +179,7 @@ TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
 
   EXPECT_EQ(bm_config.memory_regions[0].size, 10737418240);
   EXPECT_EQ(bm_config.memory_regions[0].node_ids, (NumaNodeIDs{0}));
-  EXPECT_EQ(bm_config.numa_task_nodes, (NumaNodeIDs{0, 1}));
+  EXPECT_EQ(bm_config.numa_thread_nodes, (NumaNodeIDs{0, 1}));
   EXPECT_EQ(bm_config.access_size, 4096);
   EXPECT_EQ(bm_config.exec_mode, Mode::Random);
   EXPECT_EQ(bm_config.number_operations, 10000000);
@@ -189,7 +199,7 @@ TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
 
   EXPECT_EQ(bm_config.memory_regions[0].size, 10737418240);
   EXPECT_EQ(bm_config.memory_regions[0].node_ids, (NumaNodeIDs{2, 3}));
-  EXPECT_EQ(bm_config.numa_task_nodes, (NumaNodeIDs{0, 1}));
+  EXPECT_EQ(bm_config.numa_thread_nodes, (NumaNodeIDs{0, 1}));
   EXPECT_EQ(bm_config.access_size, 256);
   EXPECT_EQ(bm_config.exec_mode, Mode::Sequential);
   EXPECT_EQ(bm_config.flush_instruction, FlushInstruction::None);
@@ -238,7 +248,7 @@ TEST_F(ConfigTest, DecodeMatrix) {
     EXPECT_EQ(config.memory_regions[0].node_ids, (NumaNodeIDs{0, 3}));
     EXPECT_EQ(config.exec_mode, Mode::Sequential);
     EXPECT_EQ(config.operation, Operation::Read);
-    EXPECT_EQ(config.numa_task_nodes, NumaNodeIDs{0});
+    EXPECT_EQ(config.numa_thread_nodes, NumaNodeIDs{0});
 
     EXPECT_EQ(config.number_operations, bm_config_default.number_operations);
     EXPECT_EQ(config.random_distribution, bm_config_default.random_distribution);
@@ -301,7 +311,7 @@ TEST_F(ConfigTest, DecodeCustomOperationsMatrix) {
     EXPECT_EQ(config.exec_mode, Mode::Custom);
     EXPECT_EQ(config.number_operations, 100000000);
     EXPECT_EQ(config.number_threads, 16);
-    EXPECT_EQ(config.numa_task_nodes, NumaNodeIDs{0});
+    EXPECT_EQ(config.numa_thread_nodes, NumaNodeIDs{0});
 
     EXPECT_EQ(config.random_distribution, bm_config_default.random_distribution);
     EXPECT_EQ(config.zipf_alpha, bm_config_default.zipf_alpha);
@@ -346,7 +356,7 @@ TEST_F(ConfigTest, ParallelDecodeMatrix) {
     EXPECT_EQ(config_one.exec_mode, Mode::Random);
     EXPECT_EQ(config_one.number_operations, 10000000);
     EXPECT_EQ(config_one.operation, Operation::Read);
-    EXPECT_EQ(config_one.numa_task_nodes, NumaNodeIDs{0});
+    EXPECT_EQ(config_one.numa_thread_nodes, NumaNodeIDs{0});
 
     EXPECT_EQ(config_one.random_distribution, bm_config_default.random_distribution);
     EXPECT_EQ(config_one.zipf_alpha, bm_config_default.zipf_alpha);
@@ -362,7 +372,7 @@ TEST_F(ConfigTest, ParallelDecodeMatrix) {
     EXPECT_EQ(config_two.operation, Operation::Write);
     EXPECT_EQ(config_two.number_threads, 16);
     EXPECT_EQ(config_two.flush_instruction, FlushInstruction::None);
-    EXPECT_EQ(config_two.numa_task_nodes, NumaNodeIDs{0});
+    EXPECT_EQ(config_two.numa_thread_nodes, NumaNodeIDs{0});
 
     EXPECT_EQ(config_two.number_operations, bm_config_default.number_operations);
     EXPECT_EQ(config_two.random_distribution, bm_config_default.random_distribution);
@@ -374,6 +384,45 @@ TEST_F(ConfigTest, ParallelDecodeMatrix) {
     EXPECT_EQ(config_two.memory_regions[0].percentage_pages_first_node,
               bm_config_default.memory_regions[0].percentage_pages_first_node);
   }
+}
+
+TEST_F(ConfigTest, ThreadPinningAllNuma) {
+  std::vector<SingleBenchmark> single_bms = BenchmarkFactory::create_single_benchmarks(config_thread_multi_core_numa);
+  std::vector<ParallelBenchmark> parallel_benchmarks =
+      BenchmarkFactory::create_parallel_benchmarks(config_thread_multi_core_numa);
+  ASSERT_EQ(single_bms.size(), 1);
+  ASSERT_EQ(parallel_benchmarks.size(), 0);
+
+  bm_config = single_bms.at(0).get_benchmark_configs()[0];
+  EXPECT_EQ(bm_config.numa_thread_nodes, NumaNodeIDs{42});
+  EXPECT_EQ(bm_config.thread_pin_mode, ThreadPinMode::AllNumaCores);
+  EXPECT_TRUE(bm_config.thread_core_ids.empty());
+}
+
+TEST_F(ConfigTest, ThreadPinningSingleNuma) {
+  std::vector<SingleBenchmark> single_bms = BenchmarkFactory::create_single_benchmarks(config_thread_single_core_numa);
+  std::vector<ParallelBenchmark> parallel_benchmarks =
+      BenchmarkFactory::create_parallel_benchmarks(config_thread_single_core_numa);
+  ASSERT_EQ(single_bms.size(), 1);
+  ASSERT_EQ(parallel_benchmarks.size(), 0);
+
+  bm_config = single_bms.at(0).get_benchmark_configs()[0];
+  EXPECT_EQ(bm_config.numa_thread_nodes, NumaNodeIDs{42});
+  EXPECT_EQ(bm_config.thread_pin_mode, ThreadPinMode::SingleNumaCoreIncrement);
+  EXPECT_TRUE(bm_config.thread_core_ids.empty());
+}
+
+TEST_F(ConfigTest, ThreadPinningSingleFixed) {
+  std::vector<SingleBenchmark> single_bms = BenchmarkFactory::create_single_benchmarks(config_thread_single_core);
+  std::vector<ParallelBenchmark> parallel_benchmarks =
+      BenchmarkFactory::create_parallel_benchmarks(config_thread_single_core);
+  ASSERT_EQ(single_bms.size(), 1);
+  ASSERT_EQ(parallel_benchmarks.size(), 0);
+
+  bm_config = single_bms.at(0).get_benchmark_configs()[0];
+  EXPECT_TRUE(bm_config.numa_thread_nodes.empty());
+  EXPECT_EQ(bm_config.thread_pin_mode, ThreadPinMode::SingleCoreFixed);
+  EXPECT_EQ(bm_config.thread_core_ids, (CoreIDs{0, 3, 4, 8}));
 }
 
 TEST_F(ConfigTest, SingleDecodeInvalidNumaMemoryNodes) {
@@ -483,6 +532,35 @@ TEST_F(ConfigTest, InvalidSecondaryMemoryRegion) {
   EXPECT_NO_THROW(bm_config.validate());
 }
 
+TEST_F(ConfigTest, InvalidThreadSingleCoreFixed) {
+  bm_config.thread_pin_mode = ThreadPinMode::SingleCoreFixed;
+  bm_config.number_threads = 4;
+  bm_config.thread_core_ids = {};
+  EXPECT_THROW(bm_config.validate(), MemaException);
+  check_log_for_critical("Core IDs must be specified if thread pinning is not");
+  bm_config.thread_core_ids = {CoreID{1}, CoreID{3}, CoreID{5}};
+  EXPECT_THROW(bm_config.validate(), MemaException);
+  check_log_for_critical("Number of Core IDs and thread count must be equal");
+  bm_config.number_threads = 3;
+  EXPECT_NO_THROW(bm_config.validate());
+}
+
+TEST_F(ConfigTest, InvalidNumaBasedThreadPinning) {
+  bm_config.thread_pin_mode = ThreadPinMode::AllNumaCores;
+  bm_config.numa_thread_nodes = {};
+  EXPECT_THROW(bm_config.validate(), MemaException);
+  check_log_for_critical("NUMA task nodes must be specified with");
+  bm_config.numa_thread_nodes = {NumaNodeID{0}};
+  EXPECT_NO_THROW(bm_config.validate());
+
+  bm_config.thread_pin_mode = ThreadPinMode::SingleNumaCoreIncrement;
+  bm_config.numa_thread_nodes = {};
+  EXPECT_THROW(bm_config.validate(), MemaException);
+  check_log_for_critical("NUMA task nodes must be specified with");
+  bm_config.numa_thread_nodes = {NumaNodeID{0}};
+  EXPECT_NO_THROW(bm_config.validate());
+}
+
 TEST_F(ConfigTest, BadNumberPartitionSplit) {
   bm_config.number_threads = 36;
   bm_config.number_partitions = 36;
@@ -539,7 +617,7 @@ TEST_F(ConfigTest, AsJsonReadSequential) {
   ASSERT_JSON_TRUE(json, contains("exec_mode"));
   EXPECT_EQ(json["exec_mode"], "sequential");
   ASSERT_JSON_TRUE(json, contains("numa_task_nodes"));
-  EXPECT_EQ(json["numa_task_nodes"].get<NumaNodeIDs>(), bm_config.numa_task_nodes);
+  EXPECT_EQ(json["numa_task_nodes"].get<NumaNodeIDs>(), bm_config.numa_thread_nodes);
   ASSERT_JSON_TRUE(json, contains("number_partitions"));
   EXPECT_EQ(json["number_partitions"].get<uint16_t>(), bm_config.number_partitions);
   ASSERT_JSON_TRUE(json, contains("number_threads"));
@@ -592,7 +670,7 @@ TEST_F(ConfigTest, AsJsonWriteCustom) {
   ASSERT_JSON_TRUE(json, contains("exec_mode"));
   EXPECT_EQ(json["exec_mode"], "custom");
   ASSERT_JSON_TRUE(json, contains("numa_task_nodes"));
-  EXPECT_EQ(json["numa_task_nodes"].get<NumaNodeIDs>(), bm_config.numa_task_nodes);
+  EXPECT_EQ(json["numa_task_nodes"].get<NumaNodeIDs>(), bm_config.numa_thread_nodes);
   ASSERT_JSON_TRUE(json, contains("number_partitions"));
   EXPECT_EQ(json["number_partitions"].get<uint16_t>(), bm_config.number_partitions);
   ASSERT_JSON_TRUE(json, contains("number_threads"));

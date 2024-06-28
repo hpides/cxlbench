@@ -1,0 +1,9 @@
+test_thread_multi_core_numa:
+  args:
+    exec_mode: random
+    numa_memory_nodes: [ 1 ]
+    numa_task_nodes: [ 42 ]
+    random_distribution: zipf
+    zipf_alpha: 0.9
+    operation: write
+    thread_pin_mode: all-numa

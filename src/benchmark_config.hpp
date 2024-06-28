@@ -15,6 +15,8 @@ namespace mema {
 using NumaNodeID = uint16_t;
 using NumaNodeIDs = std::vector<NumaNodeID>;
 using MemoryRegions = std::vector<char*>;
+using CoreID = uint64_t;
+using CoreIDs = std::vector<CoreID>;
 
 enum class Mode : uint8_t { Sequential, Sequential_Desc, Random, Custom };
 
@@ -27,6 +29,13 @@ enum class Operation : uint8_t { Read, Write };
 enum class MemoryType : uint8_t { Primary, Secondary };
 
 enum class PagePlacementMode : uint8_t { Interleaved, Partitioned };
+
+// AllNumaCores pins a thread to the set of cores of a given NUMA node.
+// SingleNumaCoreIncrement pins each thread to a single core, which is in the set of cores of a given NUMA node. The
+// tool automatically determines the next available core when configuring the threads.
+// SingleCoreFixed pints each thread to a single core. This is fully user-defined. The cores to pin threads at need to
+// match the thread count for the workload.
+enum class ThreadPinMode : uint8_t { AllNumaCores, SingleNumaCoreIncrement, SingleCoreFixed };
 
 static constexpr size_t MiB = 1024u * 1024;
 static constexpr size_t GiB = 1024u * MiB;
@@ -140,7 +149,12 @@ struct BenchmarkConfig {
   uint16_t number_partitions = 1;
 
   /** Specifies the set of NUMA nodes on which the benchmark threads are to run. */
-  NumaNodeIDs numa_task_nodes;
+  NumaNodeIDs numa_thread_nodes;
+
+  ThreadPinMode thread_pin_mode = ThreadPinMode::AllNumaCores;
+
+  /** Speficies the set of cores that the threads are pinned to. Only relevant for ThreadPinMode::SingleCoreFixed */
+  CoreIDs thread_core_ids = {};
 
   /** Distribution to use for `Mode::Random`, i.e., uniform of zipfian. */
   RandomDistribution random_distribution = RandomDistribution::Uniform;
@@ -172,11 +186,13 @@ struct BenchmarkConfig {
 };
 
 struct ConfigEnums {
+  // TODO(MW) use magic enum
   static const std::unordered_map<std::string, bool> str_to_mem_type;
   static const std::unordered_map<std::string, Mode> str_to_mode;
   static const std::unordered_map<std::string, Operation> str_to_operation;
   static const std::unordered_map<std::string, FlushInstruction> str_to_flush_instruction;
   static const std::unordered_map<std::string, RandomDistribution> str_to_random_distribution;
+  static const std::unordered_map<std::string, ThreadPinMode> str_to_thread_pin_mode;
 
   // Map to convert a K/M/G suffix to the correct kibi, mebi-, gibibyte value.
   static const std::unordered_map<char, uint64_t> scale_suffix_to_factor;
