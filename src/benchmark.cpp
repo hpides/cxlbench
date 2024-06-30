@@ -9,6 +9,7 @@
 #include "benchmark_config.hpp"
 #include "fast_random.hpp"
 #include "numa.hpp"
+#include "threads.hpp"
 
 namespace {
 
@@ -59,7 +60,7 @@ BenchmarkType Benchmark::get_benchmark_type() const { return benchmark_type_; }
 
 void Benchmark::single_set_up(const BenchmarkConfig& config, MemoryRegions& memory_regions,
                               BenchmarkExecution* execution, BenchmarkResult* result,
-                              std::vector<std::thread>* thread_pool, std::vector<ThreadRunConfig>* thread_configs) {
+                              std::vector<std::thread>* thread_pool, std::vector<ThreadConfig>* thread_configs) {
   const size_t total_range_op_count = config.memory_regions[0].size / config.access_size;
   const bool is_custom_execution = config.exec_mode == Mode::Custom;
   const size_t num_operations =
@@ -111,6 +112,13 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, MemoryRegions& memo
              "Secondary memory region is only supported with custom operations.");
   auto* secondary_partition_start = memory_regions[1];
 
+  // Thread pinning preparation
+  const auto is_numa_thread_pinning = (config.thread_pin_mode == ThreadPinMode::AllNumaCores ||
+                                       config.thread_pin_mode == ThreadPinMode::SingleNumaCoreIncrement);
+  const auto threads_pinning_cores =
+      is_numa_thread_pinning ? core_ids_of_nodes(config.numa_thread_nodes) : config.thread_core_ids;
+
+  // TODO(MW) remove partitioning. Always assume one partition.
   for (uint16_t partition_idx = 0; partition_idx < partition_count; ++partition_idx) {
     char* partition_start = (config.exec_mode == Mode::Sequential_Desc)
                                 ? primary_region + ((partition_count - partition_idx) * partition_size) - access_size
@@ -129,9 +137,14 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, MemoryRegions& memo
       std::vector<uint64_t>* custom_op_latencies =
           is_custom_execution ? &result->custom_operation_latencies[thread_idx] : nullptr;
 
+      auto thread_affinity_cores = config.thread_pin_mode == ThreadPinMode::AllNumaCores
+                                       ? threads_pinning_cores
+                                       : CoreIDs{threads_pinning_cores[partition_thread_idx]};
+
       thread_configs->emplace_back(partition_start, secondary_partition_start, partition_size, secondary_partition_size,
                                    thread_count_per_partition, thread_idx, ops_per_chunk, chunk_count, config,
-                                   execution, total_op_duration, total_op_size, custom_op_latencies);
+                                   thread_affinity_cores, execution, total_op_duration, total_op_size,
+                                   custom_op_latencies);
     }
   }
 }
@@ -147,6 +160,7 @@ MemoryRegions Benchmark::prepare_data(const BenchmarkConfig& config) {
       ++region_idx;
       continue;
     }
+    spdlog::info("Preparing memory region {}.", region_idx);
     switch (region_definition.placement_mode()) {
       case PagePlacementMode::Interleaved:
         region_start_addresses[region_idx] = prepare_interleaved_data(region_definition, prepare_read_data);
@@ -233,6 +247,7 @@ void Benchmark::verify_page_locations(const MemoryRegions& memory_regions,
   MemaAssert(memory_regions.size() == MEM_REGION_COUNT, "Number of passed memory regions incorrect.");
   MemaAssert(region_definitions.size() == MEM_REGION_COUNT, "Number of passed memory region definitions incorrect.");
   for (auto region_idx = uint64_t{0}; region_idx < MEM_REGION_COUNT; ++region_idx) {
+    spdlog::info("Verify page locations of region {}.", region_idx);
     auto verified = false;
     auto& region = memory_regions[region_idx];
     auto& definition = region_definitions[region_idx];
@@ -250,7 +265,7 @@ void Benchmark::verify_page_locations(const MemoryRegions& memory_regions,
   }
 }
 
-void Benchmark::run_custom_ops_in_thread(ThreadRunConfig* thread_config, const BenchmarkConfig& config) {
+void Benchmark::run_custom_ops_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config) {
   const auto& operations = config.custom_operations;
   const auto num_ops = operations.size();
 
@@ -353,20 +368,19 @@ inline void tuneHardwarePrefetcher() {
 }
 #endif
 
-
-
-void Benchmark::run_in_thread(ThreadRunConfig* thread_config, const BenchmarkConfig& config) {
+void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config) {
   // Pin thread to the configured numa nodes.
-  set_task_numa_nodes(config.numa_task_nodes);
+  auto& expected_run_cores = thread_config->affinity_core_ids;
+  pin_thread_to_cores(expected_run_cores);
   log_permissions_for_numa_nodes(spdlog::level::debug, thread_config->thread_idx);
 
   // Check if thread is pinned to the configured NUMA node.
-  const auto thread_numa_task_nodes = get_numa_task_nodes();
-  if (!config.numa_task_nodes.empty() && !std::equal(config.numa_task_nodes.begin(), config.numa_task_nodes.end(),
-                                                     thread_numa_task_nodes.begin(), thread_numa_task_nodes.end())) {
-    spdlog::critical("Thread #{}: Thread not pinned to the configured NUMA nodes. Expected: [{}], Actual: [{}]",
-                     thread_config->thread_idx, utils::numbers_to_string(config.numa_task_nodes),
-                     utils::numbers_to_string(thread_numa_task_nodes));
+  const auto allowed_cores = allowed_thread_core_ids();
+  if (!expected_run_cores.empty() &&
+      !std::equal(expected_run_cores.begin(), expected_run_cores.end(), allowed_cores.begin(), allowed_cores.end())) {
+    spdlog::critical("Thread #{}: Thread not pinned to the configured CPUs. Expected: [{}], Actual: [{}]",
+                     thread_config->thread_idx, utils::numbers_to_string(expected_run_cores),
+                     utils::numbers_to_string(allowed_cores));
     utils::crash_exit();
   }
 
@@ -543,7 +557,7 @@ const std::vector<BenchmarkConfig>& Benchmark::get_benchmark_configs() const { r
 
 const std::vector<MemoryRegions>& Benchmark::get_memory_regions() const { return memory_regions_; }
 
-const std::vector<std::vector<ThreadRunConfig>>& Benchmark::get_thread_configs() const { return thread_configs_; }
+const std::vector<std::vector<ThreadConfig>>& Benchmark::get_thread_configs() const { return thread_configs_; }
 const std::vector<std::unique_ptr<BenchmarkResult>>& Benchmark::get_benchmark_results() const { return results_; }
 
 nlohmann::json Benchmark::get_json_config(uint8_t config_index) { return configs_[config_index].as_json(); }

@@ -45,7 +45,7 @@ struct BenchmarkExecution {
   std::vector<IoOperation> io_operations;
 };
 
-struct ThreadRunConfig {
+struct ThreadConfig {
   // Partition start addresses
   char* start_addr;
   char* secondary_start_addr;
@@ -57,6 +57,8 @@ struct ThreadRunConfig {
   const uint64_t ops_count_per_chunk;
   const uint64_t chunk_count;
   const BenchmarkConfig& config;
+  // Defines the CPU cores to run on.
+  CoreIDs affinity_core_ids;
 
   BenchmarkExecution* execution;
 
@@ -65,12 +67,12 @@ struct ThreadRunConfig {
   ExecutionDuration* total_operation_duration;
   std::vector<uint64_t>* custom_op_latencies;
 
-  ThreadRunConfig(char* partition_start_addr, char* secondary_partition_start_addr, const uint64_t partition_size,
-                  const uint64_t secondary_partition_size, const uint64_t thread_count_per_partition,
-                  const uint64_t thread_idx, const uint64_t ops_count_per_chunk, const uint64_t chunk_count,
-                  const BenchmarkConfig& config, BenchmarkExecution* execution,
-                  ExecutionDuration* total_operation_duration, uint64_t* total_operation_size,
-                  std::vector<uint64_t>* custom_op_latencies)
+  ThreadConfig(char* partition_start_addr, char* secondary_partition_start_addr, const uint64_t partition_size,
+               const uint64_t secondary_partition_size, const uint64_t thread_count_per_partition,
+               const uint64_t thread_idx, const uint64_t ops_count_per_chunk, const uint64_t chunk_count,
+               const BenchmarkConfig& config, CoreIDs affinity_core_ids, BenchmarkExecution* execution,
+               ExecutionDuration* total_operation_duration, uint64_t* total_operation_size,
+               std::vector<uint64_t>* custom_op_latencies)
       : start_addr{partition_start_addr},
         secondary_start_addr{secondary_partition_start_addr},
         partition_size{partition_size},
@@ -80,6 +82,7 @@ struct ThreadRunConfig {
         ops_count_per_chunk{ops_count_per_chunk},
         chunk_count{chunk_count},
         config{config},
+        affinity_core_ids{affinity_core_ids},
         execution{execution},
         total_operation_duration{total_operation_duration},
         total_operation_size{total_operation_size},
@@ -158,7 +161,7 @@ class Benchmark {
   const std::vector<MemoryRegions>& get_memory_regions() const;
 
   const std::vector<BenchmarkConfig>& get_benchmark_configs() const;
-  const std::vector<std::vector<ThreadRunConfig>>& get_thread_configs() const;
+  const std::vector<std::vector<ThreadConfig>>& get_thread_configs() const;
   const std::vector<std::unique_ptr<BenchmarkResult>>& get_benchmark_results() const;
 
   nlohmann::json get_json_config(uint8_t config_index);
@@ -166,7 +169,7 @@ class Benchmark {
  protected:
   static void single_set_up(const BenchmarkConfig& config, MemoryRegions& memory_regions, BenchmarkExecution* execution,
                             BenchmarkResult* result, std::vector<std::thread>* pool,
-                            std::vector<ThreadRunConfig>* thread_config);
+                            std::vector<ThreadConfig>* thread_config);
 
   // Pepares the memory regions and returns the start pointer. A start address is nullptr if the corresponding memory
   // region has a size of 0.
@@ -182,8 +185,8 @@ class Benchmark {
   static void verify_page_locations(const MemoryRegions& memory_regions,
                                     const MemoryRegionDefinitions& region_definitions);
 
-  static void run_custom_ops_in_thread(ThreadRunConfig* thread_config, const BenchmarkConfig& config);
-  static void run_in_thread(ThreadRunConfig* thread_config, const BenchmarkConfig& config);
+  static void run_custom_ops_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config);
+  static void run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config);
 
   static uint64_t run_fixed_sized_benchmark(std::vector<IoOperation>* vector, std::atomic<uint64_t>* io_position);
   static uint64_t run_duration_based_benchmark(std::vector<IoOperation>* io_operations,
@@ -199,7 +202,7 @@ class Benchmark {
   const std::vector<BenchmarkConfig> configs_;
   std::vector<std::unique_ptr<BenchmarkResult>> results_;
   std::vector<std::unique_ptr<BenchmarkExecution>> executions_;
-  std::vector<std::vector<ThreadRunConfig>> thread_configs_;
+  std::vector<std::vector<ThreadConfig>> thread_configs_;
   std::vector<std::vector<std::thread>> thread_pools_;
 };
 

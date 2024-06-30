@@ -1,0 +1,10 @@
+test_thread_single_core:
+  args:
+    exec_mode: random
+    numa_memory_nodes: [ 1 ]
+    random_distribution: zipf
+    zipf_alpha: 0.9
+    operation: write
+    thread_pin_mode: single-fixed
+    thread_cores: [0, 3, 4, 8]
+    number_threads: 4

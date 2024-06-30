@@ -13,7 +13,7 @@ class LatencyHeatmap(Heatmap):
             title,
             output_dir,
             filename,
-            "Average Access Latency in ns",
+            "Thread avg. Latency in ns",
             BMKeys.AVG_ACCESS_LATENCY,
             "magma_r",
             "green",

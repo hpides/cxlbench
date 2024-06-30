@@ -7,4 +7,4 @@ from heatmaps.heatmap import Heatmap
 class BandwidthHeatmap(Heatmap):
     def __init__(self, df: pd.DataFrame, title: str, output_dir: str, filename):
         filename = f"bandwidth_{filename}"
-        super().__init__(df, title, output_dir, filename, "Thread's avg. Access Latency in ns", BMKeys.BANDWIDTH_GB)
+        super().__init__(df, title, output_dir, filename, "Throughput in GB/s", BMKeys.BANDWIDTH_GB)

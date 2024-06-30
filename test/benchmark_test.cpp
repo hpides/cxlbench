@@ -11,6 +11,7 @@
 #include "parallel_benchmark.hpp"
 #include "single_benchmark.hpp"
 #include "test_utils.hpp"
+#include "threads.hpp"
 
 namespace mema {
 
@@ -25,7 +26,7 @@ class BenchmarkTest : public BaseTest {
     base_config_.memory_regions[0].size = TEST_DATA_SIZE;
     base_config_.memory_regions[0].node_ids = {0};
     base_config_.min_io_chunk_size = TEST_CHUNK_SIZE;
-    base_config_.numa_task_nodes = {0};
+    base_config_.numa_thread_nodes = {0};
 
     const auto numa_max_node_id = numa_max_node();
     auto* const allowed_memory_nodes_mask = numa_get_mems_allowed();
@@ -68,9 +69,9 @@ TEST_F(BenchmarkTest, SetUpSingleThread) {
   bm.generate_data();
   bm.set_up();
 
-  const std::vector<ThreadRunConfig>& thread_configs = bm.get_thread_configs()[0];
+  const std::vector<ThreadConfig>& thread_configs = bm.get_thread_configs()[0];
   ASSERT_EQ(thread_configs.size(), 1);
-  const ThreadRunConfig& thread_config = thread_configs[0];
+  const ThreadConfig& thread_config = thread_configs[0];
 
   EXPECT_EQ(thread_config.thread_idx, 0);
   EXPECT_EQ(thread_config.thread_count_per_partition, 1);
@@ -106,12 +107,12 @@ TEST_F(BenchmarkTest, SetUpMultiThreadCustomPartition) {
   bm.set_up();
 
   const size_t partition_size = TEST_DATA_SIZE / 2;
-  const std::vector<ThreadRunConfig>& thread_configs = bm.get_thread_configs()[0];
+  const std::vector<ThreadConfig>& thread_configs = bm.get_thread_configs()[0];
   ASSERT_EQ(thread_configs.size(), thread_count);
-  const ThreadRunConfig& thread_config0 = thread_configs[0];
-  const ThreadRunConfig& thread_config1 = thread_configs[1];
-  const ThreadRunConfig& thread_config2 = thread_configs[2];
-  const ThreadRunConfig& thread_config3 = thread_configs[3];
+  const ThreadConfig& thread_config0 = thread_configs[0];
+  const ThreadConfig& thread_config1 = thread_configs[1];
+  const ThreadConfig& thread_config2 = thread_configs[2];
+  const ThreadConfig& thread_config3 = thread_configs[3];
 
   EXPECT_EQ(thread_config0.thread_idx, 0);
   EXPECT_EQ(thread_config1.thread_idx, 1);
@@ -138,7 +139,7 @@ TEST_F(BenchmarkTest, SetUpMultiThreadCustomPartition) {
   EXPECT_EQ(thread_config3.total_operation_size, &op_sizes[3]);
 
   // These values are the same for all threads
-  for (const ThreadRunConfig& tc : thread_configs) {
+  for (const ThreadConfig& tc : thread_configs) {
     EXPECT_EQ(tc.thread_count_per_partition, 2);
     EXPECT_EQ(tc.partition_size, partition_size);
     EXPECT_EQ(tc.ops_count_per_chunk, TEST_CHUNK_SIZE / 512);
@@ -163,12 +164,12 @@ TEST_F(BenchmarkTest, SetUpMultiThreadDefaultPartition) {
   bm.set_up();
 
   const size_t partition_size = TEST_DATA_SIZE / 4;
-  const std::vector<ThreadRunConfig>& thread_configs = bm.get_thread_configs()[0];
+  const std::vector<ThreadConfig>& thread_configs = bm.get_thread_configs()[0];
   ASSERT_EQ(thread_configs.size(), thread_count);
-  const ThreadRunConfig& thread_config0 = thread_configs[0];
-  const ThreadRunConfig& thread_config1 = thread_configs[1];
-  const ThreadRunConfig& thread_config2 = thread_configs[2];
-  const ThreadRunConfig& thread_config3 = thread_configs[3];
+  const ThreadConfig& thread_config0 = thread_configs[0];
+  const ThreadConfig& thread_config1 = thread_configs[1];
+  const ThreadConfig& thread_config2 = thread_configs[2];
+  const ThreadConfig& thread_config3 = thread_configs[3];
 
   EXPECT_EQ(thread_config0.thread_idx, 0);
   EXPECT_EQ(thread_config1.thread_idx, 1);
@@ -195,7 +196,7 @@ TEST_F(BenchmarkTest, SetUpMultiThreadDefaultPartition) {
   EXPECT_EQ(thread_config3.total_operation_size, &op_sizes[3]);
 
   // These values are the same for all threads
-  for (const ThreadRunConfig& tc : thread_configs) {
+  for (const ThreadConfig& tc : thread_configs) {
     EXPECT_EQ(tc.thread_count_per_partition, 1);
     EXPECT_EQ(tc.partition_size, partition_size);
     EXPECT_EQ(tc.ops_count_per_chunk, TEST_CHUNK_SIZE / 256);
@@ -222,9 +223,9 @@ TEST_F(BenchmarkTest, SetUpSingleThreadCustomOps) {
   bm.generate_data();
   bm.set_up();
 
-  const std::vector<ThreadRunConfig>& thread_configs = bm.get_thread_configs()[0];
+  const std::vector<ThreadConfig>& thread_configs = bm.get_thread_configs()[0];
   ASSERT_EQ(thread_configs.size(), 1);
-  const ThreadRunConfig& thread_config = thread_configs[0];
+  const ThreadConfig& thread_config = thread_configs[0];
 
   EXPECT_EQ(thread_config.thread_idx, 0);
   EXPECT_EQ(thread_config.thread_count_per_partition, 1);
@@ -243,6 +244,121 @@ TEST_F(BenchmarkTest, SetUpSingleThreadCustomOps) {
   EXPECT_EQ(thread_config.total_operation_size, &op_sizes[0]);
 
   bm.get_benchmark_results()[0]->config.validate();
+}
+
+TEST_F(BenchmarkTest, ThreadConfigPinningAllNumaCores) {
+  base_config_.numa_thread_nodes = NumaNodeIDs{0};
+  auto numa_node_0_cores = core_ids_of_nodes(base_config_.numa_thread_nodes);
+  if (numa_node_0_cores.size() < 4) {
+    GTEST_SKIP() << "Skipping test: less then 4 cores available for NUMA node 0.";
+  }
+  base_config_.number_threads = 4;
+  base_config_.access_size = 512;
+  base_config_.thread_pin_mode = ThreadPinMode::AllNumaCores;
+
+  base_executions_.reserve(1);
+  base_executions_.push_back(std::make_unique<BenchmarkExecution>());
+  base_results_.reserve(1);
+  base_results_.push_back(std::make_unique<BenchmarkResult>(base_config_));
+  SingleBenchmark bm{bm_name_, base_config_, std::move(base_executions_), std::move(base_results_)};
+  bm.generate_data();
+  bm.set_up();
+
+  const auto& thread_configs = bm.get_thread_configs()[0];
+  ASSERT_EQ(thread_configs.size(), 4);
+  for (auto thread_config_idx = 0u; auto& config : thread_configs) {
+    SCOPED_TRACE("Thread config id " + thread_config_idx);
+    ASSERT_EQ(config.affinity_core_ids, numa_node_0_cores);
+    ++thread_config_idx;
+  }
+}
+
+TEST_F(BenchmarkTest, ThreadConfigPinningSingleNumaCore) {
+  base_config_.numa_thread_nodes = NumaNodeIDs{0};
+  auto numa_node_0_cores = core_ids_of_nodes(base_config_.numa_thread_nodes);
+  if (numa_node_0_cores.size() < 4) {
+    GTEST_SKIP() << "Skipping test: less then 4 cores available for NUMA node 0.";
+  }
+  base_config_.number_threads = 4;
+  base_config_.access_size = 512;
+  base_config_.thread_pin_mode = ThreadPinMode::SingleNumaCoreIncrement;
+
+  base_executions_.reserve(1);
+  base_executions_.push_back(std::make_unique<BenchmarkExecution>());
+  base_results_.reserve(1);
+  base_results_.push_back(std::make_unique<BenchmarkResult>(base_config_));
+  SingleBenchmark bm{bm_name_, base_config_, std::move(base_executions_), std::move(base_results_)};
+  bm.generate_data();
+  bm.set_up();
+
+  const auto& thread_configs = bm.get_thread_configs()[0];
+  ASSERT_EQ(thread_configs.size(), 4);
+  for (auto thread_config_idx = 0u; auto& config : thread_configs) {
+    SCOPED_TRACE("Thread config id " + thread_config_idx);
+    ASSERT_EQ(config.affinity_core_ids, CoreIDs{numa_node_0_cores[thread_config_idx]});
+    ++thread_config_idx;
+  }
+}
+
+TEST_F(BenchmarkTest, ThreadConfigPinningSingleCore) {
+  base_config_.numa_thread_nodes = NumaNodeIDs{0};
+  auto numa_node_0_cores = core_ids_of_nodes(base_config_.numa_thread_nodes);
+  if (numa_node_0_cores.size() < 4) {
+    GTEST_SKIP() << "Skipping test: less then 4 cores available for NUMA node 0.";
+  }
+  base_config_.number_threads = 4;
+  base_config_.access_size = 512;
+  base_config_.thread_pin_mode = ThreadPinMode::SingleCoreFixed;
+  base_config_.thread_core_ids = CoreIDs{4, 6, 9, 13};
+
+  base_executions_.reserve(1);
+  base_executions_.push_back(std::make_unique<BenchmarkExecution>());
+  base_results_.reserve(1);
+  base_results_.push_back(std::make_unique<BenchmarkResult>(base_config_));
+  SingleBenchmark bm{bm_name_, base_config_, std::move(base_executions_), std::move(base_results_)};
+  bm.generate_data();
+  bm.set_up();
+
+  const auto& thread_configs = bm.get_thread_configs()[0];
+  ASSERT_EQ(thread_configs.size(), 4);
+  ASSERT_EQ(thread_configs[0].affinity_core_ids, CoreIDs{4});
+  ASSERT_EQ(thread_configs[1].affinity_core_ids, CoreIDs{6});
+  ASSERT_EQ(thread_configs[2].affinity_core_ids, CoreIDs{9});
+  ASSERT_EQ(thread_configs[3].affinity_core_ids, CoreIDs{13});
+}
+
+TEST_F(BenchmarkTest, ThreadPinning) {
+  auto numa_node_0_cores = core_ids_of_nodes(NumaNodeIDs{0});
+  if (numa_node_0_cores.size() < 4) {
+    GTEST_SKIP() << "Skipping test: less then 4 cores available for NUMA node 0.";
+  }
+
+  const auto core_sets = std::vector<CoreIDs>{
+      CoreIDs{numa_node_0_cores[0]},
+      CoreIDs{numa_node_0_cores[1]},
+      CoreIDs{numa_node_0_cores[2]},
+      CoreIDs{numa_node_0_cores[3]},
+      CoreIDs{numa_node_0_cores[0], numa_node_0_cores[1]},
+      CoreIDs{numa_node_0_cores[0], numa_node_0_cores[1], numa_node_0_cores[2]},
+      CoreIDs{numa_node_0_cores[0], numa_node_0_cores[1], numa_node_0_cores[2], numa_node_0_cores[3]}};
+
+  auto work = [&](uint64_t config_idx) {
+    auto& core_ids = core_sets[config_idx];
+    pin_thread_to_cores(core_ids);
+    ASSERT_EQ(core_ids, allowed_thread_core_ids());
+  };
+
+  const auto config_count = core_sets.size();
+  auto threads = std::vector<std::thread>{};
+  threads.reserve(config_count);
+
+  for (auto thread_id = uint64_t{0}; thread_id < config_count; ++thread_id) {
+    threads.emplace_back(work, thread_id);
+  }
+
+  for (auto& thread : threads) {
+    thread.join();
+  }
 }
 
 TEST_F(BenchmarkTest, RunSingleThreadRead) {

@@ -8,6 +8,7 @@
 #include <cstring>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 
 #include "benchmark.hpp"
 #include "utils.hpp"
@@ -21,38 +22,37 @@ void log_numa_nodes(spdlog::level::level_enum log_level, const std::string& mess
   spdlog::log(log_level, "{} NUMA node{}: {}", message, nodes.size() > 1 ? "s" : "", used_nodes_str);
 }
 
-void set_task_numa_nodes(const NumaNodeIDs& node_ids) {
+CoreIDs core_ids_of_nodes(const NumaNodeIDs& node_ids) {
   if (node_ids.empty()) {
-    spdlog::warn("No NUMA task nodes specified, task was not pinned to NUMA nodes.");
-    return;
+    spdlog::warn("No NUMA task nodes specified, cannot identify core IDs of NUMA nodes.");
+    return {};
   }
 
-  auto set_bits_in_cpu_mask = [&](auto& target_mask, const auto& node_cpu_mask) {
-    static const auto cpu_count = numa_num_configured_cpus();
-    for (auto cpu_idx = uint32_t{0}; cpu_idx < cpu_count; ++cpu_idx) {
+  const auto cpu_count = numa_num_configured_cpus();
+
+  auto add_core_ids_for_numa_node = [&](auto& unique_core_ids, const NumaNodeID& node_id) {
+    for (auto cpu_idx = CoreID{0}; cpu_idx < cpu_count; ++cpu_idx) {
+      auto* node_cpu_mask = numa_allocate_cpumask();
+      numa_node_to_cpus(node_id, node_cpu_mask);
       if (numa_bitmask_isbitset(node_cpu_mask, cpu_idx)) {
-        numa_bitmask_setbit(target_mask, cpu_idx);
+        unique_core_ids.insert(cpu_idx);
       }
     }
   };
 
-  auto* cpu_mask = numa_allocate_cpumask();
+  auto unique_core_ids = std::unordered_set<CoreID>{};
+  unique_core_ids.reserve(cpu_count);
+
   for (const auto& node_id : node_ids) {
     auto* node_cpu_mask = numa_allocate_cpumask();
     numa_node_to_cpus(node_id, node_cpu_mask);
-    set_bits_in_cpu_mask(cpu_mask, node_cpu_mask);
+    add_core_ids_for_numa_node(unique_core_ids, node_id);
     numa_free_cpumask(node_cpu_mask);
   }
 
-  const auto task_pinned = numa_sched_setaffinity(getpid(), cpu_mask) == 0;
-  const auto task_pinning_errno = errno;
-  numa_free_cpumask(cpu_mask);
-  if (!task_pinned) {
-    spdlog::critical("Pinning the task to NUMA nodes failed. Error: {}", std::strerror(task_pinning_errno));
-    utils::crash_exit();
-  }
-
-  log_numa_nodes(spdlog::level::debug, "Bound thread to", node_ids);
+  CoreIDs core_ids = CoreIDs(unique_core_ids.begin(), unique_core_ids.end());
+  std::sort(core_ids.begin(), core_ids.end());
+  return core_ids;
 }
 
 void set_interleave_memory_policy(const NumaNodeIDs& node_ids) {
@@ -150,39 +150,7 @@ void log_permissions_for_numa_nodes(spdlog::level::level_enum log_level, const s
   log_numa(numa_get_mems_allowed(), "memory allocation");
 }
 
-NumaNodeIDs get_numa_task_nodes() {
-  const auto max_node_id = numa_max_node();
-
-  auto node_affinity = std::vector<bool>(max_node_id + 1, false);
-  // CPU mask of this thread.
-  auto* cpu_mask = numa_allocate_cpumask();
-  numa_sched_getaffinity(getpid(), cpu_mask);
-  const auto cpu_count = numa_num_configured_cpus();
-  for (auto cpu_idx = 0u; cpu_idx < cpu_count; ++cpu_idx) {
-    if (numa_bitmask_isbitset(cpu_mask, cpu_idx)) {
-      const auto node_of_cpu = numa_node_of_cpu(cpu_idx);
-      spdlog::trace("Current thread is allowed to run on CPU {} (node {}).", cpu_idx, node_of_cpu);
-      node_affinity[node_of_cpu] = true;
-    }
-  }
-  numa_free_cpumask(cpu_mask);
-
-  auto run_nodes = NumaNodeIDs{};
-  for (auto node_idx = NumaNodeID{0}; node_idx <= max_node_id; ++node_idx) {
-    if (node_affinity[node_idx]) {
-      run_nodes.push_back(node_idx);
-    }
-  }
-
-  if (run_nodes.empty()) {
-    spdlog::critical("Could not determine NUMA task nodes of calling thread.");
-    utils::crash_exit();
-  }
-
-  return run_nodes;
-}
-
-NumaNodeID get_numa_node_index_by_address(char* const addr) {
+NumaNodeID numa_node_index_by_address(char* const addr) {
   auto node = int32_t{};
 
   auto addr_ptr = reinterpret_cast<void*>(addr);
@@ -277,8 +245,12 @@ void place_pages(char* const start_addr, size_t memory_region_size, const PageLo
 bool verify_interleaved_page_placement(char* const start_addr, size_t memory_region_size,
                                        const NumaNodeIDs& target_nodes) {
   spdlog::debug("Check page placement errors.");
+  if (memory_region_size == 0) {
+    spdlog::info("Skipped interleaved page placement verification since region size is 0.");
+    return true;
+  }
   if (target_nodes.empty()) {
-    spdlog::warn("Skipped interleaved page placement verification.");
+    spdlog::warn("Skipped interleaved page placement verification since target NUMA nodes are empty.");
     return true;
   }
 

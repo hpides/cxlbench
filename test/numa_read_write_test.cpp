@@ -54,7 +54,7 @@ TEST_F(NumaReadWriteTest, SimpleWriteRead) {
       ASSERT_EQ(compare_result, 0);
 
       // Check if data is allocated on the correct numa node.
-      ASSERT_EQ(get_numa_node_index_by_address(addr), node_id);
+      ASSERT_EQ(numa_node_index_by_address(addr), node_id);
     }
 
     munmap(base_addr, memory_region_size);
@@ -103,7 +103,7 @@ TEST_F(NumaReadWriteTest, IntrinsicsWriteRead) {
       ASSERT_EQ(compare_result, 0);
 
       // Check if data is allocated on the correct numa node.
-      ASSERT_EQ(get_numa_node_index_by_address(addr), node_id);
+      ASSERT_EQ(numa_node_index_by_address(addr), node_id);
     }
 
     munmap(base_addr, memory_region_size);

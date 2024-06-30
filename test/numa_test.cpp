@@ -8,6 +8,7 @@
 
 #include "gtest/gtest.h"
 #include "test_utils.hpp"
+#include "threads.hpp"
 #include "utils.hpp"
 
 namespace mema {
@@ -42,8 +43,9 @@ TEST_F(NumaTest, RetrieveCorrectNumaTaskNode) {
       continue;
     }
 
-    set_task_numa_nodes(NumaNodeIDs{node_id});
-    EXPECT_EQ(get_numa_task_nodes(), NumaNodeIDs{node_id});
+    const auto nodes_core_ids = core_ids_of_nodes(NumaNodeIDs{node_id});
+    pin_thread_to_cores(nodes_core_ids);
+    EXPECT_EQ(allowed_thread_core_ids(), nodes_core_ids);
     numa_run_on_node_mask(allowed_run_node_mask);
   }
 }
@@ -68,7 +70,7 @@ TEST_F(NumaTest, MemoryAllocationOnNode) {
 
     for (size_t page_idx = 0; page_idx < region_page_count; ++page_idx) {
       auto addr = data + page_idx * utils::PAGE_SIZE;
-      const auto actual_node_id = get_numa_node_index_by_address(addr);
+      const auto actual_node_id = numa_node_index_by_address(addr);
       SCOPED_TRACE("Node id of page " + std::to_string(page_idx) + ": " + std::to_string(actual_node_id));
       ASSERT_EQ(actual_node_id, node_id);
     }
