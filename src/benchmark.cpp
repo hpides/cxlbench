@@ -359,8 +359,9 @@ inline void tuneHardwarePrefetcher() {
 // Data stream control register
 #define PPC_DSCR 3
 
-// Disable strided prefetch and set maximum prefetch depth
-#define PPC_TUNE_DSCR 1ULL
+// Disable strided prefetch and set maximum prefetch depth with 7ULL
+// set minimal depth with 1ULL
+#define PPC_TUNE_DSCR 7ULL
 
 // Set this once in your function
 inline void tuneHardwarePrefetcher() {
