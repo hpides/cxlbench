@@ -176,16 +176,17 @@ class Benchmark {
   static MemoryRegions prepare_data(const BenchmarkConfig& config);
 
   // Prepares the memory region with pages interleaved accross the given NUMA nodes.
-  static char* prepare_interleaved_data(const MemoryRegionDefinition& region, bool prepare_read_data);
+  static char* prepare_interleaved_data(const MemoryRegionDefinition& region, const BenchmarkConfig& config);
 
   // Prepares the memory region with two partitions each being located on a different NUMA nodes.
-  static char* prepare_partitioned_data(const MemoryRegionDefinition& region, bool prepare_read_data);
+  static char* prepare_partitioned_data(const MemoryRegionDefinition& region, const BenchmarkConfig& config);
 
   // Verifies the page locations
   static void verify_page_locations(const MemoryRegions& memory_regions,
                                     const MemoryRegionDefinitions& region_definitions);
 
   static void run_custom_ops_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config);
+  static void run_dependent_reads_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config);
   static void run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config);
 
   static uint64_t run_fixed_sized_benchmark(std::vector<IoOperation>* vector, std::atomic<uint64_t>* io_position);

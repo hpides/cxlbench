@@ -177,6 +177,7 @@ def parse_matrix_jsons(results, supported_bm_groups: list[BMGroups]):
             BMKeys.EXPLODED_NUMA_MEMORY_NODES_M0,
             BMKeys.EXPLODED_NUMA_MEMORY_NODES_M1,
             BMKeys.EXPLODED_NUMA_TASK_NODES,
+            BMKeys.EXPLODED_THREAD_CORES,
         ],
     )
 

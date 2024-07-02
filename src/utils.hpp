@@ -59,7 +59,16 @@ void populate_memory(char* addr, const uint64_t memory_size);
 // dynamic for every given page size.
 int mmap_page_size_mask(const uint32_t page_size);
 
+// Stores access indexes for each access size in the memory region. Used for dependent reads where the read index
+// determines the access position for the next read operation.
+void generate_shuffled_access_positions(char* addr, const MemoryRegionDefinition& region,
+                                        const BenchmarkConfig& config);
+
+bool verify_shuffled_access_positions(char* addr, const MemoryRegionDefinition& region, const BenchmarkConfig& config);
+
 void generate_read_data(char* addr, const uint64_t memory_size);
+
+void clear_caches();
 
 uint64_t duration_to_nanoseconds(const std::chrono::steady_clock::duration duration);
 

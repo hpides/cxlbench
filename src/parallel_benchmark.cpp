@@ -16,6 +16,7 @@ namespace mema {
 bool ParallelBenchmark::run() {
   signal(SIGSEGV, thread_error_handler);
 
+  utils::clear_caches();
   for (auto workload_idx = uint64_t{0}; workload_idx < configs_.size(); ++workload_idx) {
     for (auto thread_idx = uint64_t{0}; thread_idx < configs_[workload_idx].number_threads; thread_idx++) {
       thread_pools_[workload_idx].emplace_back(&run_in_thread, &thread_configs_[workload_idx][thread_idx],

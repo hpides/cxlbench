@@ -213,8 +213,8 @@ void print_summary(nlohmann::json result, const std::string& bm_name, const bool
     spdlog::info("{}min_bandwidth config: {}", prefix, min_config.dump());
     spdlog::info("{}max_bandwidth config: {}", prefix, max_config.dump());
   } else {
-    spdlog::critical("Unknown execution mode: {}", result["benchmarks"][0]["config"]["exec_mode"]);
-    mema::utils::crash_exit();
+    // TODO(anyone) Add summary for dependent_reads.
+    spdlog::info("Skipping summary for execution mode: {}", result["benchmarks"][0]["config"]["exec_mode"]);
   }
 }
 
