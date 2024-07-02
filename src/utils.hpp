@@ -34,7 +34,11 @@ class MemaException : public std::exception {
 namespace utils {
 
 static constexpr auto DATA_GEN_THREAD_COUNT = uint64_t{8};  // Should be a power of two
-static constexpr auto PAGE_SIZE = uint64_t{4 * 1024ul};     // 4 KiB page size
+#if defined(__powerpc__) || defined(__arm64)
+static constexpr auto PAGE_SIZE = uint64_t{64 * 1024ul};  // 64 KiB page size
+#else
+static constexpr auto PAGE_SIZE = uint64_t{4 * 1024ul};  // 4 KiB page size
+#endif
 static constexpr auto ONE_GB = uint64_t{1024ul * 1024 * 1024};
 static constexpr auto SHORT_STRING_SIZE = uint64_t{1};
 
