@@ -12,13 +12,22 @@
 
 namespace mema {
 
+using u8 = uint8_t;
+using u16 = uint16_t;
+using u32 = uint32_t;
+using u64 = uint64_t;
+using i8 = int8_t;
+using i16 = int16_t;
+using i32 = int32_t;
+using i64 = int64_t;
+
 using NumaNodeID = uint16_t;
 using NumaNodeIDs = std::vector<NumaNodeID>;
 using MemoryRegions = std::vector<char*>;
 using CoreID = uint64_t;
 using CoreIDs = std::vector<CoreID>;
 
-enum class Mode : uint8_t { Sequential, Sequential_Desc, Random, Custom };
+enum class Mode : uint8_t { Sequential, Sequential_Desc, Random, Custom, DependentReads };
 
 enum class RandomDistribution : uint8_t { Uniform, Zipf };
 
@@ -170,7 +179,10 @@ struct BenchmarkConfig {
 
   /** Represents the minimum size of an atomic work package. A chunk contains chunk_size / access_size number of
    * operations. The default value is 64 MiB (67108864B), a ~60 ms execution unit assuming the lowest bandwidth of
-   * 1 GiB/s operations per thread. */
+   * 1 GiB/s operations per thread. For dependent reads, this chunk size determines the range in which addresses to
+   * be accessed are randomly generated. For example, with a memory region size of 1 GB, a chunk size of 64 MiB, and an
+   * access size of 64 B, the first 1,048,576 (= 64 MiB / 64 B) access addresses point to a memory region of 64 MiB.
+   * Narrowing the memory access range reduces TLB misses. */
   uint64_t min_io_chunk_size = 64 * MiB;
 
   std::vector<std::string> matrix_args{};

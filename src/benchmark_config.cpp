@@ -264,10 +264,12 @@ void BenchmarkConfig::validate() const {
   CHECK_ARGUMENT(is_total_memory_chunkable,
                  "The primary memory range needs to be multiple of chunk size " + std::to_string(min_io_chunk_size));
 
-  // Assumption: we chunk operations, so we need enough data to fill at least one chunk
-  const bool is_total_memory_large_enough = (memory_regions[0].size / number_threads) >= min_io_chunk_size;
-  CHECK_ARGUMENT(is_total_memory_large_enough, "Each thread needs at least " + std::to_string(min_io_chunk_size) +
-                                                   " Bytes of memory in primary region.");
+  if (exec_mode != Mode::DependentReads) {
+    // Assumption: we chunk operations, so we need enough data to fill at least one chunk
+    const bool is_total_memory_large_enough = (memory_regions[0].size / number_threads) >= min_io_chunk_size;
+    CHECK_ARGUMENT(is_total_memory_large_enough, "Each thread needs at least " + std::to_string(min_io_chunk_size) +
+                                                     " Bytes of memory in primary region.");
+  }
 
   // Assumption: number_threads is multiple of number_partitions
   const bool is_number_threads_multiple_of_number_partitions =
@@ -318,6 +320,10 @@ void BenchmarkConfig::validate() const {
 
   if (thread_pin_mode == ThreadPinMode::SingleCoreFixed) {
     CHECK_ARGUMENT(thread_core_ids.size() == number_threads, "Number of Core IDs and thread count must be equal.");
+  }
+
+  if (exec_mode == Mode::DependentReads) {
+    CHECK_ARGUMENT(access_size == 64, "DependentReads only supports 64B accesses.");
   }
 
 #ifdef HAS_CLWB
@@ -648,7 +654,8 @@ std::ostream& operator<<(std::ostream& os, const CustomOp& op) { return os << op
 const std::unordered_map<std::string, Mode> ConfigEnums::str_to_mode{{"sequential", Mode::Sequential},
                                                                      {"sequential_desc", Mode::Sequential_Desc},
                                                                      {"random", Mode::Random},
-                                                                     {"custom", Mode::Custom}};
+                                                                     {"custom", Mode::Custom},
+                                                                     {"dependent_reads", Mode::DependentReads}};
 
 const std::unordered_map<std::string, Operation> ConfigEnums::str_to_operation{
     {"read", Operation::Read}, {"write", Operation::Write}, {"r", Operation::Read}, {"w", Operation::Write}};

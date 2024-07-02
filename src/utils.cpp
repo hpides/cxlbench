@@ -92,6 +92,68 @@ int mmap_page_size_mask(const uint32_t page_size) {
   return required_bits << MAP_HUGE_SHIFT;
 }
 
+void generate_shuffled_access_positions(char* addr, const MemoryRegionDefinition& region,
+                                        const BenchmarkConfig& config) {
+  auto buffer = reinterpret_cast<std::byte*>(addr);
+  const auto total_entry_count = region.size / config.access_size;
+
+  const auto chunk_size = config.min_io_chunk_size;
+  const auto chunk_entry_count = chunk_size / config.access_size;
+  auto chunk_count = region.size / chunk_size;
+
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  for (auto chunk_id = u64{0}; chunk_id < chunk_count; ++chunk_id) {
+    auto indices = std::vector<u64>(chunk_entry_count);
+    for (auto i = u64{0}; i < chunk_entry_count; ++i) {
+      indices[i] = chunk_id * chunk_entry_count + i;
+    }
+    std::shuffle(indices.begin(), indices.end(), gen);
+
+    for (auto i = u64{0}; i < chunk_entry_count; ++i) {
+      auto* index = reinterpret_cast<u64*>(&buffer[indices[i] * config.access_size]);
+      *index = indices[(i + 1) % chunk_entry_count];
+    }
+  }
+}
+
+bool verify_shuffled_access_positions(char* addr, const MemoryRegionDefinition& region, const BenchmarkConfig& config) {
+  spdlog::info("Verify shuffled access positions.");
+  auto buffer = reinterpret_cast<std::byte*>(addr);
+  const auto total_entry_count = region.size / config.access_size;
+  auto index_historgram = std::vector<uint64_t>(total_entry_count, false);
+  // Create histogram
+  for (auto entry_idx = u64{0}; entry_idx < total_entry_count; ++entry_idx) {
+    auto* index = reinterpret_cast<u64*>(&buffer[entry_idx * config.access_size]);
+    const auto is_in_range = *index >= 0 && *index < total_entry_count;
+    if (!is_in_range) {
+      spdlog::critical("Access index at position {} with value {} is out of range [0, {})", entry_idx, *index,
+                       total_entry_count);
+      utils::crash_exit();
+    }
+    index_historgram[*index]++;
+  }
+
+  // Check the histogram values for missing values and duplicates
+  auto verified = true;
+  for (auto idx = u64{0}; idx < total_entry_count; ++idx) {
+    // Missing index
+    if (!index_historgram[idx]) {
+      spdlog::warn("Access index {} is not present in shuffled access positions.", idx);
+      verified = false;
+      continue;
+    }
+    // Index duplicates
+    if (index_historgram[idx] > 1) {
+      spdlog::warn("Duplicates: access index {} is present {} times in shuffled access positions.", idx,
+                   index_historgram[idx]);
+      verified = false;
+    }
+  }
+  return verified;
+}
+
 void generate_read_data(char* addr, const uint64_t memory_size) {
   if (memory_size == 0) {
     spdlog::debug("Did not generate data as the memory size was 0.");
@@ -118,6 +180,17 @@ void generate_read_data(char* addr, const uint64_t memory_size) {
     thread.join();
   }
   spdlog::debug("Finished generating data.");
+}
+
+void clear_caches() {
+  // ~200 MB
+  static constexpr auto value_count = 27000000;
+  auto values = std::make_unique<std::array<uint64_t, value_count>>();
+  for (auto counter = uint32_t{0}; auto& value : *values) {
+    value = counter;
+    ++counter;
+  }
+  benchmark::DoNotOptimize(values);
 }
 
 uint64_t duration_to_nanoseconds(const std::chrono::steady_clock::duration duration) {

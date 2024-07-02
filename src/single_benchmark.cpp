@@ -16,6 +16,7 @@ namespace mema {
 bool SingleBenchmark::run() {
   signal(SIGSEGV, thread_error_handler);
 
+  utils::clear_caches();
   const BenchmarkConfig& config = configs_[0];
   auto& thread_pool = thread_pools_[0];
   for (size_t thread_index = 0; thread_index < config.number_threads; thread_index++) {

@@ -13,7 +13,8 @@
 
 namespace {
 
-double calculate_standard_deviation(const std::vector<double>& values, const double average) {
+template <typename T>
+double calculate_standard_deviation(const std::vector<T>& values, const double average) {
   const uint16_t num_values = values.size();
   std::vector<double> diffs_to_avg(num_values);
   std::transform(values.begin(), values.end(), diffs_to_avg.begin(), [&](double x) { return x - average; });
@@ -153,7 +154,6 @@ MemoryRegions Benchmark::prepare_data(const BenchmarkConfig& config) {
   auto region_start_addresses = MemoryRegions(MEM_REGION_COUNT);
   MemaAssert(config.memory_regions.size() == MEM_REGION_COUNT, "Unexpected number of memory regions.");
   // Determines if data shall be written to the memory region so that reads can read the data.
-  const auto prepare_read_data = config.contains_read_op();
   for (auto region_idx = uint64_t{0}; auto& region_definition : config.memory_regions) {
     if (region_definition.size == 0) {
       region_start_addresses[region_idx] = nullptr;
@@ -163,10 +163,10 @@ MemoryRegions Benchmark::prepare_data(const BenchmarkConfig& config) {
     spdlog::info("Preparing memory region {}.", region_idx);
     switch (region_definition.placement_mode()) {
       case PagePlacementMode::Interleaved:
-        region_start_addresses[region_idx] = prepare_interleaved_data(region_definition, prepare_read_data);
+        region_start_addresses[region_idx] = prepare_interleaved_data(region_definition, config);
         break;
       case PagePlacementMode::Partitioned:
-        region_start_addresses[region_idx] = prepare_partitioned_data(region_definition, prepare_read_data);
+        region_start_addresses[region_idx] = prepare_partitioned_data(region_definition, config);
         break;
       default:
         spdlog::critical("Data preparation mode not handled.");
@@ -177,7 +177,7 @@ MemoryRegions Benchmark::prepare_data(const BenchmarkConfig& config) {
   return region_start_addresses;
 }
 
-char* Benchmark::prepare_interleaved_data(const MemoryRegionDefinition& region, bool prepare_read_data) {
+char* Benchmark::prepare_interleaved_data(const MemoryRegionDefinition& region, const BenchmarkConfig& config) {
   spdlog::info("Preparing interleaved data.");
   auto* data = utils::map(region.size, region.transparent_huge_pages, region.explicit_hugepages_size);
   bind_memory_interleaved(data, region.size, region.node_ids);
@@ -185,7 +185,14 @@ char* Benchmark::prepare_interleaved_data(const MemoryRegionDefinition& region, 
   utils::populate_memory(data, region.size);
   spdlog::debug("Finished populating/pre-faulting the memory region.");
 
-  if (prepare_read_data) {
+  if (config.exec_mode == Mode::DependentReads) {
+    utils::generate_shuffled_access_positions(data, region, config);
+    spdlog::debug("Finished generating shuffled access positions.");
+    if (!utils::verify_shuffled_access_positions(data, region, config)) {
+      spdlog::critical("Verifying shuffled access positions failed.");
+      utils::crash_exit();
+    }
+  } else if (config.contains_read_op()) {
     // If we read data in this benchmark, we need to generate it first.
     utils::generate_read_data(data, region.size);
     spdlog::debug("Finished generating read data.");
@@ -205,7 +212,7 @@ char* Benchmark::prepare_interleaved_data(const MemoryRegionDefinition& region, 
   return data;
 }
 
-char* Benchmark::prepare_partitioned_data(const MemoryRegionDefinition& region, bool prepare_read_data) {
+char* Benchmark::prepare_partitioned_data(const MemoryRegionDefinition& region, const BenchmarkConfig& config) {
   spdlog::info("Preparing partitioned data.");
   MemaAssert(region.percentage_pages_first_node, "Percentage of pages on first node is not configures.");
   auto* data = utils::map(region.size, region.transparent_huge_pages, region.explicit_hugepages_size);
@@ -224,7 +231,14 @@ char* Benchmark::prepare_partitioned_data(const MemoryRegionDefinition& region, 
   utils::populate_memory(data, region.size);
   spdlog::debug("Finished populating/pre-faulting the memory region.");
 
-  if (prepare_read_data) {
+  if (config.exec_mode == Mode::DependentReads) {
+    utils::generate_shuffled_access_positions(data, region, config);
+    spdlog::debug("Finished generating shuffled access positions.");
+    if (!utils::verify_shuffled_access_positions(data, region, config)) {
+      spdlog::critical("Verifying shuffled access positions failed.");
+      utils::crash_exit();
+    }
+  } else if (config.contains_read_op()) {
     // If we read data in this benchmark, we need to generate it first.
     utils::generate_read_data(data, region.size);
     spdlog::debug("Finished generating read data.");
@@ -339,6 +353,30 @@ void Benchmark::run_custom_ops_in_thread(ThreadConfig* thread_config, const Benc
   *(thread_config->total_operation_size) = total_num_ops;
 }
 
+void Benchmark::run_dependent_reads_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config) {
+  spdlog::debug("Thread {}: Running dependent reads.", thread_config->thread_idx);
+
+  auto buffer = reinterpret_cast<std::byte*>(thread_config->start_addr);
+  const auto access_count = thread_config->partition_size / config.access_size;
+
+  auto next_pos = u64{0};
+  auto begin_ts = std::chrono::steady_clock::now();
+
+  for (auto op_idx = u64{0}; op_idx < access_count; ++op_idx) {
+    auto res = rw_ops::read_64(reinterpret_cast<char*>(&buffer[next_pos * config.access_size]));
+    next_pos = *(reinterpret_cast<u64*>(&res));
+  }
+  auto end_ts = std::chrono::steady_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_ts - begin_ts);
+  spdlog::debug("Thread {}: Finished execution in {} ms", thread_config->thread_idx, duration.count());
+  auto average_latency = duration.count() / access_count;
+  spdlog::info("Thread {}: Average access latency: {} ns", thread_config->thread_idx, average_latency);
+
+  const auto chunk_size = config.min_io_chunk_size;
+  *(thread_config->total_operation_size) = access_count * config.access_size;
+  *(thread_config->total_operation_duration) = ExecutionDuration{begin_ts, end_ts};
+}
+
 void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config) {
   // Pin thread to the configured numa nodes.
   auto& expected_run_cores = thread_config->affinity_core_ids;
@@ -357,6 +395,10 @@ void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig
 
   if (config.exec_mode == Mode::Custom) {
     return run_custom_ops_in_thread(thread_config, config);
+  }
+
+  if (config.exec_mode == Mode::DependentReads) {
+    return run_dependent_reads_in_thread(thread_config, config);
   }
 
   const size_t seed = std::chrono::steady_clock::now().time_since_epoch().count() * (thread_config->thread_idx + 1);
@@ -587,19 +629,22 @@ nlohmann::json BenchmarkResult::get_result_as_json() const {
   std::chrono::steady_clock::time_point earliest_begin = total_operation_durations[0].begin;
   std::chrono::steady_clock::time_point latest_end = total_operation_durations[0].end;
 
-  uint64_t total_size = 0;
+  auto total_size = u64{0};
   std::vector<double> per_thread_bandwidth(config.number_threads);
+  std::vector<u64> per_thread_op_latency(config.number_threads);
   nlohmann::json per_thread_results = nlohmann::json::array();
 
   for (uint16_t thread_idx = 0; thread_idx < config.number_threads; ++thread_idx) {
     const ExecutionDuration& thread_timestamps = total_operation_durations[thread_idx];
     const std::chrono::steady_clock::duration thread_duration = thread_timestamps.duration();
-    auto thread_duration_s = std::chrono::duration<double>(std::chrono::nanoseconds{thread_duration}).count();
+    const auto thread_duration_s = std::chrono::duration<double>(std::chrono::nanoseconds{thread_duration}).count();
 
     const uint64_t thread_op_size = total_operation_sizes[thread_idx];
 
     const double thread_bandwidth = get_bandwidth(thread_op_size, thread_duration);
     per_thread_bandwidth[thread_idx] = thread_bandwidth;
+    const auto access_count = thread_op_size / config.access_size;
+    per_thread_op_latency[thread_idx] = std::chrono::nanoseconds{thread_duration}.count() / access_count;
 
     spdlog::debug("Thread {}: Per-Thread Information", thread_idx);
     spdlog::debug(" ├─ Bandwidth (GiB/s): {:.5f}", thread_bandwidth);
@@ -620,13 +665,22 @@ nlohmann::json BenchmarkResult::get_result_as_json() const {
   const auto execution_time = latest_end - earliest_begin;
   const double total_bandwidth = get_bandwidth(total_size, execution_time);
 
-  // Add information about per-thread avg and standard deviation.
+  // Bandwidth: Add information about per-thread avg and standard deviation.
   const double avg_bandwidth = total_bandwidth / config.number_threads;
   double bandwidth_stddev = calculate_standard_deviation(per_thread_bandwidth, avg_bandwidth);
 
   spdlog::debug("Per-Thread Average Bandwidth: {}", avg_bandwidth);
-  spdlog::debug("Per-Thread Standard Deviation: {}", bandwidth_stddev);
+  spdlog::debug("Per-Thread Bandwidth Standard Deviation: {}", bandwidth_stddev);
   spdlog::debug("Total Bandwidth: {}", total_bandwidth);
+
+  // Access Latency: Add information about per-thread avg and standard deviation.
+  const double total_threads_op_latency =
+      std::accumulate(per_thread_op_latency.begin(), per_thread_op_latency.end(), 0);
+  const double avg_op_latency = (total_threads_op_latency / config.number_threads);
+  double op_latency_stddev = calculate_standard_deviation(per_thread_op_latency, avg_op_latency);
+
+  spdlog::debug("Per-Thread Average Access Latency: {}", avg_op_latency);
+  spdlog::debug("Per-Thread Access Latency Standard Deviation: {}", op_latency_stddev);
 
   nlohmann::json result;
   nlohmann::json bandwidth_results;
@@ -638,6 +692,8 @@ nlohmann::json BenchmarkResult::get_result_as_json() const {
   bandwidth_results["accessed_bytes"] = total_size;
   bandwidth_results["thread_bandwidth_avg"] = avg_bandwidth;
   bandwidth_results["thread_bandwidth_std_dev"] = bandwidth_stddev;
+  bandwidth_results["thread_op_latency_avg"] = avg_op_latency;
+  bandwidth_results["thread_op_latency_std_dev"] = op_latency_stddev;
   bandwidth_results["threads"] = per_thread_results;
 
   result["results"] = bandwidth_results;

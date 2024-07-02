@@ -16,7 +16,7 @@ void check_json_result(const nlohmann::json& result_json, uint64_t total_bytes, 
   ASSERT_JSON_TRUE(result_json, contains("results"));
 
   const nlohmann::json& results_json = result_json["results"];
-  ASSERT_JSON_EQ(results_json, size(), 6);
+  ASSERT_JSON_EQ(results_json, size(), 8);
   ASSERT_JSON_TRUE(results_json, contains("bandwidth"));
   ASSERT_JSON_TRUE(results_json, at("bandwidth").is_number());
   EXPECT_NEAR(results_json.at("bandwidth").get<double>(), expected_bandwidth, 0.001);
@@ -25,6 +25,9 @@ void check_json_result(const nlohmann::json& result_json, uint64_t total_bytes, 
   EXPECT_NEAR(results_json.at("thread_bandwidth_avg").get<double>(), expected_per_thread_bandwidth, 0.001);
   ASSERT_JSON_TRUE(results_json, contains("thread_bandwidth_std_dev"));
   EXPECT_NEAR(results_json.at("thread_bandwidth_std_dev").get<double>(), expected_per_thread_stddev, 0.001);
+
+  ASSERT_JSON_TRUE(results_json, contains("thread_op_latency_avg"));
+  ASSERT_JSON_TRUE(results_json, contains("thread_op_latency_std_dev"));
 
   ASSERT_JSON_TRUE(results_json, contains("execution_time"));
   EXPECT_GT(results_json.at("execution_time").get<double>(), 0);
