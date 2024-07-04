@@ -53,14 +53,6 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  // populate
-  auto* data = reinterpret_cast<char*>(addr);
-
-  const auto page_count = memory_size / PAGE_SIZE;
-  for (auto page_id = uint64_t{0}; page_id < page_count; ++page_id) {
-    data[page_id * PAGE_SIZE] = '\0';
-  }
-
   // mbind
   const auto* const allowed_memory_nodes_mask = numa_get_mems_allowed();
   auto* const nodemask = numa_allocate_nodemask();
@@ -86,28 +78,36 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  // move_pages
-  auto page_target_nodes = std::vector<int>{};
-  {
-    page_target_nodes.resize(page_count);
-    auto pages = std::vector<void*>{};
-    pages.resize(page_count);
+  // populate
+  auto* data = reinterpret_cast<char*>(addr);
 
-    for (auto page_idx = uint64_t{0}; page_idx < page_count; ++page_idx) {
-      page_target_nodes[page_idx] = nodes[page_idx % NODES_SIZE];
-      pages[page_idx] = reinterpret_cast<void*>(data + page_idx * PAGE_SIZE);
-    }
-
-    auto page_status = std::vector<int>(page_count, std::numeric_limits<int>::max());
-    const auto ret =
-        move_pages(0, page_count, pages.data(), page_target_nodes.data(), page_status.data(), MPOL_MF_MOVE);
-    const auto move_pages_errno = errno;
-
-    if (ret != 0) {
-      std::cout << "Placement: move_pages failed: " << strerror(move_pages_errno) << std::endl;
-      return 1;
-    }
+  const auto page_count = memory_size / PAGE_SIZE;
+  for (auto page_id = uint64_t{0}; page_id < page_count; ++page_id) {
+    data[page_id * PAGE_SIZE] = '\0';
   }
+
+  // // move_pages
+  // auto page_target_nodes = std::vector<int>{};
+  // {
+  //   page_target_nodes.resize(page_count);
+  //   auto pages = std::vector<void*>{};
+  //   pages.resize(page_count);
+
+  //   for (auto page_idx = uint64_t{0}; page_idx < page_count; ++page_idx) {
+  //     page_target_nodes[page_idx] = nodes[page_idx % NODES_SIZE];
+  //     pages[page_idx] = reinterpret_cast<void*>(data + page_idx * PAGE_SIZE);
+  //   }
+
+  //   auto page_status = std::vector<int>(page_count, std::numeric_limits<int>::max());
+  //   const auto ret =
+  //       move_pages(0, page_count, pages.data(), page_target_nodes.data(), page_status.data(), MPOL_MF_MOVE_ALL);
+  //   const auto move_pages_errno = errno;
+
+  //   if (ret != 0) {
+  //     std::cout << "Placement: move_pages failed: " << strerror(move_pages_errno) << std::endl;
+  //     return 1;
+  //   }
+  // }
 
   // verify
   {
@@ -127,18 +127,33 @@ int main(int argc, char** argv) {
       return 1;
     }
 
+    auto counter_first = 0u;
+    auto counter_second = 0u;
     auto false_pages = 0u;
     for (auto page_idx = uint64_t{0}; page_idx < page_count; ++page_idx) {
       auto& status = page_status[page_idx];
-      auto& expected_status = page_target_nodes[page_idx];
-      if (status != expected_status) {
-        false_pages++;
-        if (page_idx % 100 == 0) {
-          std::cout << "Page " << page_idx << " with status " << status << " but expected: " << expected_status
-                    << std::endl;
-        }
+
+      if (status == first_node) {
+        ++counter_first;
+        continue;
       }
+
+      if (status == second_node) {
+        ++counter_second;
+        continue;
+      }
+
+      false_pages++;
+      // auto& expected_status = page_target_nodes[page_idx];
+      // if (status != expected_status) {
+      //   false_pages++;
+      //   if (page_idx % 100 == 0) {
+      //     std::cout << "Page " << page_idx << " with status " << status << " but expected: " << expected_status
+      //               << std::endl;
+      //   }
+      // }
     }
-    std::cout << false_pages << "/" << page_count << " pages are on the wrong node." << std::endl;
+    std::cout << page_count << " pages, N" << first_node << ": " << counter_first << ", N" << second_node << ": "
+              << counter_second << ", other status: " << false_pages << std::endl;
   }
 }

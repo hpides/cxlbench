@@ -1,0 +1,29 @@
+seq_reads_local_device:
+  parallel_benchmark:
+    local:
+      matrix:
+        number_threads: [ 1, 4, 8, 12, 16 ]
+        access_size: [ 64 ]
+
+      args:
+        exec_mode: sequential
+        memory_region_size: 7G
+        numa_memory_nodes: [ 0,1,2,3 ]
+        numa_task_nodes: [ 0,1,2,3 ]
+        number_partitions: 1
+        operation: read
+        run_time: 10
+
+    device:
+      matrix:
+        number_threads: [ 1, 4, 8, 12, 16 ]
+        access_size: [ 64 ]
+
+      args:
+        exec_mode: sequential
+        memory_region_size: 7G
+        numa_memory_nodes: [ 8 ]
+        numa_task_nodes: [ 0,1,2,3 ]
+        number_partitions: 1
+        operation: read
+        run_time: 10

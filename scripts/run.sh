@@ -46,10 +46,10 @@ echo "CMake setup..."
 CMAKE_CMD="cmake -S "$ROOT_DIR" -B "$BUILD_DIR" -DBUILD_TEST=ON -DCMAKE_C_COMPILER=gcc-12 -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_BUILD_TYPE="$BUILD_TYPE
 if echo "ninja version:" && ninja --version; then
   CMAKE_CMD="${CMAKE_CMD} -GNinja"
-  BUILD_CMD="ninja"
+  BUILD_CMD="ninja mema-bench"
   echo "Using ninja"
 else
-  BUILD_CMD="make -j"
+  BUILD_CMD="make -j mema-bench"
   echo "Using make instead"
 fi
 eval "$CMAKE_CMD"
