@@ -92,8 +92,8 @@ void bind_memory_interleaved(void* addr, const size_t memory_size, const NumaNod
   // Note that "[i]f the MPOL_INTERLEAVE policy was specified, pages already residing on the specified nodes will not be
   // moved such that they are interleaved", see mbind(2) manual.
   MemaAssert(nodemask != nullptr, "When setting the memory nodes, node mask cannot be nullptr.");
-  const auto mbind_succeeded =
-      mbind(addr, memory_size, MPOL_INTERLEAVE, nodemask->maskp, nodemask->size + 1, MPOL_MF_MOVE) == 0;
+  const auto mbind_succeeded = mbind(addr, memory_size, MPOL_INTERLEAVE, nodemask->maskp, nodemask->size + 1,
+                                     MPOL_MF_STRICT | MPOL_MF_MOVE) == 0;
   const auto mbind_errno = errno;
   if (!mbind_succeeded) {
     spdlog::critical(
@@ -314,13 +314,13 @@ bool verify_interleaved_page_placement(char* const start_addr, size_t memory_reg
     //                 expected_location);
     if (page_status[page_idx] != expected_location) {
       ++incorrect_placement_count;
-      spdlog::trace("Page {} located on NUMA node {} but expected on {}.", page_idx, page_status[page_idx],
-                    expected_location);
+      spdlog::info("Page {} located on NUMA node {} but expected on {}.", page_idx, page_status[page_idx],
+                   expected_location);
     }
   }
 
   if (incorrect_placement_count > 0) {
-    spdlog::info("Page placement verification: {}/{} pages ({}%) are incorrectly placed.", incorrect_placement_count,
+    spdlog::warn("Page placement verification: {}/{} pages ({}%) are incorrectly placed.", incorrect_placement_count,
                  region_page_count,
                  static_cast<uint32_t>(((1.f * incorrect_placement_count) / region_page_count) * 100));
   }
