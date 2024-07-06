@@ -8,8 +8,8 @@ split_memory_random_writes:
   args:
     exec_mode: random
     memory_region_size: 7G
-    numa_memory_nodes: [ 0, 2 ]
-    node_count_first_partition: 1
+    numa_memory_nodes: [ 0, 1, 2, 3, 8 ]
+    node_count_first_partition: 4
     numa_task_nodes: [ 0 ]
     number_partitions: 1
     operation: write

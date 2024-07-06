@@ -164,7 +164,7 @@ BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
     found_count += get_size_if_present(node, "secondary_explicit_hugepages_size", ConfigEnums::scale_suffix_to_factor,
                                        &bm_config.memory_regions[1].explicit_hugepages_size);
     // We only set the percentage for the primary memory region
-    found_count += get_optional_if_present(node, "percentage_pages_first_node",
+    found_count += get_optional_if_present(node, "percentage_pages_first_partition",
                                            &bm_config.memory_regions[0].percentage_pages_first_partition);
     found_count += get_optional_if_present(node, "node_count_first_partition",
                                            &bm_config.memory_regions[0].node_count_first_partition);
@@ -433,7 +433,7 @@ nlohmann::json BenchmarkConfig::as_json() const {
     config[prefix + "explicit_hugepages_size"] = region.explicit_hugepages_size;
     config[prefix + "region_size"] = region.size;
     config[prefix + "numa_nodes"] = region.node_ids;
-    config[prefix + "percentage_pages_first_node"] =
+    config[prefix + "percentage_pages_first_partition"] =
         region.percentage_pages_first_partition ? *region.percentage_pages_first_partition : -1;
     config[prefix + "node_count_first_partition"] =
         region.node_count_first_partition ? *region.node_count_first_partition : -1;

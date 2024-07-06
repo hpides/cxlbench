@@ -96,9 +96,10 @@ struct CustomOp {
 
 struct MemoryRegionDefinition {
   /** Specifies the set of memory NUMA nodes on which benchmark data is to be allocated. If multiple nodes are set and
-   * percentage_pages_first_node is not set, pages are allocated in a round robin fashion. If
-   * percentage_pages_first_node is set, only two nodes are supported. percentage_pages_first_node then determines the
-   * share of the memory region located on the first node where the remaining part will be located on the second node.
+   * percentage_pages_first_partition is not set, pages are allocated in a round robin fashion. If
+   * percentage_pages_first_partition is set, only two nodes are supported. percentage_pages_first_partition then
+   * determines the share of the memory region located on the first node where the remaining part will be located on the
+   * second node.
    */
   NumaNodeIDs node_ids = {};
 

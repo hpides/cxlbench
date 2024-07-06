@@ -17,4 +17,4 @@
 #mv false-sharing.json ./results-fs/false-sharing-N0-m1.json &&
 #numactl -N 0 -m 2 ./false-sharing &&
 #mv false-sharing.json ./results-fs/false-sharing-N0-m2.json &&
-echo "run_emr.sh done :)"
+echo "End of experiment series."

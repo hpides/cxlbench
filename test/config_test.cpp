@@ -600,8 +600,8 @@ TEST_F(ConfigTest, AsJsonReadSequential) {
   EXPECT_EQ(json["m0_region_size"].get<uint64_t>(), bm_config.memory_regions[0].size);
   ASSERT_JSON_TRUE(json, contains("m0_numa_nodes"));
   EXPECT_EQ(json["m0_numa_nodes"].get<NumaNodeIDs>(), bm_config.memory_regions[0].node_ids);
-  ASSERT_JSON_TRUE(json, contains("m0_percentage_pages_first_node"));
-  EXPECT_EQ(json["m0_percentage_pages_first_node"].get<uint64_t>(), -1);
+  ASSERT_JSON_TRUE(json, contains("m0_percentage_pages_first_partition"));
+  EXPECT_EQ(json["m0_percentage_pages_first_partition"].get<uint64_t>(), -1);
   ASSERT_JSON_TRUE(json, contains("m0_transparent_huge_pages"));
   EXPECT_EQ(json["m0_transparent_huge_pages"].get<bool>(), bm_config.memory_regions[0].transparent_huge_pages);
   ASSERT_JSON_TRUE(json, contains("m0_explicit_hugepages_size"));
@@ -610,8 +610,8 @@ TEST_F(ConfigTest, AsJsonReadSequential) {
   EXPECT_EQ(json["m1_region_size"].get<uint64_t>(), bm_config.memory_regions[1].size);
   ASSERT_JSON_TRUE(json, contains("m1_numa_nodes"));
   EXPECT_EQ(json["m1_numa_nodes"].get<NumaNodeIDs>(), bm_config.memory_regions[1].node_ids);
-  ASSERT_JSON_TRUE(json, contains("m1_percentage_pages_first_node"));
-  EXPECT_EQ(json["m1_percentage_pages_first_node"].get<uint64_t>(), -1);
+  ASSERT_JSON_TRUE(json, contains("m1_percentage_pages_first_partition"));
+  EXPECT_EQ(json["m1_percentage_pages_first_partition"].get<uint64_t>(), -1);
   ASSERT_JSON_TRUE(json, contains("m1_transparent_huge_pages"));
   EXPECT_EQ(json["m1_transparent_huge_pages"].get<bool>(), bm_config.memory_regions[1].transparent_huge_pages);
   ASSERT_JSON_TRUE(json, contains("m1_explicit_hugepages_size"));
@@ -653,8 +653,8 @@ TEST_F(ConfigTest, AsJsonWriteCustom) {
   EXPECT_EQ(json["m0_region_size"].get<uint64_t>(), bm_config.memory_regions[0].size);
   ASSERT_JSON_TRUE(json, contains("m0_numa_nodes"));
   EXPECT_EQ(json["m0_numa_nodes"].get<NumaNodeIDs>(), bm_config.memory_regions[0].node_ids);
-  ASSERT_JSON_TRUE(json, contains("m0_percentage_pages_first_node"));
-  EXPECT_EQ(json["m0_percentage_pages_first_node"].get<uint64_t>(), -1);
+  ASSERT_JSON_TRUE(json, contains("m0_percentage_pages_first_partition"));
+  EXPECT_EQ(json["m0_percentage_pages_first_partition"].get<uint64_t>(), -1);
   ASSERT_JSON_TRUE(json, contains("m0_transparent_huge_pages"));
   EXPECT_EQ(json["m0_transparent_huge_pages"].get<bool>(), bm_config.memory_regions[0].transparent_huge_pages);
   ASSERT_JSON_TRUE(json, contains("m0_explicit_hugepages_size"));
@@ -663,8 +663,8 @@ TEST_F(ConfigTest, AsJsonWriteCustom) {
   EXPECT_EQ(json["m1_region_size"].get<uint64_t>(), bm_config.memory_regions[1].size);
   ASSERT_JSON_TRUE(json, contains("m1_numa_nodes"));
   EXPECT_EQ(json["m1_numa_nodes"].get<NumaNodeIDs>(), bm_config.memory_regions[1].node_ids);
-  ASSERT_JSON_TRUE(json, contains("m1_percentage_pages_first_node"));
-  EXPECT_EQ(json["m1_percentage_pages_first_node"].get<uint64_t>(), -1);
+  ASSERT_JSON_TRUE(json, contains("m1_percentage_pages_first_partition"));
+  EXPECT_EQ(json["m1_percentage_pages_first_partition"].get<uint64_t>(), -1);
   ASSERT_JSON_TRUE(json, contains("m1_transparent_huge_pages"));
   EXPECT_EQ(json["m1_transparent_huge_pages"].get<bool>(), bm_config.memory_regions[1].transparent_huge_pages);
   ASSERT_JSON_TRUE(json, contains("m1_explicit_hugepages_size"));
