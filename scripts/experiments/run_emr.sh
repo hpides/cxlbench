@@ -3,14 +3,18 @@
 # ./scripts/run_log.sh ddr_bw &&
 # ./scripts/run_log.sh inter_socket_bw &&
 # ./scripts/run_log.sh cxl_bw_emr_SNC1 &&
-./scripts/run_log.sh ddr_lat &&
-./scripts/run_log.sh inter_socket_lat &&
-./scripts/run_log.sh cxl_lat_emr_SNC1 &&
-./scripts/run_log.sh bw_expansion_parallel_emr_SNC1 &&
-cd exp-mag-SYS-741GE-TNRT-rel-gcc-12/ &&
-numactl -N 0 -m 0 ./false-sharing &&
-mv false-sharing.json false-sharing-N0-m0.json &&
-numactl -N 0 -m 1 ./false-sharing &&
-mv false-sharing.json false-sharing-N0-m1.json &&
-numactl -N 0 -m 2 ./false-sharing &&
-mv false-sharing.json false-sharing-N0-m2.json
+#./scripts/run_log.sh ddr_lat &&
+#./scripts/run_log.sh inter_socket_lat &&
+#./scripts/run_log.sh cxl_lat_emr_SNC1 &&
+#./scripts/run_log.sh bw_expansion_parallel_emr_SNC1 &&
+./scripts/run_log.sh device_cost_emr_SNC1 &&
+./scripts/run_log.sh fp_tree_emr_SNC1 &&
+#cd exp-mag-SYS-741GE-TNRT-rel-gcc-12/ &&
+#mkdir -p results-fs &&
+#numactl -N 0 -m 0 ./false-sharing &&
+#mv false-sharing.json ./results-fs/false-sharing-N0-m0.json &&
+#numactl -N 0 -m 1 ./false-sharing &&
+#mv false-sharing.json ./results-fs/false-sharing-N0-m1.json &&
+#numactl -N 0 -m 2 ./false-sharing &&
+#mv false-sharing.json ./results-fs/false-sharing-N0-m2.json &&
+echo "run_emr.sh done :)"
