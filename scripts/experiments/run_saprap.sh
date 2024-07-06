@@ -1,5 +1,6 @@
 #! /usr/bin/env bash
 
+./scripts/setup_system.sh &&
 # ./scripts/run_log.sh saprap ddr_lat_saprap_SNC4 &&
 # ./scripts/run_log.sh saprap inter_socket_lat_saprap_SNC4 &&
 # ./scripts/run_log.sh saprap cxl_lat_saprap_SNC4 &&

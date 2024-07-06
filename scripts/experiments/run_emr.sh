@@ -1,5 +1,6 @@
 #! /usr/bin/env bash
 
+./scripts/setup_system.sh &&
 # ./scripts/run_log.sh ddr_bw &&
 # ./scripts/run_log.sh inter_socket_bw &&
 # ./scripts/run_log.sh cxl_bw_emr_SNC1 &&
