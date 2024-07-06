@@ -9,3 +9,4 @@ test_seq:
     operation: read
     min_io_chunk_size: 16384
     percentage_pages_first_node: 37
+    node_count_first_partition: 1

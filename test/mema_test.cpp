@@ -7,7 +7,7 @@ int main(int argc, char** argv) {
   // Disable info logs
   spdlog::set_level(spdlog::level::critical);
   // Use the following line to debug failing test cases.
-  // spdlog::set_level(spdlog::level::debug);
+  // spdlog::set_level(spdlog::level::info);
 
   return RUN_ALL_TESTS();
 }

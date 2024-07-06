@@ -31,7 +31,8 @@ void fill_page_locations_round_robin(PageLocations& page_locations, size_t memor
                                      const NumaNodeIDs& target_nodes);
 
 void fill_page_locations_partitioned(PageLocations& page_locations, size_t memory_region_size,
-                                     const NumaNodeIDs& target_nodes, const int32_t percentage_first_node);
+                                     const NumaNodeIDs& target_nodes, const uint64_t percentage_first_node,
+                                     const uint64_t node_count_first_node);
 
 void place_pages(char* const start_addr, size_t memory_region_size, const PageLocations& target_page_locations);
 
@@ -40,14 +41,11 @@ void place_pages(char* const start_addr, size_t memory_region_size, const PageLo
 bool verify_interleaved_page_placement(char* const start_addr, size_t memory_region_size,
                                        const NumaNodeIDs& target_nodes);
 
-// Check page locations based on given expected page locations.
-bool verify_partitioned_page_placement(char* const start_addr, uint64_t memory_region_size,
-                                       const PageLocations& expected_page_locations);
-
 // Check page locations. Based on the given target nodes and percentage, the expected locations are calulated first,
 // before the current page locations are compared with the expected ones.
 bool verify_partitioned_page_placement(char* const start_addr, uint64_t memory_region_size,
-                                       const NumaNodeIDs& target_nodes, const int32_t percentage_first_node);
+                                       const NumaNodeIDs& target_nodes, const uint64_t percentage_first_node,
+                                       const uint64_t node_count_first_node);
 
 void log_numa_nodes(spdlog::level::level_enum log_level, const std::string& message, const NumaNodeIDs& nodes);
 

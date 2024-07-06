@@ -102,9 +102,11 @@ struct MemoryRegionDefinition {
    */
   NumaNodeIDs node_ids = {};
 
-  /** Specifies the share of pages in percentage located on the NUMA node at the first position of the NUMA node list.
-   * This only works for two NUMA nodes. Ignored if not set. The option only applies to the primary memory region. */
-  std::optional<uint64_t> percentage_pages_first_node = std::nullopt;
+  /** Specifies the number of NUMA nodes for the first partition of the NUMA node list. Ignored if not set. */
+  std::optional<uint64_t> node_count_first_partition = std::nullopt;
+
+  /** Specifies the share of pages in percentage located in the first partition. Ignored if not set. */
+  std::optional<uint64_t> percentage_pages_first_partition = std::nullopt;
 
   /** Represents the total primary memory range to use for the benchmark. Must be a multiple of `access_size`.  */
   uint64_t size = 10 * GiB;

@@ -1,6 +1,7 @@
 #include "test_utils.hpp"
 
 #include <gmock/gmock-matchers.h>
+#include <numaif.h>
 
 #include <fstream>
 
@@ -37,6 +38,23 @@ void check_json_result(const nlohmann::json& result_json, uint64_t total_bytes, 
 
   ASSERT_JSON_TRUE(results_json, contains("threads"));
   EXPECT_EQ(results_json.at("threads").size(), thread_count);
+}
+
+std::vector<int> retrieve_page_status(const uint64_t page_count, char* data) {
+  // Prepare page pointers for move_pages.
+  auto pages = std::vector<void*>{};
+  pages.resize(page_count);
+
+  for (auto page_idx = uint64_t{0}; page_idx < page_count; ++page_idx) {
+    pages[page_idx] = reinterpret_cast<void*>(data + page_idx * utils::PAGE_SIZE);
+  }
+
+  // Retrieve
+  auto page_status = std::vector<int>(page_count, std::numeric_limits<int>::max());
+  const auto ret = move_pages(0, page_count, pages.data(), NULL, page_status.data(), MPOL_MF_MOVE);
+  const auto move_pages_errno = errno;
+  MemaAssert(ret == 0, "move_pages failed with error code " + ret);
+  return page_status;
 }
 
 }  // namespace mema

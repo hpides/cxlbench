@@ -137,7 +137,7 @@ bool get_sequence_if_present(YAML::Node& data, const std::string& name, std::vec
 namespace mema {
 
 PagePlacementMode MemoryRegionDefinition::placement_mode() const {
-  if (percentage_pages_first_node) {
+  if (percentage_pages_first_partition) {
     return PagePlacementMode::Partitioned;
   }
   return PagePlacementMode::Interleaved;
@@ -165,7 +165,9 @@ BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
                                        &bm_config.memory_regions[1].explicit_hugepages_size);
     // We only set the percentage for the primary memory region
     found_count += get_optional_if_present(node, "percentage_pages_first_node",
-                                           &bm_config.memory_regions[0].percentage_pages_first_node);
+                                           &bm_config.memory_regions[0].percentage_pages_first_partition);
+    found_count += get_optional_if_present(node, "node_count_first_partition",
+                                           &bm_config.memory_regions[0].node_count_first_partition);
     found_count += get_if_present(node, "number_partitions", &bm_config.number_partitions);
 
     found_count +=
@@ -239,12 +241,16 @@ void BenchmarkConfig::validate() const {
     CHECK_ARGUMENT(numa_memory_nodes_present, "NUMA memory nodes must be specified.");
 
     // Check if share of pages on first node has a valid value if set.
-    if (region.percentage_pages_first_node) {
-      const bool has_memory_share_correct_value = *region.percentage_pages_first_node <= 100;
+    if (region.percentage_pages_first_partition) {
+      CHECK_ARGUMENT(region.node_count_first_partition.has_value(),
+                     "Partitioned mode requires node_count_first_partition, which is not set.");
+      CHECK_ARGUMENT(*region.node_count_first_partition <= region.node_ids.size(),
+                     "node_count_first_partition must not be larger than the number of specified NUMA node IDs.");
+      const bool has_memory_share_correct_value = *region.percentage_pages_first_partition <= 100;
       CHECK_ARGUMENT(has_memory_share_correct_value, "Share of pages located on first node must be in range [0, 100].");
-      const bool has_two_numa_memory_nodes = region.node_ids.size() == 2;
-      CHECK_ARGUMENT(has_two_numa_memory_nodes,
-                     "When a share of pages located on first node is specified, two nodes need to be specified.");
+      const bool has_gte_two_numa_memory_nodes = region.node_ids.size() >= 2;
+      CHECK_ARGUMENT(has_gte_two_numa_memory_nodes,
+                     "When a share of pages located on first node is specified, >=2 nodes need to be specified.");
     }
 
     // Assumption: total memory range must be evenly divisible into number of partitions
@@ -368,8 +374,9 @@ std::string BenchmarkConfig::to_string(const std::string sep) const {
     stream << "]";
     stream << sep << "partition count: " << number_partitions;
     stream << sep << "page placement: ";
-    if (region.percentage_pages_first_node) {
-      stream << "partitioned with " << *region.percentage_pages_first_node << "% on first node";
+    if (region.percentage_pages_first_partition) {
+      stream << "partitioned with " << *region.percentage_pages_first_partition << "% on first partition. ";
+      stream << "The first " << *region.node_count_first_partition << "nodes belong to the first partition.";
     } else {
       stream << "interleaved";
     }
@@ -427,7 +434,9 @@ nlohmann::json BenchmarkConfig::as_json() const {
     config[prefix + "region_size"] = region.size;
     config[prefix + "numa_nodes"] = region.node_ids;
     config[prefix + "percentage_pages_first_node"] =
-        region.percentage_pages_first_node ? *region.percentage_pages_first_node : -1;
+        region.percentage_pages_first_partition ? *region.percentage_pages_first_partition : -1;
+    config[prefix + "node_count_first_partition"] =
+        region.node_count_first_partition ? *region.node_count_first_partition : -1;
     config[prefix + "transparent_huge_pages"] = region.transparent_huge_pages;
     ++region_idx;
   }

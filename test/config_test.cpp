@@ -97,8 +97,8 @@ class ConfigTest : public BaseTest {
 std::filesystem::path ConfigTest::test_logger_path;
 
 TEST_F(ConfigTest, PlacementMode) {
-  bm_config.memory_regions[0].percentage_pages_first_node = 42;
-  bm_config.memory_regions[1].percentage_pages_first_node = std::nullopt;
+  bm_config.memory_regions[0].percentage_pages_first_partition = 42;
+  bm_config.memory_regions[1].percentage_pages_first_partition = std::nullopt;
   EXPECT_EQ(bm_config.memory_regions[0].placement_mode(), PagePlacementMode::Partitioned);
   EXPECT_EQ(bm_config.memory_regions[1].placement_mode(), PagePlacementMode::Interleaved);
 }
@@ -131,7 +131,8 @@ TEST_F(ConfigTest, SingleDecodeSequential) {
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
   EXPECT_EQ(bm_config.numa_thread_nodes, NumaNodeIDs{0});
   EXPECT_EQ(bm_config.memory_regions[0].node_ids, (NumaNodeIDs{0, 1}));
-  EXPECT_EQ(bm_config.memory_regions[0].percentage_pages_first_node, 37);
+  EXPECT_EQ(bm_config.memory_regions[0].percentage_pages_first_partition, 37);
+  EXPECT_EQ(bm_config.memory_regions[0].node_count_first_partition, 1);
 }
 
 TEST_F(ConfigTest, DecodeRandom) {
@@ -150,8 +151,8 @@ TEST_F(ConfigTest, DecodeRandom) {
 
   EXPECT_EQ(bm_config.memory_regions[0].size, bm_config_default.memory_regions[0].size);
   EXPECT_EQ(bm_config.memory_regions[0].node_ids, NumaNodeIDs{1});
-  EXPECT_EQ(bm_config.memory_regions[0].percentage_pages_first_node,
-            bm_config_default.memory_regions[0].percentage_pages_first_node);
+  EXPECT_EQ(bm_config.memory_regions[0].percentage_pages_first_partition,
+            bm_config_default.memory_regions[0].percentage_pages_first_partition);
   EXPECT_EQ(bm_config.numa_thread_nodes, NumaNodeIDs{0});
   EXPECT_EQ(bm_config.access_size, bm_config_default.access_size);
   EXPECT_EQ(bm_config.number_operations, bm_config_default.number_operations);
@@ -215,8 +216,8 @@ TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
   EXPECT_EQ(bm_config.min_io_chunk_size, bm_config_default.min_io_chunk_size);
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
-  EXPECT_EQ(bm_config.memory_regions[0].percentage_pages_first_node,
-            bm_config_default.memory_regions[0].percentage_pages_first_node);
+  EXPECT_EQ(bm_config.memory_regions[0].percentage_pages_first_partition,
+            bm_config_default.memory_regions[0].percentage_pages_first_partition);
 }
 
 TEST_F(ConfigTest, DecodeMatrix) {
@@ -258,8 +259,8 @@ TEST_F(ConfigTest, DecodeMatrix) {
     EXPECT_EQ(config.min_io_chunk_size, bm_config_default.min_io_chunk_size);
     EXPECT_EQ(config.run_time, bm_config_default.run_time);
     EXPECT_EQ(config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
-    EXPECT_EQ(config.memory_regions[0].percentage_pages_first_node,
-              bm_config_default.memory_regions[0].percentage_pages_first_node);
+    EXPECT_EQ(config.memory_regions[0].percentage_pages_first_partition,
+              bm_config_default.memory_regions[0].percentage_pages_first_partition);
   }
 }
 
@@ -319,8 +320,8 @@ TEST_F(ConfigTest, DecodeCustomOperationsMatrix) {
     EXPECT_EQ(config.min_io_chunk_size, bm_config_default.min_io_chunk_size);
     EXPECT_EQ(config.run_time, bm_config_default.run_time);
     EXPECT_EQ(config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
-    EXPECT_EQ(config.memory_regions[0].percentage_pages_first_node,
-              bm_config_default.memory_regions[0].percentage_pages_first_node);
+    EXPECT_EQ(config.memory_regions[0].percentage_pages_first_partition,
+              bm_config_default.memory_regions[0].percentage_pages_first_partition);
   }
 }
 
@@ -381,8 +382,8 @@ TEST_F(ConfigTest, ParallelDecodeMatrix) {
     EXPECT_EQ(config_two.min_io_chunk_size, bm_config_default.min_io_chunk_size);
     EXPECT_EQ(config_two.run_time, bm_config_default.run_time);
     EXPECT_EQ(config_two.latency_sample_frequency, bm_config_default.latency_sample_frequency);
-    EXPECT_EQ(config_two.memory_regions[0].percentage_pages_first_node,
-              bm_config_default.memory_regions[0].percentage_pages_first_node);
+    EXPECT_EQ(config_two.memory_regions[0].percentage_pages_first_partition,
+              bm_config_default.memory_regions[0].percentage_pages_first_partition);
   }
 }
 
@@ -508,18 +509,19 @@ TEST_F(ConfigTest, InvalidMissingMemoryNodes) {
 TEST_F(ConfigTest, InvalidPercentageOnFirstNode) {
   bm_config.memory_regions[0].node_ids = {0, 1};
 
-  bm_config.memory_regions[0].percentage_pages_first_node = 101;
+  bm_config.memory_regions[0].percentage_pages_first_partition = 101;
+  bm_config.memory_regions[0].node_count_first_partition = 1;
   EXPECT_THROW(bm_config.validate(), MemaException);
   check_log_for_critical("Share of pages located on first node must be in range [0, 100]");
-  bm_config.memory_regions[0].percentage_pages_first_node = 100;
+  bm_config.memory_regions[0].percentage_pages_first_partition = 100;
   EXPECT_NO_THROW(bm_config.validate());
-  bm_config.memory_regions[0].percentage_pages_first_node = 0;
+  bm_config.memory_regions[0].percentage_pages_first_partition = 0;
   EXPECT_NO_THROW(bm_config.validate());
 
   // Require two numa nodes when percentage is set.
   bm_config.memory_regions[0].node_ids = {0};
   EXPECT_THROW(bm_config.validate(), MemaException);
-  check_log_for_critical("two nodes need to be specified");
+  check_log_for_critical(">=2 nodes need to be specified");
 }
 
 TEST_F(ConfigTest, InvalidSecondaryMemoryRegion) {

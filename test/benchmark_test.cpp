@@ -4,6 +4,7 @@
 #include <numa.h>
 
 #include <fstream>
+#include <unordered_set>
 
 #include "gmock/gmock-matchers.h"
 #include "gtest/gtest.h"
@@ -799,7 +800,7 @@ TEST_F(BenchmarkTest, PrepareDataMemoryLocationInterleaved) {
   }
 }
 
-TEST_F(BenchmarkTest, PrepareDataMemoryLocationPartitioned) {
+TEST_F(BenchmarkTest, PrepareDataMemoryLocationPartitioned2Nodes) {
   if (valid_node_ids.size() < 2) {
     GTEST_SKIP() << "Skipping test: system has " << valid_node_ids.size() << " but test requires at least 2.";
   }
@@ -807,22 +808,141 @@ TEST_F(BenchmarkTest, PrepareDataMemoryLocationPartitioned) {
   auto config = base_config_;
   config.memory_regions[0].size = 10 * MiB;
   config.memory_regions[0].node_ids = NumaNodeIDs{valid_node_ids[0], valid_node_ids[1]};
-  config.memory_regions[0].percentage_pages_first_node = 60;
+  config.memory_regions[0].percentage_pages_first_partition = 60;
+  config.memory_regions[0].node_count_first_partition = 1;
   EXPECT_EQ(config.memory_regions[0].placement_mode(), PagePlacementMode::Partitioned);
-
   config.memory_regions[1].size = 0;
-
   SingleBenchmark bm{bm_name_, config, {}, {}};
-
   // Generate data creates the memory mapping and populates the memory based on the given numa_memory_nodes.
   bm.generate_data();
 
   const auto& regions = bm.get_memory_regions()[0];
   ASSERT_EQ(regions.size(), 2u);
-
   const auto& definition = config.memory_regions[0];
+  const auto region_page_count = definition.size / utils::PAGE_SIZE;
+  // Verify page status
+  auto page_status = retrieve_page_status(region_page_count, regions[0]);
+  auto page_idx = uint64_t{0};
+  // Partition 1
+  const auto first_partition_page_count =
+      static_cast<uint32_t>((*definition.percentage_pages_first_partition / 100.f) * region_page_count);
+  for (; page_idx < first_partition_page_count; ++page_idx) {
+    ASSERT_EQ(page_status[page_idx], valid_node_ids[0]);
+  }
+  // Partition 2
+  for (; page_idx < region_page_count; ++page_idx) {
+    ASSERT_EQ(page_status[page_idx], valid_node_ids[1]);
+  }
+
   ASSERT_TRUE(verify_partitioned_page_placement(regions[0], definition.size, definition.node_ids,
-                                                *definition.percentage_pages_first_node));
+                                                *definition.percentage_pages_first_partition,
+                                                *definition.node_count_first_partition));
+  ASSERT_FALSE(verify_interleaved_page_placement(regions[0], definition.size, definition.node_ids));
+
+  ASSERT_EQ(regions[1], nullptr);
+}
+
+TEST_F(BenchmarkTest, PrepareDataMemoryLocationPartitioned3Nodes) {
+  if (valid_node_ids.size() < 2) {
+    GTEST_SKIP() << "Skipping test: system has " << valid_node_ids.size() << " but test requires at least 2.";
+  }
+
+  auto config = base_config_;
+  config.memory_regions[0].size = 10 * MiB;
+  config.memory_regions[0].node_ids = NumaNodeIDs{valid_node_ids[0], valid_node_ids[1], valid_node_ids[1]};
+  config.memory_regions[0].percentage_pages_first_partition = 60;
+  config.memory_regions[0].node_count_first_partition = 2;
+  EXPECT_EQ(config.memory_regions[0].placement_mode(), PagePlacementMode::Partitioned);
+  config.memory_regions[1].size = 0;
+  SingleBenchmark bm{bm_name_, config, {}, {}};
+  // Generate data creates the memory mapping and populates the memory based on the given numa_memory_nodes.
+  bm.generate_data();
+
+  const auto& regions = bm.get_memory_regions()[0];
+  ASSERT_EQ(regions.size(), 2u);
+  const auto& definition = config.memory_regions[0];
+  const auto region_page_count = definition.size / utils::PAGE_SIZE;
+  // Verify page status
+  auto page_status = retrieve_page_status(region_page_count, regions[0]);
+  auto page_idx = uint64_t{0};
+  // Partition 1
+  const auto first_partition_nodes = std::unordered_set{valid_node_ids[0], valid_node_ids[1]};
+  const auto first_partition_page_count =
+      static_cast<uint32_t>((*definition.percentage_pages_first_partition / 100.f) * region_page_count);
+  auto last_status = std::optional<uint64_t>(std::nullopt);
+  for (; page_idx < first_partition_page_count; ++page_idx) {
+    const auto& status = page_status[page_idx];
+    ASSERT_TRUE(first_partition_nodes.contains(status));
+    if (last_status) {
+      ASSERT_NE(*last_status, status);
+    }
+    last_status = status;
+  }
+  // Partition 2
+  for (; page_idx < region_page_count; ++page_idx) {
+    ASSERT_EQ(page_status[page_idx], valid_node_ids[1]);
+  }
+
+  ASSERT_TRUE(verify_partitioned_page_placement(regions[0], definition.size, definition.node_ids,
+                                                *definition.percentage_pages_first_partition,
+                                                *definition.node_count_first_partition));
+  ASSERT_FALSE(verify_interleaved_page_placement(regions[0], definition.size, definition.node_ids));
+
+  ASSERT_EQ(regions[1], nullptr);
+}
+
+TEST_F(BenchmarkTest, PrepareDataMemoryLocationPartitioned4Nodes) {
+  if (valid_node_ids.size() < 2) {
+    GTEST_SKIP() << "Skipping test: system has " << valid_node_ids.size() << " but test requires at least 2.";
+  }
+
+  auto config = base_config_;
+  config.memory_regions[0].size = 10 * MiB;
+  config.memory_regions[0].node_ids =
+      NumaNodeIDs{valid_node_ids[0], valid_node_ids[1], valid_node_ids[1], valid_node_ids[0]};
+  config.memory_regions[0].percentage_pages_first_partition = 60;
+  config.memory_regions[0].node_count_first_partition = 2;
+  EXPECT_EQ(config.memory_regions[0].placement_mode(), PagePlacementMode::Partitioned);
+  config.memory_regions[1].size = 0;
+  SingleBenchmark bm{bm_name_, config, {}, {}};
+  // Generate data creates the memory mapping and populates the memory based on the given numa_memory_nodes.
+  bm.generate_data();
+
+  const auto& regions = bm.get_memory_regions()[0];
+  ASSERT_EQ(regions.size(), 2u);
+  const auto& definition = config.memory_regions[0];
+  const auto region_page_count = definition.size / utils::PAGE_SIZE;
+  // Verify page status
+  auto page_status = retrieve_page_status(region_page_count, regions[0]);
+  auto page_idx = uint64_t{0};
+  // Partition 1
+  const auto first_partition_nodes = std::unordered_set{valid_node_ids[0], valid_node_ids[1]};
+  const auto first_partition_page_count =
+      static_cast<uint32_t>((*definition.percentage_pages_first_partition / 100.f) * region_page_count);
+  auto last_status = std::optional<uint64_t>(std::nullopt);
+  for (; page_idx < first_partition_page_count; ++page_idx) {
+    const auto& status = page_status[page_idx];
+    ASSERT_TRUE(first_partition_nodes.contains(status));
+    if (last_status) {
+      ASSERT_NE(*last_status, status);
+    }
+    last_status = status;
+  }
+  // Partition 2
+  const auto second_partition_nodes = std::unordered_set{valid_node_ids[0], valid_node_ids[1]};
+  last_status = std::optional<uint64_t>(std::nullopt);
+  for (; page_idx < region_page_count; ++page_idx) {
+    const auto& status = page_status[page_idx];
+    ASSERT_TRUE(second_partition_nodes.contains(status));
+    if (last_status) {
+      ASSERT_NE(*last_status, status);
+    }
+    last_status = status;
+  }
+
+  ASSERT_TRUE(verify_partitioned_page_placement(regions[0], definition.size, definition.node_ids,
+                                                *definition.percentage_pages_first_partition,
+                                                *definition.node_count_first_partition));
   ASSERT_FALSE(verify_interleaved_page_placement(regions[0], definition.size, definition.node_ids));
 
   ASSERT_EQ(regions[1], nullptr);
@@ -841,7 +961,8 @@ TEST_F(BenchmarkTest, PrepareDataMemoryLocationInterleavedPartitioned) {
 
   config.memory_regions[1].size = 20 * MiB;
   config.memory_regions[1].node_ids = NumaNodeIDs{valid_node_ids[0], valid_node_ids[1]};
-  config.memory_regions[1].percentage_pages_first_node = 60;
+  config.memory_regions[1].percentage_pages_first_partition = 60;
+  config.memory_regions[1].node_count_first_partition = 1;
   ASSERT_EQ(config.memory_regions[1].placement_mode(), PagePlacementMode::Partitioned);
 
   SingleBenchmark bm{bm_name_, config, {}, {}};
@@ -855,11 +976,11 @@ TEST_F(BenchmarkTest, PrepareDataMemoryLocationInterleavedPartitioned) {
   const auto& definitions = config.memory_regions;
   // Region 0
   ASSERT_FALSE(verify_partitioned_page_placement(regions[0], definitions[0].size, definitions[0].node_ids,
-                                                 percentage_first_node));
+                                                 percentage_first_node, 1));
   ASSERT_TRUE(verify_interleaved_page_placement(regions[0], definitions[0].size, definitions[0].node_ids));
   // Region 1
   ASSERT_TRUE(verify_partitioned_page_placement(regions[1], definitions[1].size, definitions[1].node_ids,
-                                                percentage_first_node));
+                                                percentage_first_node, 1));
   ASSERT_FALSE(verify_interleaved_page_placement(regions[1], definitions[1].size, definitions[1].node_ids));
 }
 

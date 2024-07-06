@@ -188,25 +188,43 @@ void fill_page_locations_round_robin(PageLocations& page_locations, size_t memor
 }
 
 void fill_page_locations_partitioned(PageLocations& page_locations, size_t memory_region_size,
-                                     const NumaNodeIDs& target_nodes, const int32_t percentage_first_node) {
+                                     const NumaNodeIDs& target_nodes, const uint64_t percentage_first_node,
+                                     const uint64_t node_count_first_node) {
   spdlog::debug("Start filling page locations (partitioned).");
-  MemaAssert(target_nodes.size() == 2, "When using partitioned page placements, only two NUMA nodes are supported.");
+  MemaAssert(target_nodes.size() >= 2, "When using partitioned page placements, at least two NUMA nodes are required.");
   MemaAssert(percentage_first_node >= 0 && percentage_first_node <= 100,
              "Percentage of pages on first node needs to be in range [0,100].");
   MemaAssert(memory_region_size % utils::PAGE_SIZE == 0, "Memory region size needs to be a multiple of the page size.");
   // Calculate page counts
   const auto region_page_count = memory_region_size / utils::PAGE_SIZE;
   const auto first_node_page_count = static_cast<uint32_t>((percentage_first_node / 100.f) * region_page_count);
-  spdlog::info("Expected page locations: {} on node {}, {} on node {}.", first_node_page_count, target_nodes[0],
-               region_page_count - first_node_page_count, target_nodes[1]);
+
+  auto nodes_first_partition = NumaNodeIDs(target_nodes.begin(), target_nodes.begin() + node_count_first_node);
+  std::sort(nodes_first_partition.begin(), nodes_first_partition.end());
+  const auto node_count_first_partition = nodes_first_partition.size();
+  spdlog::info("Nodes first partition: [{}].", utils::numbers_to_string(nodes_first_partition));
+
+  auto nodes_second_partition = NumaNodeIDs(target_nodes.begin() + node_count_first_node, target_nodes.end());
+  std::sort(nodes_second_partition.begin(), nodes_second_partition.end());
+  const auto node_count_second_partition = nodes_second_partition.size();
+  spdlog::info("Nodes second partition: [{}].", utils::numbers_to_string(nodes_second_partition));
+
+  spdlog::info("Expected page locations: {} on nodes [{}], {} on nodes [{}].", first_node_page_count,
+               utils::numbers_to_string(nodes_first_partition), region_page_count - first_node_page_count,
+               utils::numbers_to_string(nodes_second_partition));
+
   // Fill locations
   page_locations.resize(region_page_count);
   auto page_idx = uint32_t{0};
+  auto next_node_idx = 0u;
   for (; page_idx < first_node_page_count; page_idx++) {
-    page_locations[page_idx] = target_nodes[0];
+    page_locations[page_idx] = nodes_first_partition[next_node_idx];
+    next_node_idx = (next_node_idx + 1) % node_count_first_partition;
   }
+  next_node_idx = 0u;
   for (; page_idx < region_page_count; page_idx++) {
-    page_locations[page_idx] = target_nodes[1];
+    page_locations[page_idx] = nodes_second_partition[next_node_idx];
+    next_node_idx = (next_node_idx + 1) % node_count_second_partition;
   }
 }
 
@@ -328,62 +346,24 @@ bool verify_interleaved_page_placement(char* const start_addr, size_t memory_reg
   return incorrect_placement_count <= PAGE_ERROR_LIMIT * region_page_count;
 }
 
-bool verify_partitioned_page_placement(char* const start_addr, uint64_t memory_region_size,
-                                       const PageLocations& expected_page_locations) {
-  spdlog::debug("Check page placement errors.");
-  if (expected_page_locations.empty()) {
-    spdlog::warn("Skipped partitioned page placement verification.");
-    return true;
-  }
-
-  const auto region_page_count = memory_region_size / utils::PAGE_SIZE;
-
-  // Calculate page pointers.
-  auto pages = std::vector<void*>{};
-  pages.resize(region_page_count);
-  for (auto page_idx = uint64_t{0}; page_idx < region_page_count; ++page_idx) {
-    pages[page_idx] = reinterpret_cast<void*>(start_addr + page_idx * utils::PAGE_SIZE);
-  }
-
-  // Prepare page status array.
-  auto page_status = std::vector<int>(region_page_count, std::numeric_limits<int>::max());
-
-  const auto ret = move_pages(0, region_page_count, pages.data(), NULL, page_status.data(), MPOL_MF_MOVE);
-  const auto move_pages_errno = errno;
-
-  if (ret != 0) {
-    spdlog::critical("move_pages() failed: {}", strerror(move_pages_errno));
-    utils::crash_exit();
-  }
-
-  // Verify locations.
-  auto incorrect_placement_count = uint32_t{0};
-  for (auto page_idx = uint32_t{0}; page_idx < region_page_count; ++page_idx) {
-    if (page_status[page_idx] < 0) {
-      spdlog::critical("Expected status is error status: {}, {}", page_status[page_idx], strerror(move_pages_errno));
-      utils::crash_exit();
-    }
-    if (page_status[page_idx] != expected_page_locations[page_idx]) {
-      spdlog::debug("Page {}: status {}, expected: {}.", page_idx, page_status[page_idx],
-                    expected_page_locations[page_idx]);
-      ++incorrect_placement_count;
-    }
-  }
-
-  if (incorrect_placement_count > 0) {
-    spdlog::info("Page placement verification: {}/{} pages ({}%) are incorrectly placed.", incorrect_placement_count,
-                 region_page_count,
-                 static_cast<uint32_t>(((1.f * incorrect_placement_count) / region_page_count) * 100));
-  }
-
-  return incorrect_placement_count <= PAGE_ERROR_LIMIT * region_page_count;
-}
-
 bool verify_partitioned_page_placement(char* const start_addr, size_t memory_region_size,
-                                       const NumaNodeIDs& target_nodes, const int32_t percentage_first_node) {
-  auto page_locations = PageLocations{};
-  fill_page_locations_partitioned(page_locations, memory_region_size, target_nodes, percentage_first_node);
-  return verify_partitioned_page_placement(start_addr, memory_region_size, page_locations);
+                                       const NumaNodeIDs& target_nodes, const uint64_t percentage_first_node,
+                                       const uint64_t node_count_first_node) {
+  spdlog::info("Verify partitioned page placement.");
+  const auto region_page_count = memory_region_size / utils::PAGE_SIZE;
+  const auto first_partition_page_count = static_cast<uint32_t>((percentage_first_node / 100.f) * region_page_count);
+  const auto first_partition_nodes = NumaNodeIDs(target_nodes.begin(), target_nodes.begin() + node_count_first_node);
+  const auto first_partition_size = first_partition_page_count * utils::PAGE_SIZE;
+  auto first_partition_verified =
+      verify_interleaved_page_placement(start_addr, first_partition_size, first_partition_nodes);
+
+  const auto second_partition_page_count = region_page_count - first_partition_page_count;
+  const auto second_partition_nodes = NumaNodeIDs(target_nodes.begin() + node_count_first_node, target_nodes.end());
+  const auto second_partition_size = second_partition_page_count * utils::PAGE_SIZE;
+  auto second_partition_verified = verify_interleaved_page_placement(start_addr + first_partition_size,
+                                                                     second_partition_size, second_partition_nodes);
+
+  return first_partition_verified & second_partition_verified;
 }
 
 }  // namespace mema

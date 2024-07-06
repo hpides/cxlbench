@@ -214,19 +214,24 @@ char* Benchmark::prepare_interleaved_data(const MemoryRegionDefinition& region, 
 
 char* Benchmark::prepare_partitioned_data(const MemoryRegionDefinition& region, const BenchmarkConfig& config) {
   spdlog::info("Preparing partitioned data.");
-  MemaAssert(region.percentage_pages_first_node, "Percentage of pages on first node is not configures.");
+  MemaAssert(region.percentage_pages_first_partition, "Percentage of pages in first partition is not configured.");
+  MemaAssert(region.node_count_first_partition, "Number of nodes belonging to the first partition not set.");
   auto* data = utils::map(region.size, region.transparent_huge_pages, region.explicit_hugepages_size);
   spdlog::debug("Finished mapping memory region.");
 
   const auto region_page_count = region.size / utils::PAGE_SIZE;
-  const auto first_node_page_count =
-      static_cast<uint32_t>((*region.percentage_pages_first_node / 100.f) * region_page_count);
+  const auto first_partition_page_count =
+      static_cast<uint32_t>((*region.percentage_pages_first_partition / 100.f) * region_page_count);
 
-  const auto first_partition_length = first_node_page_count * utils::PAGE_SIZE;
-  bind_memory_interleaved(data, first_partition_length, {region.node_ids[0]});
+  const auto first_partition_length = first_partition_page_count * utils::PAGE_SIZE;
+  const auto nodes_first_partition =
+      NumaNodeIDs(region.node_ids.begin(), region.node_ids.begin() + *region.node_count_first_partition);
+  bind_memory_interleaved(data, first_partition_length, nodes_first_partition);
   const auto second_partition_start = data + first_partition_length;
-  const auto second_partition_length = (region_page_count - first_node_page_count) * utils::PAGE_SIZE;
-  bind_memory_interleaved(second_partition_start, second_partition_length, {region.node_ids[1]});
+  const auto second_partition_length = (region_page_count - first_partition_page_count) * utils::PAGE_SIZE;
+  const auto nodes_second_partition =
+      NumaNodeIDs(region.node_ids.begin() + *region.node_count_first_partition, region.node_ids.end());
+  bind_memory_interleaved(second_partition_start, second_partition_length, nodes_second_partition);
 
   utils::populate_memory(data, region.size);
   spdlog::debug("Finished populating/pre-faulting the memory region.");
@@ -244,10 +249,8 @@ char* Benchmark::prepare_partitioned_data(const MemoryRegionDefinition& region, 
     spdlog::debug("Finished generating read data.");
   }
 
-  // Place pages.
-  auto page_locations = PageLocations{};
-  fill_page_locations_partitioned(page_locations, region.size, region.node_ids, *region.percentage_pages_first_node);
-  if (!verify_partitioned_page_placement(data, region.size, page_locations)) {
+  if (!verify_partitioned_page_placement(data, region.size, region.node_ids, *region.percentage_pages_first_partition,
+                                         *region.node_count_first_partition)) {
     spdlog::critical("Page verification for partitioned memory region failed.");
     utils::crash_exit();
   }
@@ -268,10 +271,11 @@ void Benchmark::verify_page_locations(const MemoryRegions& memory_regions,
     if (definition.placement_mode() == PagePlacementMode::Interleaved) {
       verified = verify_interleaved_page_placement(region, definition.size, definition.node_ids);
     } else {
-      MemaAssert(definition.percentage_pages_first_node,
+      MemaAssert(definition.percentage_pages_first_partition,
                  "Percentage for page placement must be set for partitioned verificatiopn");
       verified = verify_partitioned_page_placement(region, definition.size, definition.node_ids,
-                                                   *definition.percentage_pages_first_node);
+                                                   *definition.percentage_pages_first_partition,
+                                                   *definition.node_count_first_partition);
     }
     if (!verified) {
       spdlog::critical("Page locations of region {} incorrect.", region_idx);

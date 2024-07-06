@@ -15,4 +15,6 @@ using BaseTest = ::testing::Test;
 void check_json_result(const nlohmann::json& result_json, uint64_t total_bytes, double expected_bandwidth,
                        uint64_t thread_count, double expected_per_thread_bandwidth, double expected_per_thread_stddev);
 
+std::vector<int> retrieve_page_status(const uint64_t page_count, char* data);
+
 }  // namespace mema

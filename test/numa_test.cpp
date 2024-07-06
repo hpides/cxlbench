@@ -77,17 +77,17 @@ TEST_F(NumaTest, MemoryAllocationOnNode) {
   }
 }
 
-TEST_F(NumaTest, FillPageLocationsPartitioned) {
+TEST_F(NumaTest, FillPageLocationsPartitioned2Nodes) {
   auto page_locations = PageLocations{};
   constexpr auto memory_region_size = size_t{10 * 1024 * 1024};
   const auto target_nodes = NumaNodeIDs{0, 1};
-  constexpr auto percentage_first_node = 25u;
+  constexpr auto percentage_first_partition = 25u;
 
-  fill_page_locations_partitioned(page_locations, memory_region_size, target_nodes, percentage_first_node);
+  fill_page_locations_partitioned(page_locations, memory_region_size, target_nodes, percentage_first_partition, 1);
 
   const auto region_page_count = memory_region_size / utils::PAGE_SIZE;
   const auto expected_first_node_page_count =
-      static_cast<uint32_t>((percentage_first_node / 100.f) * region_page_count);
+      static_cast<uint32_t>((percentage_first_partition / 100.f) * region_page_count);
   auto page_idx = uint32_t{0};
   for (; page_idx < expected_first_node_page_count; ++page_idx) {
     ASSERT_EQ(page_locations[page_idx], target_nodes[0]);
@@ -97,20 +97,50 @@ TEST_F(NumaTest, FillPageLocationsPartitioned) {
   }
 }
 
+TEST_F(NumaTest, FillPageLocationsPartitioned5Nodes) {
+  auto page_locations = PageLocations{};
+  constexpr auto memory_region_size = size_t{10 * 1024 * 1024};
+  const auto target_nodes = NumaNodeIDs{0, 1, 2, 0, 3};
+  constexpr auto percentage_first_partition = 25u;
+  constexpr auto node_count_first_partition = 2u;
+
+  fill_page_locations_partitioned(page_locations, memory_region_size, target_nodes, percentage_first_partition,
+                                  node_count_first_partition);
+
+  const auto region_page_count = memory_region_size / utils::PAGE_SIZE;
+  const auto expected_first_node_page_count =
+      static_cast<uint32_t>((percentage_first_partition / 100.f) * region_page_count);
+  auto page_idx = uint32_t{0};
+
+  auto nodes_first_partition = NumaNodeIDs(target_nodes.begin(), target_nodes.begin() + node_count_first_partition);
+  std::sort(nodes_first_partition.begin(), nodes_first_partition.end());
+  auto next_node_idx = 0u;
+  for (; page_idx < expected_first_node_page_count; ++page_idx) {
+    ASSERT_EQ(page_locations[page_idx], nodes_first_partition[next_node_idx]);
+    next_node_idx++;
+    next_node_idx = next_node_idx % node_count_first_partition;
+  }
+  auto nodes_second_partition = NumaNodeIDs(target_nodes.begin() + node_count_first_partition, target_nodes.end());
+  std::sort(nodes_second_partition.begin(), nodes_second_partition.end());
+  const auto node_count_second_partition = nodes_second_partition.size();
+  next_node_idx = 0u;
+  for (; page_idx < region_page_count; ++page_idx) {
+    ASSERT_EQ(page_locations[page_idx], nodes_second_partition[next_node_idx]);
+    next_node_idx++;
+    next_node_idx = next_node_idx % node_count_second_partition;
+  }
+}
+
 TEST_F(NumaTest, FillPageLocationsPartitionedFailure) {
   auto page_locations = PageLocations{};
   auto memory_region_size = size_t{10 * 1024 * 1024};
   auto one_target_node = NumaNodeIDs{0};
-  auto three_target_nodes = NumaNodeIDs{0, 1, 2};
-  auto percentage_first_node = 25;
+  auto percentage_first_partition = 25;
 
-  // Expect throw since exactly two nodes are required.
-  EXPECT_THROW(
-      fill_page_locations_partitioned(page_locations, memory_region_size, one_target_node, percentage_first_node),
-      MemaException);
-  EXPECT_THROW(
-      fill_page_locations_partitioned(page_locations, memory_region_size, three_target_nodes, percentage_first_node),
-      MemaException);
+  // Expect throw since at least two nodes are required.
+  EXPECT_THROW(fill_page_locations_partitioned(page_locations, memory_region_size, one_target_node,
+                                               percentage_first_partition, 1),
+               MemaException);
 }
 
 TEST_F(NumaTest, FillPageLocationsRoundRobin) {
@@ -157,25 +187,12 @@ TEST_F(NumaTest, PlacePages) {
   constexpr auto region_page_count = memory_region_size / utils::PAGE_SIZE;
   ASSERT_EQ(region_page_count, 256);
 
-  // Prepare page pointers for move_pages.
-  auto pages = std::vector<void*>{};
-  pages.resize(region_page_count);
-
-  for (auto page_idx = uint64_t{0}; page_idx < region_page_count; ++page_idx) {
-    pages[page_idx] = reinterpret_cast<void*>(data + page_idx * utils::PAGE_SIZE);
-  }
-
   // -------------------------------------------------------------------------------------------------------------------
   auto test_place_one_node = [&](auto target_node) {
     SCOPED_TRACE("Target node: " + std::to_string(target_node));
     const auto locations = PageLocations(region_page_count, target_node);
     place_pages(data, memory_region_size, locations);
-
-    // Retrieve and verify page status
-    auto page_status = std::vector<int>(region_page_count, std::numeric_limits<int>::max());
-    const auto ret = move_pages(0, region_page_count, pages.data(), NULL, page_status.data(), MPOL_MF_MOVE);
-    const auto move_pages_errno = errno;
-    ASSERT_EQ(ret, 0);
+    auto page_status = retrieve_page_status(region_page_count, data);
 
     for (auto page_idx = uint64_t{0}; page_idx < region_page_count; ++page_idx) {
       SCOPED_TRACE("Page id: " + std::to_string(page_idx));
@@ -201,12 +218,7 @@ TEST_F(NumaTest, PlacePages) {
     locations[page_idx] = valid_node_ids[1];
   }
   place_pages(data, memory_region_size, locations);
-
-  // Retrieve and verify page status
-  auto page_status = std::vector<int>(region_page_count, std::numeric_limits<int>::max());
-  const auto ret = move_pages(0, region_page_count, pages.data(), NULL, page_status.data(), MPOL_MF_MOVE);
-  const auto move_pages_errno = errno;
-  ASSERT_EQ(ret, 0);
+  auto page_status = retrieve_page_status(region_page_count, data);
 
   for (auto page_idx = uint64_t{0}; page_idx < region_page_count; ++page_idx) {
     SCOPED_TRACE("Page id: " + std::to_string(page_idx));
@@ -264,16 +276,18 @@ TEST_F(NumaTest, VerifyPagePlacement) {
   {
     const auto nodes_first_first = NumaNodeIDs{valid_node_ids[0], valid_node_ids[0]};
     const auto nodes_second_second = NumaNodeIDs{valid_node_ids[1], valid_node_ids[1]};
-    const auto percentage_first_node = uint64_t{64};
+    const auto percentage_first_partition = uint64_t{64};
     auto expected_page_locations = PageLocations{};
     fill_page_locations_partitioned(expected_page_locations, memory_region_size, nodes_first_second,
-                                    percentage_first_node);
+                                    percentage_first_partition, 1);
     place_pages(data, memory_region_size, expected_page_locations);
-    ASSERT_TRUE(verify_partitioned_page_placement(data, memory_region_size, nodes_first_second, percentage_first_node));
+    ASSERT_TRUE(
+        verify_partitioned_page_placement(data, memory_region_size, nodes_first_second, percentage_first_partition, 1));
     ASSERT_FALSE(verify_interleaved_page_placement(data, memory_region_size, nodes_first_second));
-    ASSERT_FALSE(verify_partitioned_page_placement(data, memory_region_size, nodes_first_first, percentage_first_node));
     ASSERT_FALSE(
-        verify_partitioned_page_placement(data, memory_region_size, nodes_second_second, percentage_first_node));
+        verify_partitioned_page_placement(data, memory_region_size, nodes_first_first, percentage_first_partition, 1));
+    ASSERT_FALSE(verify_partitioned_page_placement(data, memory_region_size, nodes_second_second,
+                                                   percentage_first_partition, 1));
   }
 }
 
