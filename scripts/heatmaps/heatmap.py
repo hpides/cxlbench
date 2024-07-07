@@ -125,7 +125,7 @@ class Heatmap:
         zones = self.get_maximum_value_zones(threshold_value)
         zones = self.get_largest_two_zones(zones)
         # Add the following line to remove the smaller zone when two zones are overlapping.
-        # zones = get_non_overlapping_zones(zones)
+        zones = self.get_non_overlapping_zones(zones)
 
         linestyles = ["-", "--", "-.", ":"]
         # For each contiguous region, draw a zone around it.
