@@ -44,7 +44,7 @@ echo "Copying workload "$WORKLOAD" to the build dir's workload directory."
 
 echo "CMake setup..."
 CMAKE_CMD="cmake -S "$ROOT_DIR" -B "$BUILD_DIR" -DBUILD_TEST=ON -DCMAKE_C_COMPILER=gcc-12 -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_BUILD_TYPE="$BUILD_TYPE
-BUILD_CMD="make -j mema-bench"
+BUILD_CMD="make clean && make -j mema-bench"
 echo "Using make instead"
 eval "$CMAKE_CMD"
 eval "$BUILD_CMD"
