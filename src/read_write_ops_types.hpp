@@ -21,26 +21,27 @@ static const char WRITE_DATA[] __attribute__((aligned(64))) =
     "AbcdefghijklmnopAbcdefghijklmnopAbcdefghijklmnopAbcdefghijklmnop";
 
 // We use platform-independent vector intrinsics (compiler intrinsics) to avoid writing platform-specific SIMD
-// intrinsics (only for char data type; see definition of CharVec). VECTOR_SIZE defines the vector size and, in the case
-// of type char, the number of Bytes being accessed. 64 B is the base access size in this benchmark tool. We need a
-// certain number of vectorized memory accesses to access 64 B. This number is determined by VECTOR_SIZE_FACTOR.
+// intrinsics (only for char data type; see definition of CharVec). SIMD_VECTOR_SIZE defines the vector size and, in the
+// case of type char, the number of Bytes being accessed. 64 B is the base access size in this benchmark tool. We need a
+// certain number of vectorized memory accesses to access 64 B. This number is determined by SIMD_VECTOR_SIZE_FACTOR.
 
 #if defined(__powerpc__)
 // 128 bit registers
-static constexpr size_t VECTOR_SIZE = 16;
+static constexpr size_t SIMD_VECTOR_SIZE = 16;
 #elif defined(USE_AVX_2)
 // 256 bit registers
-static constexpr size_t VECTOR_SIZE = 32;
+static constexpr size_t SIMD_VECTOR_SIZE = 32;
 #else
 // 512 bit registers
-static constexpr size_t VECTOR_SIZE = 64;
+static constexpr size_t SIMD_VECTOR_SIZE = 64;
 #endif
 
 static constexpr size_t BASE_ACCESS_SIZE = 64;
 // This factor needs to be multiplied with the a SIMD instruction's access size to achieve the base access size.
-static constexpr size_t VECTOR_SIZE_FACTOR = BASE_ACCESS_SIZE / VECTOR_SIZE;
+static constexpr size_t SIMD_VECTOR_SIZE_FACTOR = BASE_ACCESS_SIZE / SIMD_VECTOR_SIZE;
 
-using CharVec __attribute__((vector_size(VECTOR_SIZE))) = char;
+using CharVecBase __attribute__((vector_size(BASE_ACCESS_SIZE))) = char;
+using CharVecSIMD __attribute__((vector_size(SIMD_VECTOR_SIZE))) = char;
 
 using flush_fn = void(char*, const size_t);
 using barrier_fn = void();

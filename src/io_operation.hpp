@@ -220,7 +220,7 @@ class ChainedOperation {
 
  private:
   inline char* run_read(char* addr) {
-    mema::rw_ops::CharVec read_value{};
+    mema::rw_ops::CharVecBase read_value{};
     switch (access_size_) {
       case 64:
         read_value = rw_ops::read_64(addr);

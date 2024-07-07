@@ -35,52 +35,63 @@ inline void flush_clwb(char* addr, const size_t len) {
  */
 
 template <int ACCESS_COUNT_64B>
-inline CharVec read_64B_accesses(char* address) {
-  volatile CharVec* volatile_addr = reinterpret_cast<CharVec*>(address);
-  auto result = CharVec{0};
-  constexpr size_t vector_access_count = VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B;
-// The maximum access size is 64 KiB. With a 64 B base access size, we need 1024 access. With the smallest supported
-// vector size of 16, the access count gets multiplied by 4, resulting in 4096.
+inline CharVecBase read_64B_accesses(char* address) {
+  volatile CharVecSIMD* volatile_addr = reinterpret_cast<CharVecSIMD*>(address);
+  auto result = CharVecBase{0};
+  constexpr size_t vector_access_count = SIMD_VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B;
+  auto result_vec_simd = reinterpret_cast<CharVecSIMD*>(&result);
+  // The maximum access size is 64 KiB. With a 64 B base access size, we need 1024 access. With the smallest supported
+  // vector size of 16, the access count gets multiplied by 4, resulting in 4096.
 #pragma GCC unroll 4096
-  for (size_t access_idx = 0; access_idx < vector_access_count; ++access_idx) {
-    result = volatile_addr[access_idx];
+  for (auto vector_access_idx = uint64_t{0}; vector_access_idx < vector_access_count;) {
+// Perform base access with SIMD_VECTOR_SIZE_FACTOR * vector accesses.
+#pragma GCC unroll SIMD_VECTOR_SIZE_FACTOR;
+    for (auto sub_access_idx = uint64_t{0}; sub_access_idx < SIMD_VECTOR_SIZE_FACTOR; ++sub_access_idx) {
+      result_vec_simd[sub_access_idx] = volatile_addr[vector_access_idx++];
+    }
   }
   return result;
 }
 
-inline CharVec read_64(char* addr) { return read_64B_accesses<1>(addr); }
+inline CharVecBase read_64(char* addr) { return read_64B_accesses<1>(addr); }
 
-inline CharVec read_128(char* addr) { return read_64B_accesses<2>(addr); }
+inline CharVecBase read_128(char* addr) { return read_64B_accesses<2>(addr); }
 
-inline CharVec read_256(char* addr) { return read_64B_accesses<4>(addr); }
+inline CharVecBase read_256(char* addr) { return read_64B_accesses<4>(addr); }
 
-inline CharVec read_512(char* addr) { return read_64B_accesses<8>(addr); }
+inline CharVecBase read_512(char* addr) { return read_64B_accesses<8>(addr); }
 
-inline CharVec read_1k(char* addr) { return read_64B_accesses<16>(addr); }
+inline CharVecBase read_1k(char* addr) { return read_64B_accesses<16>(addr); }
 
-inline CharVec read_2k(char* addr) { return read_64B_accesses<32>(addr); }
+inline CharVecBase read_2k(char* addr) { return read_64B_accesses<32>(addr); }
 
-inline CharVec read_4k(char* addr) { return read_64B_accesses<64>(addr); }
+inline CharVecBase read_4k(char* addr) { return read_64B_accesses<64>(addr); }
 
-inline CharVec read_8k(char* addr) { return read_64B_accesses<128>(addr); }
+inline CharVecBase read_8k(char* addr) { return read_64B_accesses<128>(addr); }
 
-inline CharVec read_16k(char* addr) { return read_64B_accesses<256>(addr); }
+inline CharVecBase read_16k(char* addr) { return read_64B_accesses<256>(addr); }
 
-inline CharVec read_32k(char* addr) { return read_64B_accesses<512>(addr); }
+inline CharVecBase read_32k(char* addr) { return read_64B_accesses<512>(addr); }
 
-inline CharVec read_64k(char* addr) { return read_64B_accesses<1024>(addr); }
+inline CharVecBase read_64k(char* addr) { return read_64B_accesses<1024>(addr); }
 
-inline CharVec read(char* addr, const size_t access_size) {
-  auto result = CharVec{0};
+inline CharVecBase read(char* addr, const size_t access_size) {
+  auto result = CharVecBase{0};
   const char* access_end_addr = addr + access_size;
   for (char* mem_addr = addr; mem_addr < access_end_addr; mem_addr += (1024 * 64)) {
     // Note that code duplication might be reduced here by calling read_64B_accesses(), but that this requires
     // inspecting the assembly instructions again so that we do not introduce overhead that we can avoid.
-    volatile CharVec* volatile_addr = reinterpret_cast<CharVec*>(addr);
+    volatile CharVecSIMD* volatile_addr = reinterpret_cast<CharVecSIMD*>(addr);
     // 1x 64k access (1024x 64B access)
+    constexpr size_t vector_access_count = SIMD_VECTOR_SIZE_FACTOR * 1024;
+    auto result_vec_simd = reinterpret_cast<CharVecSIMD*>(&result);
 #pragma GCC unroll 4096
-    for (size_t access_idx = 0; access_idx < VECTOR_SIZE_FACTOR * 1024; ++access_idx) {
-      result = volatile_addr[access_idx];
+    for (auto vector_access_idx = uint64_t{0}; vector_access_idx < vector_access_count;) {
+// Perform base access with SIMD_VECTOR_SIZE_FACTOR * vector accesses.
+#pragma GCC unroll SIMD_VECTOR_SIZE_FACTOR;
+      for (auto sub_access_idx = uint64_t{0}; sub_access_idx < SIMD_VECTOR_SIZE_FACTOR; ++sub_access_idx) {
+        result_vec_simd[sub_access_idx] = volatile_addr[vector_access_idx++];
+      }
     }
   }
   return result;
@@ -88,9 +99,9 @@ inline CharVec read(char* addr, const size_t access_size) {
 
 template <int ACCESS_COUNT_64B>
 inline void read_64B_accesses(const std::vector<char*>& addresses) {
-  constexpr size_t vector_access_count = VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B;
+  constexpr size_t vector_access_count = SIMD_VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B;
   for (char* addr : addresses) {
-    volatile CharVec* volatile_addr = reinterpret_cast<CharVec*>(addr);
+    volatile CharVecSIMD* volatile_addr = reinterpret_cast<CharVecSIMD*>(addr);
 #pragma GCC unroll 4096
     for (size_t access_idx = 0; access_idx < vector_access_count; ++access_idx) {
       auto result = volatile_addr[access_idx];
@@ -155,7 +166,7 @@ template <int ACCESS_COUNT_64B>
 inline void write_64B_accesses(char* address) {
   const auto* data = reinterpret_cast<const uint8x16x4_t*>(WRITE_DATA);
   auto* base_address = reinterpret_cast<uint8_t*>(address);
-  constexpr size_t vector_access_count = VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B;
+  constexpr size_t vector_access_count = SIMD_VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B;
 #pragma GCC unroll 4096
   for (size_t access_idx = 0; access_idx < vector_access_count; ++access_idx) {
     vst1q_u8_x4(base_address + (VECTOR_SIZE * access_idx), *data);
@@ -165,9 +176,9 @@ inline void write_64B_accesses(char* address) {
 #else
 template <int ACCESS_COUNT_64B>
 inline void write_64B_accesses(char* address) {
-  const CharVec* write_data = reinterpret_cast<const CharVec*>(WRITE_DATA);
-  CharVec* target_address = reinterpret_cast<CharVec*>(address);
-  constexpr size_t vector_access_count = VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B;
+  const CharVecSIMD* write_data = reinterpret_cast<const CharVecSIMD*>(WRITE_DATA);
+  CharVecSIMD* target_address = reinterpret_cast<CharVecSIMD*>(address);
+  constexpr size_t vector_access_count = SIMD_VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B;
 #pragma GCC unroll 4096
   for (size_t access_idx = 0; access_idx < vector_access_count; access_idx++) {
     target_address[access_idx] = write_data[0];
