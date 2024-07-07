@@ -20,4 +20,4 @@
 #SBATCH --hint=nomultithread
 #SBATCH --cpu-freq=Performance
 
-enroot start --rw -r -m /hpi/fs00/home/marcel.weisgut/enroot_mount:/enroot_mount mrclw+dev+x86 bash /enroot_mount/mema-bench/scripts/run_log.sh casclake ddr_lat
+enroot start --rw -r -m /hpi/fs00/home/marcel.weisgut/enroot_mount:/enroot_mount mrclw+dev+x86 bash /enroot_mount/mema-bench/scripts/run_log.sh casclake ddr_lat_N1m1

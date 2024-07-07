@@ -1,0 +1,9 @@
+latency:
+  args:
+    number_threads: 1
+    access_size: 64
+    memory_region_size: 2G
+    min_io_chunk_size: 2G
+    numa_memory_nodes: [ 1 ]
+    numa_task_nodes: [ 1 ]
+    exec_mode: dependent_reads
