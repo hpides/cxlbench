@@ -21,6 +21,7 @@ class Heatmap:
         value_format=".2f",
     ):
         self.df = df
+        # self.df = df[df[BMKeys.THREAD_COUNT] <= 60]
         self.title = title
         self.value_label = value_label
         self.output_path = "{}/{}{}.pdf".format(output_dir, PLOT_FILE_PREFIX, filename)
@@ -125,7 +126,8 @@ class Heatmap:
         zones = self.get_maximum_value_zones(threshold_value)
         zones = self.get_largest_two_zones(zones)
         # Add the following line to remove the smaller zone when two zones are overlapping.
-        zones = self.get_non_overlapping_zones(zones)
+        if len(zones) > 1:
+            zones = self.get_non_overlapping_zones(zones)
 
         linestyles = ["-", "--", "-.", ":"]
         # For each contiguous region, draw a zone around it.
@@ -288,16 +290,16 @@ class Heatmap:
             zone2_y1 = zone2[0][1]
             zone2_y2 = zone2[1][1]
             # zone2 is on the left of zone1
-            if zone2_x2 <= zone1_x1:
+            if zone2_x2 < zone1_x1:
                 return False
             # zone2 is on the right of zone1
-            if zone2_x1 >= zone1_x2:
+            if zone2_x1 > zone1_x2:
                 return False
             # zone2 is above zone1
-            if zone2_y1 >= zone1_y2:
+            if zone2_y1 > zone1_y2:
                 return False
             # zone2 is below zone1
-            if zone2_y2 <= zone1_y1:
+            if zone2_y2 < zone1_y1:
                 return False
 
             return True
