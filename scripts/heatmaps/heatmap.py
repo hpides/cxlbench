@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt, patches
@@ -18,10 +19,11 @@ class Heatmap:
         color_theme: str = "magma",
         min_color="red",
         max_color="green",
-        value_format=".2f",
+        value_format="d",
+        # value_format=".2f",
     ):
-        self.df = df
-        # self.df = df[df[BMKeys.THREAD_COUNT] <= 60]
+        # self.df = df
+        self.df = df[df[BMKeys.THREAD_COUNT] <= 60]
         self.title = title
         self.value_label = value_label
         self.output_path = "{}/{}{}.pdf".format(output_dir, PLOT_FILE_PREFIX, filename)
@@ -45,13 +47,12 @@ class Heatmap:
         plt.close(fig)
 
     def add_heatmap(self):
-
         thread_count = len(self.df[BMKeys.THREAD_COUNT].unique())
         access_size_count = len(self.df[BMKeys.ACCESS_SIZE].unique())
         padding = 2
-        x_scale = 0.6
-        y_scale = 0.2
-        minimum = 4
+        x_scale = 0.25
+        y_scale = 0.1
+        minimum = 2
         plt.figure(
             figsize=(
                 max(thread_count * x_scale, minimum) + padding,
@@ -59,9 +60,10 @@ class Heatmap:
             )
         )
 
+        rounded_df_heatmap = self.df_heatmap.round().astype(int)
         self.heatmap = sns.heatmap(
             self.df_heatmap,
-            annot=True,
+            annot=rounded_df_heatmap,
             annot_kws={"fontsize": 7, "va": "center_baseline"},
             fmt=self.value_format,
             cmap=self.color_theme,
@@ -71,12 +73,13 @@ class Heatmap:
         self.heatmap.set_xlabel("Thread Count")
         self.heatmap.set_ylabel("Access size (Byte)")
         self.heatmap.invert_yaxis()
-        self.heatmap.set_title(self.title)
+        # self.heatmap.set_title(self.title)
         self.heatmap.set_yticklabels(self.heatmap.get_yticklabels(), rotation=0)
 
         # Add additional padding to the heatmap so that zone marks are not cut off.
         self.heatmap.set_xlim([-0.1, self.df_heatmap.shape[1] + 0.1])
         self.heatmap.set_ylim([-0.1, self.df_heatmap.shape[0] + 0.1])
+        plt.tight_layout()
 
     def mark_maximum(self):
         # Get the row label and column label of the maximum value.
