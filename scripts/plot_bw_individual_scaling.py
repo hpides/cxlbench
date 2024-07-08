@@ -19,7 +19,16 @@ from enums.file_names import PLOT_FILE_PREFIX, FILE_TAG_SUBSTRING
 MAX_THREAD_COUNT = 40
 
 # benchmark configuration names
-BM_SUPPORTED_CONFIGS = ["scale_reads_rnd", "scale_writes_rnd", "scale_writes_seq", "scale_reads_seq"]
+BM_SUPPORTED_CONFIGS = [
+    "scale_reads_rnd",
+    "scale_writes_rnd",
+    "scale_writes_seq",
+    "scale_reads_seq",
+    "random_reads",
+    "random_writes",
+    "sequential_reads",
+    "sequential_writes",
+]
 
 PRINT_DEBUG = False
 
@@ -129,6 +138,9 @@ if __name__ == "__main__":
         BMKeys.THREADS,
         BMKeys.NUMA_TASK_NODES,
         BMKeys.NUMA_MEMORY_NODES,
+        BMKeys.NUMA_MEMORY_NODES_M0,
+        BMKeys.NUMA_MEMORY_NODES_M1,
+        BMKeys.EXPLODED_THREAD_CORES,
     ]
 
     drop_columns = [
@@ -146,8 +158,7 @@ if __name__ == "__main__":
     df = df[(df[BMKeys.BM_NAME].isin(BM_SUPPORTED_CONFIGS))]
     df = ju.flatten_nested_json_df(df, deny_list_explosion)
     # Transform GiB/s to GB/s
-    df[BMKeys.BANDWIDTH_GB] = df[BMKeys.BANDWIDTH_GiB] * (1024 ** 3 / 1e9)
-    BMKeys.TAG = "Workload"
+    df[BMKeys.BANDWIDTH_GB] = df[BMKeys.BANDWIDTH_GiB] * (1024**3 / 1e9)
     df[BMKeys.TAG] = df[BMKeys.EXEC_MODE] + " " + df[BMKeys.OPERATION]
     df.to_csv("{}/{}.csv".format(output_dir, "results"))
     df = df.drop(columns=drop_columns, errors="ignore")
@@ -157,6 +168,12 @@ if __name__ == "__main__":
 
     # ------------------------------------------------------------------------------------------------------------------
     # create plots
+    access_sizes = df[BMKeys.ACCESS_SIZE].unique()
+    shown_sizes = [64, 4096]
+    size_titles = {64: "64 Bytes", 4096: "4 KiB"}
+    # shown_sizes = [64, 4096, 16384]
+    # size_titles = {64: "64 Bytes", 4096: "4 KiB", 16384: "16 KiB"}
+
     TAG_RND_READS = "Rnd Reads"
     TAG_SEQ_READS = "Seq Reads"
     TAG_RND_WRITES = "Rnd Writes"
@@ -175,8 +192,7 @@ if __name__ == "__main__":
     thread_counts.sort()
 
     sns.set_context("paper")
-    sns.set(style="ticks")
-    plt.figure(figsize=(5.5, 2.3))
+    sns.set_theme(style="ticks")
     hpi_palette = [(0.9609, 0.6563, 0), (0.8633, 0.3789, 0.0313), (0.6914, 0.0234, 0.2265)]
     palette = {
         TAG_RND_READS: hpi_palette[0],
@@ -186,33 +202,52 @@ if __name__ == "__main__":
     }
 
     markers = {TAG_RND_READS: "X", TAG_SEQ_READS: ".", TAG_RND_WRITES: "X", TAG_SEQ_WRITES: "."}
-
     dashes = {TAG_RND_READS: [1, 0], TAG_SEQ_READS: [1, 0], TAG_RND_WRITES: [1, 0], TAG_SEQ_WRITES: [1, 0]}
-
     hue_order = [TAG_SEQ_READS, TAG_RND_READS, TAG_SEQ_WRITES, TAG_RND_WRITES]
 
-    lineplot = sns.lineplot(
-        data=df,
-        x=BMKeys.THREAD_COUNT,
-        y=BMKeys.BANDWIDTH_GB,
-        palette=palette,
-        style=BMKeys.TAG,
-        dashes=dashes,
-        markers=markers,
-        hue_order=hue_order,
-        hue=BMKeys.TAG,
-    )
-    lineplot.set_xticks(thread_counts)
-    lineplot.set_xticklabels(thread_counts)
-    lineplot.yaxis.grid()
-    if y_tick_distance is not None:
-        lineplot.yaxis.set_major_locator(ticker.MultipleLocator(y_tick_distance))
+    # Create the subplots without shared y-axis, with reduced height
+    fig, axes = plt.subplots(1, len(shown_sizes), figsize=(6, 1.85))
 
-    lineplot.legend(title=None)
-    sns.move_legend(
-        lineplot,
-        "lower center",
-        bbox_to_anchor=(0.5, 0.92),
+    for ax, access_size in zip(axes, shown_sizes):
+        df_plot = df[df[BMKeys.ACCESS_SIZE] == access_size]
+        print(access_size)
+        print(df[BMKeys.TAG].unique())
+        lineplot = sns.lineplot(
+            data=df_plot,
+            x=BMKeys.THREAD_COUNT,
+            y=BMKeys.BANDWIDTH_GB,
+            palette=palette,
+            style=BMKeys.TAG,
+            dashes=dashes,
+            markers=markers,
+            hue_order=hue_order,
+            hue=BMKeys.TAG,
+            ax=ax,  # Pass the current axis to seaborn
+        )
+        ax.set_xticks(thread_counts)
+        ax.set_xticklabels(thread_counts)
+        ax.yaxis.grid()
+        ax.set_title(f"Access Size: {size_titles[access_size]}")  # Use abbreviated title
+
+        if y_tick_distance is not None:
+            ax.yaxis.set_major_locator(ticker.MultipleLocator(y_tick_distance))
+
+        # Clear individual axis labels
+        ax.set_ylabel("")
+        ax.set_xlabel("")
+        ax.get_legend().remove()  # Remove legend from all subplots
+
+    # Add shared x-axis and y-axis labels
+    fig.text(0.5, 0.04, "Thread Count", ha="center", va="center")
+    fig.text(0.0, 0.55, "Throughput in GB/s", ha="center", va="center", rotation="vertical")
+
+    # Move the legend outside of the subplots
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.1),
         ncol=4,
         frameon=False,
         columnspacing=0.5,
@@ -220,12 +255,7 @@ if __name__ == "__main__":
         handletextpad=0.5,
     )
 
-    fig = lineplot.get_figure()
-
-    plt.xlabel("Thread Count")
-    plt.ylabel("Throughput in GB/s")
-
-    plt.tight_layout()
+    plt.tight_layout(w_pad=2)  # Adjust padding between subplots
 
     fig.savefig(
         "{}/{}{}.pdf".format(output_dir, PLOT_FILE_PREFIX, "scale_throughput"), bbox_inches="tight", pad_inches=0

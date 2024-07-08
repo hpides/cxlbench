@@ -126,7 +126,7 @@ def main():
     ]
     df = df.drop(columns=drop_columns, errors="ignore")
 
-    df["M_ops"] = df[mplt.KEY_OPS_PER_SECOND] / 10 ** 6
+    df["M_ops"] = df[mplt.KEY_OPS_PER_SECOND] / 10**6
     df["inner_node_size"] = df[mplt.KEY_CUSTOM_OPS].apply(lambda x: x.split(",", 1)[0].rsplit("_", 1)[1])
     df["leaf_node_size"] = df["inner_node_size"].astype(int) / 2
     df["inner_leaf_sizes"] = df["inner_node_size"] + "/" + df["leaf_node_size"].astype(int).astype(str)

@@ -13,6 +13,7 @@ class BMKeys(StrEnum):
     BM_TYPE = "bm_type"
     CHUNK_SIZE = "min_io_chunk_size"
     CUSTOM_OPS = "custom_operations"
+    EXEC_MODE = "exec_mode"
     EXPLODED_NUMA_MEMORY_NODES = "benchmarks.config.numa_memory_nodes"  # legacy
     EXPLODED_NUMA_MEMORY_NODES_M0 = "benchmarks.config.m0_numa_nodes"
     EXPLODED_NUMA_MEMORY_NODES_M1 = "benchmarks.config.m1_numa_nodes"
