@@ -169,7 +169,7 @@ inline void write_64B_accesses(char* address) {
   constexpr size_t vector_access_count = SIMD_VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B;
 #pragma GCC unroll 4096
   for (size_t access_idx = 0; access_idx < vector_access_count; ++access_idx) {
-    vst1q_u8_x4(base_address + (VECTOR_SIZE * access_idx), *data);
+    vst1q_u8_x4(base_address + (SIMD_VECTOR_SIZE * access_idx), *data);
   }
 }
 
