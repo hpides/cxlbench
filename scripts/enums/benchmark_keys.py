@@ -34,6 +34,7 @@ class BMKeys(StrEnum):
     RANDOM_DISTRIBUTION = "random_distribution"
     RUN_TIME = "run_time"
     TAG = "tag"
+    THREAD_CORES = "thread_cores"
     THREAD_COUNT = "number_threads"
     THREADS = "threads"
     THREADS_LEVELED = "benchmarks.results.threads"

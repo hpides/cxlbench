@@ -21,16 +21,14 @@ MAX_THREAD_COUNT = 40
 
 # benchmark configuration names
 BM_CONFIG_PARALLEL_LOCAL_DEVICE = "seq_reads_local_device"
+BM_CONFIG_PARALLEL_LOCAL_REMOTE_SOCKET = "seq_reads_local_remote_socket"
 BM_CONFIG_PARALLEL_LOCAL_ONLY = "seq_reads_local1_local2"
 
-BM_SUPPORTED_CONFIGS = [BM_CONFIG_PARALLEL_LOCAL_DEVICE, BM_CONFIG_PARALLEL_LOCAL_ONLY]
-
-PRINT_DEBUG = False
-
-
-def print_debug(message):
-    if PRINT_DEBUG:
-        print(message)
+BM_SUPPORTED_CONFIGS = [
+    BM_CONFIG_PARALLEL_LOCAL_DEVICE,
+    BM_CONFIG_PARALLEL_LOCAL_REMOTE_SOCKET,
+    BM_CONFIG_PARALLEL_LOCAL_ONLY,
+]
 
 
 def dir_path(path):
@@ -38,7 +36,7 @@ def dir_path(path):
     Checks if the given directory path is valid.
 
     :param path: directory path to the results folder
-    :return: bool representing if path was valid
+    :return: bool representing if path was valid.
     """
     if os.path.isdir(path):
         return path
@@ -133,10 +131,15 @@ if __name__ == "__main__":
         BMKeys.THREADS,
         BMKeys.NUMA_TASK_NODES,
         BMKeys.NUMA_MEMORY_NODES,
+        BMKeys.NUMA_MEMORY_NODES_M0,
+        BMKeys.NUMA_MEMORY_NODES_M1,
+        BMKeys.EXPLODED_THREAD_CORES,
+        BMKeys.THREAD_CORES,
         "matrix_args.local",
         "matrix_args.device",
         "matrix_args.local1",
         "matrix_args.local2",
+        "matrix_args.remote_socket",
         "sub_bm_names",
     ]
 
@@ -168,11 +171,19 @@ if __name__ == "__main__":
     df_local = df_local.drop(columns=drop_columns, errors="ignore")
     df_local.to_csv("{}/{}-reduced.csv".format(output_dir, BM_CONFIG_PARALLEL_LOCAL_ONLY))
 
+    # parallel local remote socket
+    df_local_remote_socket = df[(df[BMKeys.BM_NAME] == BM_CONFIG_PARALLEL_LOCAL_REMOTE_SOCKET)]
+    df_local_remote_socket = ju.flatten_nested_json_df(df_local_remote_socket, deny_list_explosion)
+    df_local_remote_socket.to_csv("{}/{}.csv".format(output_dir, BM_CONFIG_PARALLEL_LOCAL_REMOTE_SOCKET))
+    df_local_remote_socket = df_local_remote_socket.drop(columns=drop_columns, errors="ignore")
+    df_local_remote_socket.to_csv("{}/{}-reduced.csv".format(output_dir, BM_CONFIG_PARALLEL_LOCAL_REMOTE_SOCKET))
+
     # ------------------------------------------------------------------------------------------------------------------
     # create plots
 
     TAG_LOCAL_DEV = "local_device"
     TAG_LOCAL_LOCAL = "local_local"
+    TAG_LOCAL_REMOTE_SOCKET = "local_remote_socket"
 
     # We plot combined_bandwidth first and add workload_1_bandwidth afterwards. workload_1_bandwidth is drawn over
     # combined_bandwidth. combined_bandwidth is visualized as the delta of combined_bandwidth - workload_1_bandwidth.
@@ -194,124 +205,131 @@ if __name__ == "__main__":
     df_local["workload_1_thread_count"] = df_local["local1.number_threads"]
     df_local["workload_2_thread_count"] = df_local["local2.number_threads"]
 
+    # Workloads: local remote socket
+    df_local_remote_socket["tag"] = TAG_LOCAL_REMOTE_SOCKET
+    df_local_remote_socket["workload_1_bandwidth"] = df_local_remote_socket["local.results.bandwidth"]
+    df_local_remote_socket["workload_2_bandwidth"] = df_local_remote_socket["remote_socket.results.bandwidth"]
+    df_local_remote_socket["workload_1_thread_count"] = df_local_remote_socket["local.number_threads"]
+    df_local_remote_socket["workload_2_thread_count"] = df_local_remote_socket["remote_socket.number_threads"]
+
     # Calculate combined bandwidth
-    df = pd.concat([df_local_dev, df_local])
+    df = pd.concat([df_local_dev, df_local, df_local_remote_socket])
     df["combined_bandwidth"] = df["workload_1_bandwidth"] + df["workload_2_bandwidth"]
-    assert len(df["workload_1_thread_count"].unique()) == 1
+    df.to_csv("{}/{}.csv".format(output_dir, "manual_check"))
+
+    w1_thread_counts = df["workload_1_thread_count"].unique()
 
     # Transform GiB/s to GB/s
     df["combined_bandwidth_gb"] = df["combined_bandwidth"] * (1024**3 / 1e9)
     df["workload_1_bandwidth_gb"] = df["workload_1_bandwidth"] * (1024**3 / 1e9)
     df["workload_2_bandwidth_gb"] = df["workload_2_bandwidth"] * (1024**3 / 1e9)
 
-    sns.set(style="ticks")
-    # hpi_palette = [(0.9609, 0.6563, 0), (0.8633, 0.3789, 0.0313), (0.6914, 0.0234, 0.2265)]
+    sns.set_theme(style="ticks")
     SEPARATOR = ": "
 
-    LABEL_LOC_DEV_W1 = "A{}Local (W1)".format(SEPARATOR)
-    LABEL_LOC_DEV_W2 = "A{}Device (W2)".format(SEPARATOR)
-    LABEL_LOC_LOC_W1 = "B{}Local (W1)".format(SEPARATOR)
-    LABEL_LOC_LOC_W2 = "B{}Local (W2)".format(SEPARATOR)
+    LABEL_LOC_DEV_W1 = "C{}Local (W1)".format(SEPARATOR)
+    LABEL_LOC_DEV_W2 = "C{}Device (W2)".format(SEPARATOR)
+    LABEL_LOC_LOC_W1 = "A{}Local (W1)".format(SEPARATOR)
+    LABEL_LOC_LOC_W2 = "A{}Local (W2)".format(SEPARATOR)
+    LABEL_LOC_REMOTE_SOCKET_W1 = "B{}Local (W1)".format(SEPARATOR)
+    LABEL_LOC_REMOTE_SOCKET_W2 = "B{}Remote Socket (W2)".format(SEPARATOR)
 
-    # Plot combined bandwidth
-    df["combined_bandwidth_label"] = df["tag"]
-    combined_bandwidth_tag_replacements = {
-        TAG_LOCAL_DEV: LABEL_LOC_DEV_W2,
-        TAG_LOCAL_LOCAL: LABEL_LOC_LOC_W2,
-    }
-    df["combined_bandwidth_label"].replace(combined_bandwidth_tag_replacements, inplace=True)
+    # Prepare subplots
+    hatches = ["/", "\\", "+"]
+    fig, axes = plt.subplots(1, len(w1_thread_counts), figsize=(2 * len(w1_thread_counts), 1.7), sharey=True)
 
-    plt.figure(figsize=(5.5, 2.8))
+    for ax, thread_count in zip(axes, w1_thread_counts):
+        df_plot = df[df["workload_1_thread_count"] == thread_count]
 
-    barplot = sns.barplot(
-        x="workload_2_thread_count",
-        y="combined_bandwidth",
-        data=df,
-        # palette=hpi_palette,
-        palette="colorblind",
-        hue="combined_bandwidth_label",
-    )
+        # Plot combined bandwidth
+        df_plot["combined_bandwidth_label"] = df_plot["tag"]
+        combined_bandwidth_tag_replacements = {
+            TAG_LOCAL_DEV: LABEL_LOC_DEV_W2,
+            TAG_LOCAL_LOCAL: LABEL_LOC_LOC_W2,
+            TAG_LOCAL_REMOTE_SOCKET: LABEL_LOC_REMOTE_SOCKET_W2,
+        }
+        df_plot["combined_bandwidth_label"].replace(combined_bandwidth_tag_replacements, inplace=True)
 
-    # Plot workload 1 bandwidth
-    df["workload_1_bandwidth_label"] = df["tag"]
-    workload_1_bandwidth_tag_replacements = {
-        TAG_LOCAL_DEV: LABEL_LOC_DEV_W1,
-        TAG_LOCAL_LOCAL: LABEL_LOC_LOC_W1,
-    }
-    df["workload_1_bandwidth_label"].replace(workload_1_bandwidth_tag_replacements, inplace=True)
+        hue_order = [LABEL_LOC_LOC_W2, LABEL_LOC_REMOTE_SOCKET_W2, LABEL_LOC_DEV_W2]
 
-    barplot = sns.barplot(
-        # we plot workload_1_bandwidth over combined_bandwidth. However, we still use workload 2's thread count since
-        # w1's thread count is assumed to be fixed.
-        x="workload_2_thread_count",
-        y="workload_1_bandwidth",
-        data=df,
-        #   color=hpi_palette[2],
-        palette="dark",
-        hue="workload_1_bandwidth_label",
-    )
+        sns.barplot(
+            x="workload_2_thread_count",
+            y="combined_bandwidth",
+            data=df_plot,
+            palette="colorblind",
+            hue="combined_bandwidth_label",
+            hue_order=hue_order,
+            ax=ax,
+        )
 
-    barplot.yaxis.grid()
-    if y_tick_distance is not None:
-        barplot.yaxis.set_major_locator(ticker.MultipleLocator(y_tick_distance))
+        # Plot workload 1 bandwidth
+        df_plot["workload_1_bandwidth_label"] = df_plot["tag"]
+        workload_1_bandwidth_tag_replacements = {
+            TAG_LOCAL_DEV: LABEL_LOC_DEV_W1,
+            TAG_LOCAL_LOCAL: LABEL_LOC_LOC_W1,
+            TAG_LOCAL_REMOTE_SOCKET: LABEL_LOC_REMOTE_SOCKET_W1,
+        }
+        df_plot["workload_1_bandwidth_label"].replace(workload_1_bandwidth_tag_replacements, inplace=True)
 
-    fig = barplot.get_figure()
+        hue_order_w1 = [LABEL_LOC_LOC_W1, LABEL_LOC_REMOTE_SOCKET_W1, LABEL_LOC_DEV_W1]
 
-    plt.xlabel("Thread Count (W2)")
-    plt.ylabel("Throughput [GB/s]")
+        sns.barplot(
+            # we plot workload_1_bandwidth over combined_bandwidth. However, we still use workload 2's thread count since
+            # w1's thread count is assumed to be fixed.
+            x="workload_2_thread_count",
+            y="workload_1_bandwidth",
+            data=df_plot,
+            palette="dark",
+            hue="workload_1_bandwidth_label",
+            hue_order=hue_order_w1,
+            ax=ax,
+        )
 
-    legend = plt.legend()
-
-    # Two legends
-    # legend_handles = [[None, None], [None, None]]
-    # legend_indexes = {
-    #     LABEL_LOC_DEV_W1: 0,
-    #     LABEL_LOC_DEV_W2: 0,
-    #     LABEL_LOC_LOC_W1: 1,
-    #     LABEL_LOC_LOC_W2: 1,
-    # }
-    # handle_indexes = {
-    #     LABEL_LOC_DEV_W1: 0,
-    #     LABEL_LOC_DEV_W2: 1,
-    #     LABEL_LOC_LOC_W1: 0,
-    #     LABEL_LOC_LOC_W2: 1,
-    # }
-
-    # one legend
-    handles = [None, None, None, None]
-    handle_indexes = {
-        LABEL_LOC_DEV_W1: 0,
-        LABEL_LOC_DEV_W2: 1,
-        LABEL_LOC_LOC_W1: 2,
-        LABEL_LOC_LOC_W2: 3,
-    }
-
-    for handle, label in zip(legend.legend_handles, legend.get_texts()):
-        if label.get_text() in handle_indexes:
-            handles[handle_indexes[label.get_text()]] = mpatches.Patch(
-                color=handle.get_facecolor(), label=label.get_text()
+        ax.yaxis.grid()
+        if y_tick_distance is not None:
+            ax.yaxis.set_major_locator(ticker.MultipleLocator(y_tick_distance))
+            # Add y-axis label at every 2nd tick
+            label_distance = 2 * y_tick_distance
+            ax.yaxis.set_major_formatter(
+                ticker.FuncFormatter(lambda x, pos: f"{int(x)}" if x % label_distance == 0 else "")
             )
-            continue
 
-        if not label.get_text().startswith("None"):
-            handles.append(mpatches.Patch(color=handle.get_facecolor(), label=label.get_text()))
+        ax.set_title(f"#Threads W1: {thread_count}")
+        if ax != axes[0]:
+            ax.set_ylabel("")
+        ax.set_xlabel("")
+        ax.set_ylabel("")
 
-    legend = plt.legend(
-        # legend above plot
-        # loc="upper center",
-        # bbox_to_anchor=(0.5, 1.35),
-        # ncol=2,
-        # legend right outside plot
-        # legend on the right
-        loc="upper left",
-        bbox_to_anchor=(0.98, 1),
-        ncol=1,
-        handles=handles,
-        handlelength=0.8,
-        columnspacing=1,
-        handletextpad=0.3,
+        # Remove legend for each subplot
+        ax.get_legend().remove()
+
+    handles, labels = ax.get_legend_handles_labels()
+
+    # Define the order of the handles based on the new desired order
+    ordered_labels = [
+        LABEL_LOC_LOC_W1,
+        LABEL_LOC_LOC_W2,
+        LABEL_LOC_REMOTE_SOCKET_W1,
+        LABEL_LOC_REMOTE_SOCKET_W2,
+        LABEL_LOC_DEV_W1,
+        LABEL_LOC_DEV_W2,
+    ]
+
+    ordered_handles = [handles[labels.index(label)] for label in ordered_labels]
+
+    fig.legend(
+        ordered_handles,
+        ordered_labels,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.1),
+        ncol=6,
         frameon=False,
+        handlelength=0.8,  # reduce handle size
+        handletextpad=0.3,  # reduce space between handle and label
     )
+
+    fig.text(0.55, 0.03, "Thread Count (W2)", ha="center")
+    fig.text(0.0, 0.5, "Throughput [GB/s]", va="center", rotation="vertical")
 
     plt.tight_layout()
 
