@@ -31,6 +31,10 @@ class BMKeys(StrEnum):
     OPERATION = "operation"
     OPERATION_COUNT = "number_operations"
     PARTITION_COUNT = "number_partitions"
+    PERCENTAGE_FIRST_NODE_M0 = "m0_percentage_pages_first_node"  # legacy
+    PERCENTAGE_FIRST_NODE_M1 = "m1_percentage_pages_first_node"  # legacy
+    PERCENTAGE_FIRST_PARTITION_M0 = "m0_percentage_pages_first_partition"
+    PERCENTAGE_FIRST_PARTITION_M1 = "m1_percentage_pages_first_partition"
     RANDOM_DISTRIBUTION = "random_distribution"
     RUN_TIME = "run_time"
     TAG = "tag"

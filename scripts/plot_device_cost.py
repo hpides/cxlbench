@@ -17,16 +17,10 @@ from enums.file_names import FILE_TAG_SUBSTRING, PLOT_FILE_PREFIX
 
 
 MAX_THREAD_COUNT = 120
+PERCENTAGE_SECOND_PARTITION = "percentage_pages_second_partition"
 
 # benchmark configuration names
 BM_SUPPORTED_CONFIGS = ["split_memory_random_writes", "split_memory_random_reads"]
-
-PRINT_DEBUG = False
-
-
-def print_debug(message):
-    if PRINT_DEBUG:
-        print(message)
 
 
 def dir_path(path):
@@ -129,6 +123,9 @@ if __name__ == "__main__":
         BMKeys.THREADS,
         BMKeys.NUMA_TASK_NODES,
         BMKeys.NUMA_MEMORY_NODES,
+        BMKeys.NUMA_MEMORY_NODES_M0,
+        BMKeys.NUMA_MEMORY_NODES_M1,
+        BMKeys.EXPLODED_THREAD_CORES,
     ]
 
     drop_columns = [
@@ -145,12 +142,17 @@ if __name__ == "__main__":
 
     df = df[(df[BMKeys.BM_NAME].isin(BM_SUPPORTED_CONFIGS))]
     df = ju.flatten_nested_json_df(df, deny_list_explosion)
+
     # Transform GiB/s to GB/s
     df[BMKeys.BANDWIDTH_GB] = df[BMKeys.BANDWIDTH_GiB] * (1024**3 / 1e9)
-    BMKeys.TAG = "Workload"
     df[BMKeys.TAG] = df[BMKeys.EXEC_MODE] + " " + df[BMKeys.OPERATION]
-    BMKeys.PERCENTAGE_SECOND_NODE = "percentage_pages_second_node"
-    df[BMKeys.PERCENTAGE_SECOND_NODE] = 100 - df[BMKeys.PERCENTAGE_FIRST_NODE]
+
+    if BMKeys.PERCENTAGE_FIRST_PARTITION_M0 in df.columns:
+        percentage_key = BMKeys.PERCENTAGE_FIRST_PARTITION_M0
+    else:
+        percentage_key = BMKeys.PERCENTAGE_FIRST_NODE_M0
+
+    df[PERCENTAGE_SECOND_PARTITION] = 100 - df[percentage_key]
     df.to_csv("{}/{}.csv".format(output_dir, "results"))
     df = df.drop(columns=drop_columns, errors="ignore")
     df.to_csv("{}/{}.csv".format(output_dir, "results-reduced"))
@@ -177,8 +179,8 @@ if __name__ == "__main__":
     page_share_on_device = [x * 10 for x in range(0, 11)]
 
     sns.set_context("paper")
-    sns.set(style="ticks")
-    plt.figure(figsize=(5.5, 2.3))
+    sns.set_theme(style="ticks")
+
     hpi_palette = [(0.9609, 0.6563, 0), (0.8633, 0.3789, 0.0313), (0.6914, 0.0234, 0.2265)]
     palette = {
         TAG_RND_READS: hpi_palette[0],
@@ -193,40 +195,67 @@ if __name__ == "__main__":
 
     hue_order = [TAG_RND_READS, TAG_RND_WRITES]
 
-    lineplot = sns.lineplot(
-        data=df,
-        x=BMKeys.PERCENTAGE_SECOND_NODE,
-        y=BMKeys.BANDWIDTH_GB,
-        palette=palette,
-        style=BMKeys.TAG,
-        dashes=dashes,
-        markers=markers,
-        hue_order=hue_order,
-        hue=BMKeys.TAG,
-    )
-    lineplot.set_xticks(page_share_on_device)
-    lineplot.set_xticklabels(page_share_on_device)
-    lineplot.yaxis.grid()
-    if y_tick_distance is not None:
-        lineplot.yaxis.set_major_locator(ticker.MultipleLocator(y_tick_distance))
+    thread_counts = df[BMKeys.THREAD_COUNT].unique()
+    access_sizes = df[BMKeys.ACCESS_SIZE].unique()
 
-    lineplot.legend(title=None)
-    sns.move_legend(
-        lineplot,
-        "lower center",
-        bbox_to_anchor=(0.5, 0.92),
-        ncol=4,
+    # Create a grid of subplots
+    fig, axes = plt.subplots(
+        len(access_sizes),
+        len(thread_counts),
+        figsize=(3 * len(thread_counts), 2 * len(access_sizes)),
+        sharex=True,
+        sharey=True,
+    )
+
+    for i, access_size in enumerate(access_sizes):
+        for j, thread_count in enumerate(thread_counts):
+            ax = axes[i, j]
+            sub_df = df[(df[BMKeys.THREAD_COUNT] == thread_count) & (df[BMKeys.ACCESS_SIZE] == access_size)]
+
+            lineplot = sns.lineplot(
+                data=sub_df,
+                x=PERCENTAGE_SECOND_PARTITION,
+                y=BMKeys.BANDWIDTH_GB,
+                palette=palette,
+                style=BMKeys.TAG,
+                dashes=dashes,
+                markers=markers,
+                hue_order=hue_order,
+                hue=BMKeys.TAG,
+                ax=ax,
+            )
+            lineplot.set_xticks(page_share_on_device)
+            lineplot.set_xticklabels(page_share_on_device)
+            lineplot.yaxis.grid()
+            if y_tick_distance is not None:
+                lineplot.yaxis.set_major_locator(ticker.MultipleLocator(y_tick_distance))
+
+            lineplot.legend().remove()
+
+            ax.set_title(f"Threads: {thread_count}, Access Size: {access_size}")
+
+    # Set common labels
+    fig.text(0.5, 0.04, "Pages on device memory in %", ha="center")
+    fig.text(0.045, 0.5, "Throughput in GB/s", va="center", rotation="vertical")
+
+    # Remove individual subplot labels
+    for ax in axes.flat:
+        ax.set_xlabel("")
+        ax.set_ylabel("")
+
+    # Center the shared legend at the top middle with two columns
+    handles, labels = ax.get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.0),
+        ncol=2,
         frameon=False,
         columnspacing=0.5,
         handlelength=1.2,
         handletextpad=0.5,
     )
 
-    fig = lineplot.get_figure()
-
-    plt.xlabel("Pages on device memory in %")
-    plt.ylabel("Throughput in GB/s")
-
-    plt.tight_layout()
-
+    plt.tight_layout(rect=[0.05, 0.05, 1, 0.95])
     fig.savefig("{}/{}{}.pdf".format(output_dir, PLOT_FILE_PREFIX, "device_penalty"), bbox_inches="tight", pad_inches=0)
