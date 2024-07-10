@@ -19,6 +19,7 @@ class Heatmap:
         min_color="red",
         max_color="green",
         value_format="d",
+        compact=False,
         # value_format=".2f",
     ):
         # self.df = df
@@ -30,6 +31,7 @@ class Heatmap:
         self.min_color = min_color
         self.max_color = max_color
         self.value_format = value_format
+        self.compact = compact
 
         self.df_heatmap = pd.pivot_table(
             self.df, index=BMKeys.ACCESS_SIZE, columns=BMKeys.THREAD_COUNT, values=value_key
@@ -39,8 +41,9 @@ class Heatmap:
     def create(self):
         self.add_heatmap()
         self.mark_max_value_zones()
-        # self.mark_minimum()
-        # self.mark_maximum()
+        if not self.compact:
+            self.mark_minimum()
+            self.mark_maximum()
         fig = self.heatmap.get_figure()
         fig.savefig(self.output_path)
         plt.close(fig)
@@ -67,12 +70,23 @@ class Heatmap:
             fmt=self.value_format,
             cmap=self.color_theme,
             cbar_kws={"label": self.value_label, "pad": 0.02},
+            cbar=not self.compact,
         )
 
         self.heatmap.set_xlabel("Thread Count")
         self.heatmap.set_ylabel("Access size (Byte)")
         self.heatmap.invert_yaxis()
-        # self.heatmap.set_title(self.title)
+        self.heatmap.set_title(self.title)
+
+        if self.compact:
+            self.heatmap.set_title("")
+            compact_heatmap_groups = ["random_reads", "sequential_reads", "random_writes"]
+            assert len(self.df[BMKeys.BM_GROUP].unique()) == 1
+            bm_group = self.df[BMKeys.BM_GROUP].unique()[0]
+            if bm_group in compact_heatmap_groups:
+                self.heatmap.set_ylabel("")
+                self.heatmap.set_yticks([])
+
         self.heatmap.set_yticklabels(self.heatmap.get_yticklabels(), rotation=0)
 
         # Add additional padding to the heatmap so that zone marks are not cut off.
@@ -92,7 +106,7 @@ class Heatmap:
             (max_value_col_idx, max_value_row_idx),
             1,
             1,
-            linewidth=5,
+            linewidth=3,
             edgecolor=self.max_color,
             facecolor="none",
         )
@@ -110,7 +124,7 @@ class Heatmap:
             (min_value_col_idx, min_value_row_idx),
             1,
             1,
-            linewidth=5,
+            linewidth=3,
             edgecolor=self.min_color,
             facecolor="none",
         )
