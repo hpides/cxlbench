@@ -22,6 +22,7 @@ class Heatmap:
         compact=True,
         access_size_limit=8192,
         thread_limit=60,
+        mark_linewidth=3,
         # value_format=".2f",
     ):
         self.df = df
@@ -37,6 +38,9 @@ class Heatmap:
         self.max_color = max_color
         self.value_format = value_format
         self.compact = compact
+        self.mark_linewidth = mark_linewidth
+        if self.compact:
+            self.mark_linewidth = 1
 
         self.df_heatmap = pd.pivot_table(
             self.df, index=BMKeys.ACCESS_SIZE, columns=BMKeys.THREAD_COUNT, values=value_key
@@ -54,7 +58,7 @@ class Heatmap:
         plt.close(fig)
 
     def add_heatmap(self):
-        thread_count = len(self.df[BMKeys.THREAD_COUNT].unique())
+        thread_configs_count = len(self.df[BMKeys.THREAD_COUNT].unique())
         access_size_count = len(self.df[BMKeys.ACCESS_SIZE].unique())
 
         x_padding = 2
@@ -68,9 +72,9 @@ class Heatmap:
         bm_group = self.df[BMKeys.BM_GROUP].unique()[0]
 
         if self.compact:
-            x_scale = 0.25
+            x_scale = 0.16
             y_scale = 0.25
-            x_padding = 2.5 * x_scale
+            x_padding = 3 * x_scale
             y_padding = 0
             minimum = 0
             if bm_group in compact_heatmap_groups:
@@ -78,7 +82,7 @@ class Heatmap:
 
         plt.figure(
             figsize=(
-                max(thread_count * x_scale, minimum) + x_padding,
+                max(thread_configs_count * x_scale, minimum) + x_padding,
                 max(access_size_count * y_scale, minimum / 2) + y_padding,
             )
         )
@@ -90,6 +94,8 @@ class Heatmap:
             annot_kws={"fontsize": 7, "va": "center_baseline"},
             fmt=self.value_format,
             cmap=self.color_theme,
+            linewidths=0.5,  # Add thin grid lines between cells
+            linecolor="white",  # Color of the grid lines
             cbar_kws={"label": self.value_label, "pad": 0.02},
             cbar=not self.compact,
         )
@@ -100,6 +106,10 @@ class Heatmap:
         self.heatmap.set_title(self.title)
 
         if self.compact:
+            # Ensure that get_xticklabels always has labels for all x values
+            x_ticks = range(len(self.df_heatmap.columns))
+            self.heatmap.set_xticks(x_ticks)
+            self.heatmap.set_xticklabels(self.df_heatmap.columns, rotation=90)
             self.heatmap.set_title("")
             if bm_group in compact_heatmap_groups:
                 self.heatmap.set_ylabel("")
@@ -124,7 +134,7 @@ class Heatmap:
             (max_value_col_idx, max_value_row_idx),
             1,
             1,
-            linewidth=2,
+            linewidth=self.mark_linewidth,
             edgecolor=self.max_color,
             facecolor="none",
         )
@@ -142,7 +152,7 @@ class Heatmap:
             (min_value_col_idx, min_value_row_idx),
             1,
             1,
-            linewidth=2,
+            linewidth=self.mark_linewidth,
             edgecolor=self.min_color,
             facecolor="none",
         )
@@ -175,7 +185,7 @@ class Heatmap:
                 x2 - x1 + 1,
                 y2 - y1 + 1,
                 linestyle=linestyles[0],
-                linewidth=2,
+                linewidth=self.mark_linewidth,
                 edgecolor="grey",
                 facecolor="none",
             )
