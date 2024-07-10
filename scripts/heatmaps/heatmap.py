@@ -51,19 +51,30 @@ class Heatmap:
     def add_heatmap(self):
         thread_count = len(self.df[BMKeys.THREAD_COUNT].unique())
         access_size_count = len(self.df[BMKeys.ACCESS_SIZE].unique())
-        padding = 2
+
+        x_padding = 2
+        y_padding = 2
         x_scale = 0.25
         y_scale = 0.1
         minimum = 2
+
+        compact_heatmap_groups = ["random_reads", "sequential_writes", "random_writes"]
+        assert len(self.df[BMKeys.BM_GROUP].unique()) == 1
+        bm_group = self.df[BMKeys.BM_GROUP].unique()[0]
+
         if self.compact:
-            padding = 1.4
-            x_scale = 0.14
-            y_scale = 0.07
-            minimum = 0.1
+            x_scale = 0.25
+            y_scale = 0.25
+            x_padding = 2.5 * x_scale
+            y_padding = 0
+            minimum = 0
+            if bm_group in compact_heatmap_groups:
+                x_padding = 0
+
         plt.figure(
             figsize=(
-                max(thread_count * x_scale, minimum) + padding,
-                max(access_size_count * y_scale, minimum / 2) + padding,
+                max(thread_count * x_scale, minimum) + x_padding,
+                max(access_size_count * y_scale, minimum / 2) + y_padding,
             )
         )
 
@@ -85,9 +96,6 @@ class Heatmap:
 
         if self.compact:
             self.heatmap.set_title("")
-            compact_heatmap_groups = ["random_reads", "sequential_writes", "random_writes"]
-            assert len(self.df[BMKeys.BM_GROUP].unique()) == 1
-            bm_group = self.df[BMKeys.BM_GROUP].unique()[0]
             if bm_group in compact_heatmap_groups:
                 self.heatmap.set_ylabel("")
                 self.heatmap.set_yticks([])
