@@ -19,11 +19,16 @@ class Heatmap:
         min_color="red",
         max_color="green",
         value_format="d",
-        compact=False,
+        compact=True,
+        access_size_limit=8192,
+        thread_limit=60,
         # value_format=".2f",
     ):
-        # self.df = df
-        self.df = df[df[BMKeys.THREAD_COUNT] <= 60]
+        self.df = df
+        if thread_limit is not None:
+            self.df = self.df[self.df[BMKeys.THREAD_COUNT] <= thread_limit]
+        if access_size_limit is not None:
+            self.df = self.df[self.df[BMKeys.ACCESS_SIZE] <= access_size_limit]
         self.title = title
         self.value_label = value_label
         self.output_path = "{}/{}{}.pdf".format(output_dir, PLOT_FILE_PREFIX, filename)
