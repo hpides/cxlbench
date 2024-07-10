@@ -217,6 +217,10 @@ if __name__ == "__main__":
     df.to_csv("{}/{}.csv".format(output_dir, "manual_check"))
 
     w1_thread_counts = df["workload_1_thread_count"].unique()
+    selected = [1, 4, 8, 16]
+    all_present = all(count in w1_thread_counts for count in selected)
+    assert all_present
+    w1_thread_counts = selected
 
     # Transform GiB/s to GB/s
     df["combined_bandwidth_gb"] = df["combined_bandwidth"] * (1024**3 / 1e9)
@@ -234,8 +238,23 @@ if __name__ == "__main__":
     LABEL_LOC_REMOTE_SOCKET_W2 = "B{}Remote Socket (W2)".format(SEPARATOR)
 
     # Prepare subplots
-    hatches = ["/", "\\", "+"]
-    fig, axes = plt.subplots(1, len(w1_thread_counts), figsize=(2 * len(w1_thread_counts), 1.7), sharey=True)
+    hatches_w1 = ["/", "\\", "+"]
+    hatches_w2 = ["//", "\\\\", "xx"]  # "*", "-", "|"
+    colors_w1 = ["#CC79A7", "#F0E442", "#56B4E9"]
+    colors_w2 = ["#0072B2", "#D55E00", "#009E73"]
+    styles_w1 = [(color, hatch) for color, hatch in zip(colors_w1, hatches_w1)]
+    styles_w2 = [(color, hatch) for color, hatch in zip(colors_w2, hatches_w2)]
+    fig, axes = plt.subplots(2, 2, figsize=(8, 6), sharey=False)
+    axes = axes.flatten()
+
+    fontsize = 20
+    plt.rcParams.update({"font.size": fontsize})
+    plt.rcParams["axes.titlesize"] = fontsize
+    plt.rcParams["axes.labelsize"] = fontsize
+    plt.rcParams["xtick.labelsize"] = fontsize
+    plt.rcParams["ytick.labelsize"] = fontsize
+    plt.rcParams["legend.fontsize"] = fontsize
+    plt.rcParams["legend.title_fontsize"] = fontsize
 
     for ax, thread_count in zip(axes, w1_thread_counts):
         df_plot = df[df["workload_1_thread_count"] == thread_count]
@@ -250,16 +269,22 @@ if __name__ == "__main__":
         df_plot["combined_bandwidth_label"].replace(combined_bandwidth_tag_replacements, inplace=True)
 
         hue_order = [LABEL_LOC_LOC_W2, LABEL_LOC_REMOTE_SOCKET_W2, LABEL_LOC_DEV_W2]
+        hue_count = len(hue_order)
 
         sns.barplot(
             x="workload_2_thread_count",
             y="combined_bandwidth",
             data=df_plot,
-            palette="colorblind",
+            palette=colors_w2,
             hue="combined_bandwidth_label",
             hue_order=hue_order,
             ax=ax,
         )
+
+        # Apply hatches and colors
+        # for i, bar in enumerate(ax.patches):
+        #     bar.set_hatch(styles_w2[i % len(styles_w2)][1])
+        #     bar.set_facecolor(styles_w2[i % len(styles_w2)][0])
 
         # Plot workload 1 bandwidth
         df_plot["workload_1_bandwidth_label"] = df_plot["tag"]
@@ -273,12 +298,10 @@ if __name__ == "__main__":
         hue_order_w1 = [LABEL_LOC_LOC_W1, LABEL_LOC_REMOTE_SOCKET_W1, LABEL_LOC_DEV_W1]
 
         sns.barplot(
-            # we plot workload_1_bandwidth over combined_bandwidth. However, we still use workload 2's thread count since
-            # w1's thread count is assumed to be fixed.
             x="workload_2_thread_count",
             y="workload_1_bandwidth",
             data=df_plot,
-            palette="dark",
+            palette=colors_w1,
             hue="workload_1_bandwidth_label",
             hue_order=hue_order_w1,
             ax=ax,
@@ -294,6 +317,7 @@ if __name__ == "__main__":
             )
 
         ax.set_title(f"#Threads W1: {thread_count}")
+        ax.tick_params(axis="both", which="major", labelsize=fontsize)
         if ax != axes[0]:
             ax.set_ylabel("")
         ax.set_xlabel("")
@@ -320,14 +344,15 @@ if __name__ == "__main__":
         ordered_handles,
         ordered_labels,
         loc="upper center",
-        bbox_to_anchor=(0.5, 1.1),
-        ncol=6,
+        bbox_to_anchor=(0.5, 1.12),
+        ncol=3,  # Limit legend to 3 columns
         frameon=False,
         handlelength=0.8,  # reduce handle size
         handletextpad=0.3,  # reduce space between handle and label
+        columnspacing=0.5,  # Reduce space between legend items
     )
 
-    fig.text(0.55, 0.03, "Thread Count (W2)", ha="center")
+    fig.text(0.55, -0.0, "Thread Count (W2)", ha="center")
     fig.text(0.0, 0.5, "Throughput [GB/s]", va="center", rotation="vertical")
 
     plt.tight_layout()
