@@ -30,6 +30,7 @@ class BMKeys(StrEnum):
     NUMA_MEMORY_NODES_M1 = "m1_numa_nodes"
     OPERATION = "operation"
     OPERATION_COUNT = "number_operations"
+    OPS_PER_SECOND = "ops_per_second"
     PARTITION_COUNT = "number_partitions"
     PERCENTAGE_FIRST_NODE_M0 = "m0_percentage_pages_first_node"  # legacy
     PERCENTAGE_FIRST_NODE_M1 = "m1_percentage_pages_first_node"  # legacy

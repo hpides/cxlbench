@@ -12,18 +12,46 @@ import seaborn as sns
 
 import sys
 
+from enums.benchmark_keys import BMKeys
 from enums.file_names import PLOT_FILE_PREFIX, FILE_TAG_SUBSTRING
 
+BM_SUPPORTED_CONFIGS = ["tree_index_lookup", "tree_index_update"]
+KEY_LOCATION_M0 = "m0_memory_location"
+KEY_LOCATION_M1 = "m1_memory_location"
+SAPRAP_MEM_REPLACEMENT = {"0, 1, 2, 3": "CPU0", "4, 5, 6, 7": "CPU1", "8": "CXL"}
+EMR_MEM_REPLACEMENT = {"0": "CPU0", "1": "CPU1", "2": "CXL"}
 
-# benchmark configuration names
-BM_REPLACE_OLD_NAMES = {
-    "hybrid_tree_index_lookup_local_baseline": "hybrid_tree_index_lookup",
-    "hybrid_tree_index_update_local_baseline": "hybrid_tree_index_update",
-}
 
-BM_SUPPORTED_CONFIGS = ["hybrid_tree_index_lookup", "hybrid_tree_index_update"]
+def is_saprap(df):
+    saprap_mem_options = list(SAPRAP_MEM_REPLACEMENT.keys())
+    for key in [BMKeys.NUMA_MEMORY_NODES_M0, BMKeys.NUMA_MEMORY_NODES_M0]:
+        if any(config not in saprap_mem_options for config in df[key].unique()):
+            return False
+    return True
 
-PRINT_DEBUG = False
+
+def is_emr(df):
+    emr_mem_options = list(EMR_MEM_REPLACEMENT.keys())
+    for key in [BMKeys.NUMA_MEMORY_NODES_M0, BMKeys.NUMA_MEMORY_NODES_M0]:
+        if any(config not in emr_mem_options for config in df[key].unique()):
+            return False
+    return True
+
+
+def add_memory_location(df):
+    replacements = None
+    if is_saprap(df):
+        replacements = SAPRAP_MEM_REPLACEMENT
+    elif is_emr(df):
+        replacements = EMR_MEM_REPLACEMENT
+
+    if replacements:
+        df[KEY_LOCATION_M0] = df[BMKeys.NUMA_MEMORY_NODES_M0].replace(replacements)
+        df[KEY_LOCATION_M1] = df[BMKeys.NUMA_MEMORY_NODES_M1].replace(replacements)
+    else:
+        df[KEY_LOCATION_M0] = df[BMKeys.NUMA_MEMORY_NODES_M0]
+        df[KEY_LOCATION_M1] = df[BMKeys.NUMA_MEMORY_NODES_M1]
+    return df
 
 
 def main():
@@ -92,30 +120,31 @@ def main():
             tag = tag_part.split(".")[0]
 
         df = pd.read_json(path)
-        df[mplt.KEY_TAG] = tag
         dfs.append(df)
 
     df = pd.concat(dfs)
-    df[mplt.KEY_BM_NAME].replace(BM_REPLACE_OLD_NAMES, inplace=True)
-    bm_names = df[mplt.KEY_BM_NAME].unique()
+    bm_names = df[BMKeys.BM_NAME].unique()
     print("Existing BM groups: {}".format(bm_names))
 
     # -------------------------------------------------------------------------------------------------------------------
 
-    df = df[(df[mplt.KEY_BM_NAME].isin(BM_SUPPORTED_CONFIGS))]
+    df = df[(df[BMKeys.BM_NAME].isin(BM_SUPPORTED_CONFIGS))]
     df = ju.flatten_nested_json_df(
         df,
         [
-            mplt.KEY_MATRIX_ARGS,
-            mplt.KEY_THREADS,
-            mplt.KEY_NUMA_TASK_NODES,
-            mplt.KEY_M0_NUMA_MEMORY_NODES,
-            mplt.KEY_M1_NUMA_MEMORY_NODES,
+            BMKeys.MATRIX_ARGS,
+            BMKeys.THREADS,
+            BMKeys.NUMA_TASK_NODES,
+            BMKeys.NUMA_MEMORY_NODES_M0,
+            BMKeys.NUMA_MEMORY_NODES_M1,
+            BMKeys.EXPLODED_THREAD_CORES,
         ],
     )
+    df[BMKeys.NUMA_MEMORY_NODES_M0] = df[BMKeys.NUMA_MEMORY_NODES_M0].apply(mplt.values_as_string)
+    df[BMKeys.NUMA_MEMORY_NODES_M1] = df[BMKeys.NUMA_MEMORY_NODES_M1].apply(mplt.values_as_string)
     df.to_csv("{}/data.csv".format(output_dir))
-    df[mplt.KEY_M0_NUMA_MEMORY_NODES] = df[mplt.KEY_M0_NUMA_MEMORY_NODES].apply(mplt.get_single_list_value)
-    df[mplt.KEY_M1_NUMA_MEMORY_NODES] = df[mplt.KEY_M1_NUMA_MEMORY_NODES].apply(mplt.get_single_list_value)
+    df = add_memory_location(df)
+
     drop_columns = [
         "index",
         "bm_type",
@@ -126,78 +155,90 @@ def main():
     ]
     df = df.drop(columns=drop_columns, errors="ignore")
 
-    df["M_ops"] = df[mplt.KEY_OPS_PER_SECOND] / 10**6
-    df["inner_node_size"] = df[mplt.KEY_CUSTOM_OPS].apply(lambda x: x.split(",", 1)[0].rsplit("_", 1)[1])
+    df["M_ops"] = df[BMKeys.OPS_PER_SECOND] / 10**6
+    df["inner_node_size"] = df[BMKeys.CUSTOM_OPS].apply(lambda x: x.split(",", 1)[0].rsplit("_", 1)[1])
     df["leaf_node_size"] = df["inner_node_size"].astype(int) / 2
     df["inner_leaf_sizes"] = df["inner_node_size"] + "/" + df["leaf_node_size"].astype(int).astype(str)
-    bm_name_replacement = {"hybrid_tree_index_lookup": "Lookup", "hybrid_tree_index_update": "Update"}
-    df["bm_name_short"] = df[mplt.KEY_BM_NAME].replace(bm_name_replacement)
+    bm_name_replacement = {"tree_index_lookup": "Lookup", "tree_index_update": "Update"}
+    df["bm_name_short"] = df[BMKeys.BM_NAME].replace(bm_name_replacement)
     df["workload"] = df["bm_name_short"] + "\n" + df["inner_leaf_sizes"]
 
     df.to_csv("{}/data-reduced.csv".format(output_dir))
 
-    thread_counts = df[mplt.KEY_THREAD_COUNT].unique()
-    for thread_count in thread_counts:
-        create_plot(df, thread_count, y_tick_distance, output_dir)
+    # Define the configuration column
+    df["config"] = "Inner: " + df[KEY_LOCATION_M0].astype(str) + ", Leaf: " + df[KEY_LOCATION_M1].astype(str)
 
+    # Get unique workloads
+    unique_workloads = df["workload"].unique()
 
-def create_plot(df, thread_count, y_tick_distance, output_dir):
-    df = df[df[mplt.KEY_THREAD_COUNT] == thread_count]
-    # create plots
+    # Define the number of rows and columns for the subplots
+    num_cols = len(unique_workloads)
 
-    # LABEL_LOC = "Local"
-    # LABEL_CXL = "CXL"
-    # node_names = {0: LABEL_LOC, 1: LABEL_CXL}
-    df["config"] = df[mplt.KEY_M0_NUMA_MEMORY_NODES].astype(str) + df[mplt.KEY_M1_NUMA_MEMORY_NODES].astype(str)
-    config_names = {"00": "Local", "01": "Hybrid", "11": "CXL"}
-    df["config"].replace(config_names, inplace=True)
+    fig, axes = plt.subplots(1, num_cols, figsize=(2.6 * num_cols, 2.8), sharey=True)
 
-    sns.set(style="ticks")
-    plt.figure(figsize=(5.5, 2.3))
+    # Iterate over each workload
+    for j, workload in enumerate(unique_workloads):
+        ax = axes[j] if num_cols > 1 else axes
 
-    # hue_order = [LABEL_LOC, LABEL_CXL]
-    ax = sns.barplot(
-        data=df,
-        x="workload",
-        y="M_ops",
-        palette="colorblind",
-        hue="config",
-        # hue_order=hue_order
-    )
-    plt.xticks(rotation=0)
-    # plot.set_xticks(thread_counts)
-    # plot.set_xticklabels(thread_counts)
-    ax.yaxis.grid()
-    if y_tick_distance is not None:
-        ax.yaxis.set_major_locator(ticker.MultipleLocator(y_tick_distance))
+        # Filter the DataFrame for the specific workload
+        subset_df = df[df["workload"] == workload]
 
-    ax.legend(title=None)
+        # Create a lineplot for the specific workload with markers
+        sns.lineplot(
+            data=subset_df,
+            x=BMKeys.THREAD_COUNT,
+            y="M_ops",
+            hue="config",
+            style="config",
+            markers=True,
+            dashes=False,
+            ax=ax,
+            palette="colorblind",
+        )
 
-    sns.move_legend(
-        ax,
-        "lower center",
-        bbox_to_anchor=(0.5, 0.92),
-        ncol=4,
+        ax.set_title(workload.split("\n")[0])
+        ax.yaxis.grid()
+        ax.set_xlabel("")
+        ax.set_ylabel("")
+        ax.get_legend().remove()
+
+        if y_tick_distance is not None:
+            ax.yaxis.set_major_locator(ticker.MultipleLocator(y_tick_distance))
+            # Add y-axis label at every 4th tick
+            label_distance = 2 * y_tick_distance
+            ax.yaxis.set_major_formatter(
+                ticker.FuncFormatter(lambda x, pos: f"{int(x)}" if x % label_distance == 0 else "")
+            )
+
+        # Set x-ticks for each thread count
+        ax.set_xticks(subset_df[BMKeys.THREAD_COUNT].unique())
+
+    # Set shared labels
+    fig.supxlabel("Thread Count", x=0.5, y=0.095)
+    fig.supylabel("Million Ops/s", x=0.05, y=0.5)
+
+    # Create a shared legend
+    handles, labels = ax.get_legend_handles_labels()
+    fig.legend(
+        handles=handles,
+        labels=labels,
+        title="Node Location",
+        # title="Node Location: Inner, Leaf",
+        loc="center left",
+        bbox_to_anchor=(0.83, 0.5),
         frameon=False,
-        columnspacing=0.5,
-        handlelength=1.2,
-        handletextpad=0.5,
+        ncol=1,  # Split legend into two columns
+        handlelength=1,  # Reduce handle length
+        handletextpad=0.5,  # Reduce space between handle and text
+        columnspacing=0.5,  # Reduce space between columns
     )
 
-    # TODO(MW) add error bars, based on
-    # https://stackoverflow.com/questions/62820959/use-precalculated-error-bars-with-seaborn-and-barplot
+    # Adjust layout
+    plt.tight_layout(rect=[0, 0, 0.85, 0.95])
 
-    fig = ax.get_figure()
-
-    plt.xlabel("Workload with Inner/Leaf Node Size (Byte)")
-    plt.ylabel("Million Ops/s")
-    # plt.title(BM_NAME_TITLE[bench_name], y=1, x=0.1)
-    # plt.xticks(rotation=45)
-
-    plt.tight_layout()
-
+    # Save the figure
     fig.savefig(
-        "{}/{}{}-T{}.pdf".format(output_dir, PLOT_FILE_PREFIX, "fptree", thread_count),
+        "{}/{}{}-lineplots.pdf".format(output_dir, PLOT_FILE_PREFIX, "fptree"),
         bbox_inches="tight",
         pad_inches=0,
     )
