@@ -169,17 +169,16 @@ def parse_matrix_jsons(results, supported_bm_groups: list[BMGroups]):
     print("Supported BM groups: {}".format([x.value for x in supported_bm_groups]))
 
     df = df[(df[BMKeys.BM_GROUP].isin(supported_bm_groups)) & (df[BMKeys.BM_TYPE] == "single")]
-    df = flatten_nested_json_df(
-        df,
-        [
-            BMKeys.MATRIX_ARGS,
-            BMKeys.THREADS_LEVELED,
-            BMKeys.EXPLODED_NUMA_MEMORY_NODES_M0,
-            BMKeys.EXPLODED_NUMA_MEMORY_NODES_M1,
-            BMKeys.EXPLODED_NUMA_TASK_NODES,
-            BMKeys.EXPLODED_THREAD_CORES,
-        ],
-    )
+    deny_explosion_list = [
+        BMKeys.MATRIX_ARGS,
+        BMKeys.THREADS_LEVELED,
+        BMKeys.EXPLODED_NUMA_MEMORY_NODES_M0,
+        BMKeys.EXPLODED_NUMA_MEMORY_NODES_M1,
+        BMKeys.EXPLODED_NUMA_TASK_NODES,
+        BMKeys.EXPLODED_NUMA_MEMORY_NODES,
+        BMKeys.EXPLODED_THREAD_CORES,
+    ]
+    df = flatten_nested_json_df(df, deny_explosion_list)
 
     # If only latency benchnarks have been performed, the dataframe does not have a KEY_ACCESS_SIZE column so it
     # must be added.
@@ -202,7 +201,14 @@ def parse_matrix_jsons(results, supported_bm_groups: list[BMGroups]):
 
 
 def stringify_nodes(df):
-    df[BMKeys.NUMA_MEMORY_NODES_M0] = df[BMKeys.NUMA_MEMORY_NODES_M0].transform(lambda x: ",".join(str(i) for i in x))
-    df[BMKeys.NUMA_MEMORY_NODES_M1] = df[BMKeys.NUMA_MEMORY_NODES_M1].transform(lambda x: ",".join(str(i) for i in x))
+    if BMKeys.NUMA_MEMORY_NODES in df.columns:
+        df[BMKeys.NUMA_MEMORY_NODES] = df[BMKeys.NUMA_MEMORY_NODES].transform(lambda x: ",".join(str(i) for i in x))
+    else:
+        df[BMKeys.NUMA_MEMORY_NODES_M0] = df[BMKeys.NUMA_MEMORY_NODES_M0].transform(
+            lambda x: ",".join(str(i) for i in x)
+        )
+        df[BMKeys.NUMA_MEMORY_NODES_M1] = df[BMKeys.NUMA_MEMORY_NODES_M1].transform(
+            lambda x: ",".join(str(i) for i in x)
+        )
     df[BMKeys.NUMA_TASK_NODES] = df[BMKeys.NUMA_TASK_NODES].transform(lambda x: ",".join(str(i) for i in x))
     return df

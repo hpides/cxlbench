@@ -77,7 +77,6 @@ if __name__ == "__main__":
     print("Output directory:", output_dir_string)
     output_dir = os.path.abspath(output_dir_string)
     results = args.results
-    do_barplots = args.bars
     if args.memory_nodes is not None:
         memory_nodes = args.memory_nodes
     else:

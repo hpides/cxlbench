@@ -61,7 +61,6 @@ if __name__ == "__main__":
     output_dir = os.path.abspath(output_dir_string)
     results = args.results
     no_plots = args.noplots
-    do_barplots = args.bars
     latency_heatmap = args.latency_heatmap
     if args.memory_nodes is not None:
         memory_nodes = args.memory_nodes
@@ -71,5 +70,5 @@ if __name__ == "__main__":
     os.makedirs(output_dir, exist_ok=True)
 
     # create plots
-    plotter = PlotGenerator(results, output_dir, no_plots, do_barplots, latency_heatmap, memory_nodes)
+    plotter = PlotGenerator(results, output_dir, no_plots, latency_heatmap, memory_nodes)
     plotter.process_matrix_jsons()

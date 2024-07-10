@@ -65,11 +65,10 @@ class PlotGenerator:
     This class calls the methods of the plotter classes, according go the given JSON.
     """
 
-    def __init__(self, results, output_dir, no_plots, do_barplots, latency_heatmap, memory_nodes):
+    def __init__(self, results, output_dir, no_plots, latency_heatmap, memory_nodes):
         self.results = results
         self.output_dir = output_dir
         self.no_plots = no_plots
-        self.do_barplots = do_barplots
         self.latency_heatmap = latency_heatmap
         self.memory_nodes = memory_nodes
 
@@ -168,115 +167,13 @@ class PlotGenerator:
         filename = filename_template.replace("_<custom>", "")
         df.to_csv("{}/{}{}.csv".format(self.output_dir, DATA_FILE_PREFIX, filename))
         if BMKeys.BANDWIDTH_GB in df.columns:
-            if self.do_barplots:
-                # Plot 1 (x: thread count, y: throughput, for each access size)
-                access_sizes = df[BMKeys.ACCESS_SIZE].unique()
-                access_sizes_count = len(access_sizes)
+            # Plot heatmap (x: thread count, y: access size)
+            key_memory_nodes = BMKeys.NUMA_MEMORY_NODES_M0
+            if BMKeys.NUMA_MEMORY_NODES in df.columns:
+                # legacy measurements
+                key_memory_nodes = BMKeys.NUMA_MEMORY_NODES
 
-                row_count = math.ceil(access_sizes_count / 3)
-                col_count = min(3, access_sizes_count)
-
-                fig, axes = plt.subplots(row_count, col_count)
-                if access_sizes_count <= 3:
-                    axes = np.reshape(axes, (1, access_sizes_count))
-                else:
-                    if access_sizes_count % 3 == 1:
-                        axes[-1, -1].axis("off")
-                        axes[-1, -2].axis("off")
-                    if access_sizes_count % 3 == 2:
-                        axes[-1, -1].axis("off")
-
-                for index in range(access_sizes_count):
-                    access_size = access_sizes[index]
-                    plot_df = df[df[BMKeys.ACCESS_SIZE] == access_size]
-                    assert_config_columns_one_value(plot_df, [BMKeys.THREAD_COUNT])
-                    print("Creating barplot (# threads) for BM group {}, {}B".format(bm_group, access_size))
-                    plot_title = plot_title_template.replace("<custom>", "{}B".format(access_size))
-
-                    self.create_barplot(
-                        plot_df,
-                        BMKeys.THREAD_COUNT,
-                        BMKeys.BANDWIDTH_GB,
-                        "Number of Threads",
-                        "Throughput in GB/s",
-                        BMKeys.NUMA_MEMORY_NODES,
-                        plot_title,
-                        legend_title,
-                        self.memory_nodes,
-                        axes,
-                        index,
-                    )
-
-                fig.set_size_inches(
-                    min(3, len(access_sizes))
-                    * (
-                        len(df[df[BMKeys.ACCESS_SIZE] == access_sizes[0]][BMKeys.THREAD_COUNT].unique())
-                        + len(df[df[BMKeys.ACCESS_SIZE] == access_sizes[0]][BMKeys.NUMA_MEMORY_NODES].unique())
-                    )
-                    * 0.8,
-                    math.ceil(len(access_sizes) / 3) * 5,
-                )
-                fig.tight_layout()
-
-                filename = "{}".format(filename_template.replace("<custom>", "access_size"))
-                fig.savefig("{}/{}{}.pdf".format(self.output_dir, PLOT_FILE_PREFIX, filename))
-                plt.close("all")
-
-                # Plot 2 (x: access size, y: throughput)
-                thread_counts = df[BMKeys.THREAD_COUNT].unique()
-                thread_counts_count = len(thread_counts)
-
-                row_count = math.ceil(thread_counts_count / 3)
-                col_count = min(3, thread_counts_count)
-
-                fig, axes = plt.subplots(row_count, col_count)
-                if thread_counts_count <= 3:
-                    axes = np.reshape(axes, (1, thread_counts_count))
-                else:
-                    if thread_counts_count % 3 == 1:
-                        axes[-1, -1].axis("off")
-                        axes[-1, -2].axis("off")
-                    if thread_counts_count % 3 == 2:
-                        axes[-1, -1].axis("off")
-
-                for index in range(thread_counts_count):
-                    thread_count = thread_counts[index]
-                    plot_df = df[df[BMKeys.THREAD_COUNT] == thread_count]
-                    assert_config_columns_one_value(plot_df, [BMKeys.ACCESS_SIZE])
-                    print("Creating barplot (access sizes) for BM group {}, {} threads".format(bm_group, thread_count))
-                    filename = filename_template.replace("<custom>", "{}_threads".format(thread_count))
-                    plot_title = plot_title_template.replace("<custom>", "{} Threads".format(thread_count))
-
-                    self.create_barplot(
-                        plot_df,
-                        BMKeys.ACCESS_SIZE,
-                        BMKeys.BANDWIDTH_GB,
-                        "Access Size in Byte",
-                        "Throughput in GB/s",
-                        BMKeys.NUMA_MEMORY_NODES_M0,
-                        plot_title,
-                        legend_title,
-                        self.memory_nodes,
-                        axes,
-                        index,
-                    )
-
-                filename = filename_template.replace("<custom>", "threads")
-                fig.set_size_inches(
-                    min(3, len(thread_counts))
-                    * (
-                        len(df[df[BMKeys.THREAD_COUNT] == thread_counts[0]][BMKeys.ACCESS_SIZE].unique())
-                        + len(df[df[BMKeys.THREAD_COUNT] == thread_counts[0]][BMKeys.NUMA_MEMORY_NODES_M0].unique())
-                    )
-                    * 0.8,
-                    math.ceil(len(thread_counts) / 3) * 5,
-                )
-                fig.tight_layout()
-                fig.savefig("{}/{}{}.pdf".format(self.output_dir, PLOT_FILE_PREFIX, filename))
-                plt.close("all")
-
-            # Plot 3: heatmap (x: thread count, y: access size)
-            numa_memory_nodes = df[BMKeys.NUMA_MEMORY_NODES_M0].unique()
+            numa_memory_nodes = df[key_memory_nodes].unique()
             for memory_node in numa_memory_nodes:
                 flush_type = get_single_distinct_value(BMKeys.FLUSH_INSTRUCTION, df)
                 print(
@@ -284,7 +181,7 @@ class PlotGenerator:
                         bm_group, flush_type, memory_node, numa_task_node
                     )
                 )
-                df_sub = df[df[BMKeys.NUMA_MEMORY_NODES_M0] == memory_node]
+                df_sub = df[df[key_memory_nodes] == memory_node]
                 plot_title = plot_title_template.replace(
                     "<custom>", "task node: {} mem node: {}".format(numa_task_node, memory_node)
                 )

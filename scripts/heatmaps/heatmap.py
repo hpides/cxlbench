@@ -39,8 +39,8 @@ class Heatmap:
     def create(self):
         self.add_heatmap()
         self.mark_max_value_zones()
-        self.mark_minimum()
-        self.mark_maximum()
+        # self.mark_minimum()
+        # self.mark_maximum()
         fig = self.heatmap.get_figure()
         fig.savefig(self.output_path)
         plt.close(fig)
