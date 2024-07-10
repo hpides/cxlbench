@@ -80,7 +80,7 @@ class Heatmap:
 
         if self.compact:
             self.heatmap.set_title("")
-            compact_heatmap_groups = ["random_reads", "sequential_reads", "random_writes"]
+            compact_heatmap_groups = ["random_reads", "sequential_writes", "random_writes"]
             assert len(self.df[BMKeys.BM_GROUP].unique()) == 1
             bm_group = self.df[BMKeys.BM_GROUP].unique()[0]
             if bm_group in compact_heatmap_groups:
