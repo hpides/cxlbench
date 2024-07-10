@@ -107,7 +107,7 @@ class Heatmap:
 
         if self.compact:
             # Ensure that get_xticklabels always has labels for all x values
-            x_ticks = range(len(self.df_heatmap.columns))
+            x_ticks = [x + 0.5 for x in range(len(self.df_heatmap.columns))]
             self.heatmap.set_xticks(x_ticks)
             self.heatmap.set_xticklabels(self.df_heatmap.columns, rotation=90)
             self.heatmap.set_title("")
