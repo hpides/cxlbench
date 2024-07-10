@@ -5,7 +5,6 @@
 import argparse
 import glob
 import json_util as ju
-import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import os

@@ -56,11 +56,11 @@ def flatten_nested_json_df(df, deny_explosion_list):
     print_debug(f"deny explosion for: {deny_explosion_list}")
 
     # search for columns to explode/flatten
-    s = (df.applymap(type) == list).all()
+    s = (df.map(type) == list).all()  # noqa: E721
     print_debug(s)
     list_columns = s[s].index.tolist()
 
-    s = (df.applymap(type) == dict).all()
+    s = (df.map(type) == dict).all()  # noqa: E721
     dict_columns = s[s].index.tolist()
 
     print_debug(f"lists: {list_columns}, dicts: {dict_columns}")
@@ -96,9 +96,9 @@ def flatten_nested_json_df(df, deny_explosion_list):
             new_columns.append(col)
 
         # check if there are still dict o list fields to flatten
-        s = (df[new_columns].applymap(type) == list).all()
+        s = (df[new_columns].map(type) == list).all()  # noqa: E721
         list_columns = s[s].index.tolist()
-        s = (df[new_columns].applymap(type) == dict).all()
+        s = (df[new_columns].map(type) == dict).all()  # noqa: E721
         dict_columns = s[s].index.tolist()
 
         print_debug(f"lists: {list_columns}, dicts: {dict_columns}")

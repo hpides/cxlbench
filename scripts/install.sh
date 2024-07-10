@@ -14,7 +14,12 @@ sudo apt install -y \
     ninja-build \
     numactl \
     pciutils \
-    python3-pip \
     ruby \
     vim \
-    zlib1g-dev
+    zlib1g-dev \
+    pipx
+
+pipx install poetry  # python package manager
+pipx ensurepath
+echo "To install python dependencies run 'poetry install'"
+

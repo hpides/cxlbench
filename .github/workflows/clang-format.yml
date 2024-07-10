@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v3
@@ -15,8 +15,19 @@ jobs:
           source: 'src'
           extensions: 'hpp,cpp'
           clangFormatVersion: 10
+      - name: install poetry
+        run : |
+            sudo apt-get install pipx
+            pipx ensurepath
+            pipx install poetry
+            cd scripts
+            poetry install --only dev
+            cd ..
       - name: Linting
         run: |
-          pip install flake8
           sudo apt-get install --no-install-recommends dos2unix
           ./scripts/lint.sh
+      - name: Python Formatting
+        run: |
+          cd scripts
+          poetry run ruff format --check .

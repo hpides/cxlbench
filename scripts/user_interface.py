@@ -1,5 +1,5 @@
 """
-    This module creates HTML pages for each benchmark with index.html as an entry point to the user interface.
+This module creates HTML pages for each benchmark with index.html as an entry point to the user interface.
 """
 
 import dominate

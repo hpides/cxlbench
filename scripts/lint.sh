@@ -86,9 +86,11 @@ if [[ ${output} ]]; then
 	exitcode=1
 fi
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 # Python linting
-output=$(flake8 --max-line-length 120 --extend-ignore=E203 scripts)
-if [ ! -z "$output" ]; then
+cd "$DIR" || exit 1 # cd scripts to use poetry env.
+output=$(poetry run ruff check .)
+if [ $? -ne 0 ]; then
 	echo "$output"
 	exitcode=1
 fi
