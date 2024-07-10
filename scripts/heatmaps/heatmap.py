@@ -55,6 +55,11 @@ class Heatmap:
         x_scale = 0.25
         y_scale = 0.1
         minimum = 2
+        if self.compact:
+            padding = 1.4
+            x_scale = 0.14
+            y_scale = 0.07
+            minimum = 0.1
         plt.figure(
             figsize=(
                 max(thread_count * x_scale, minimum) + padding,
@@ -106,7 +111,7 @@ class Heatmap:
             (max_value_col_idx, max_value_row_idx),
             1,
             1,
-            linewidth=3,
+            linewidth=2,
             edgecolor=self.max_color,
             facecolor="none",
         )
@@ -124,7 +129,7 @@ class Heatmap:
             (min_value_col_idx, min_value_row_idx),
             1,
             1,
-            linewidth=3,
+            linewidth=2,
             edgecolor=self.min_color,
             facecolor="none",
         )
@@ -156,8 +161,8 @@ class Heatmap:
                 (x1, y1),
                 x2 - x1 + 1,
                 y2 - y1 + 1,
-                linestyle=linestyles[linestyle_idx],
-                linewidth=3,
+                linestyle=linestyles[0],
+                linewidth=2,
                 edgecolor="grey",
                 facecolor="none",
             )
