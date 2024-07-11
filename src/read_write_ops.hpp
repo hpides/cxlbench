@@ -38,16 +38,15 @@ template <int ACCESS_COUNT_64B>
 inline CharVecBase read_64B_accesses(char* address) {
   volatile CharVecSIMD* volatile_addr = reinterpret_cast<CharVecSIMD*>(address);
   auto result = CharVecBase{0};
-  constexpr size_t vector_access_count = SIMD_VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B;
   auto result_vec_simd = reinterpret_cast<CharVecSIMD*>(&result);
-  // The maximum access size is 64 KiB. With a 64 B base access size, we need 1024 access. With the smallest supported
-  // vector size of 16, the access count gets multiplied by 4, resulting in 4096.
-#pragma GCC unroll 4096
-  for (auto vector_access_idx = uint64_t{0}; vector_access_idx < vector_access_count;) {
+  // The maximum access size is 64 KiB. With a 64 B base access size, we need 1024 accesses.
+#pragma GCC unroll 1024
+  for (auto base_access_idx = uint64_t{0}; base_access_idx < ACCESS_COUNT_64B; ++base_access_idx) {
 // Perform base access with SIMD_VECTOR_SIZE_FACTOR * vector accesses.
-#pragma GCC unroll SIMD_VECTOR_SIZE_FACTOR;
+#pragma GCC unroll SIMD_VECTOR_SIZE_FACTOR
     for (auto sub_access_idx = uint64_t{0}; sub_access_idx < SIMD_VECTOR_SIZE_FACTOR; ++sub_access_idx) {
-      result_vec_simd[sub_access_idx] = volatile_addr[vector_access_idx++];
+      const auto index = base_access_idx * SIMD_VECTOR_SIZE_FACTOR + sub_access_idx;
+      result_vec_simd[index] = volatile_addr[index];
     }
   }
   return result;
@@ -79,21 +78,9 @@ inline CharVecBase read(char* addr, const size_t access_size) {
   auto result = CharVecBase{0};
   const char* access_end_addr = addr + access_size;
   for (char* mem_addr = addr; mem_addr < access_end_addr; mem_addr += (1024 * 64)) {
-    // Note that code duplication might be reduced here by calling read_64B_accesses(), but that this requires
-    // inspecting the assembly instructions again so that we do not introduce overhead that we can avoid.
-    volatile CharVecSIMD* volatile_addr = reinterpret_cast<CharVecSIMD*>(addr);
-    // 1x 64k access (1024x 64B access)
-    constexpr size_t vector_access_count = SIMD_VECTOR_SIZE_FACTOR * 1024;
-    auto result_vec_simd = reinterpret_cast<CharVecSIMD*>(&result);
-#pragma GCC unroll 4096
-    for (auto vector_access_idx = uint64_t{0}; vector_access_idx < vector_access_count;) {
-// Perform base access with SIMD_VECTOR_SIZE_FACTOR * vector accesses.
-#pragma GCC unroll SIMD_VECTOR_SIZE_FACTOR;
-      for (auto sub_access_idx = uint64_t{0}; sub_access_idx < SIMD_VECTOR_SIZE_FACTOR; ++sub_access_idx) {
-        result_vec_simd[sub_access_idx] = volatile_addr[vector_access_idx++];
-      }
-    }
+    result = read_64B_accesses<1024>(mem_addr);
   }
+  // Returning the last read, not supporting dependent reads
   return result;
 }
 

@@ -186,6 +186,7 @@ class Benchmark {
                                     const MemoryRegionDefinitions& region_definitions);
 
   static void run_custom_ops_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config);
+  template <size_t ACCESS_COUNT_64B>
   static void run_dependent_reads_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config);
   static void run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config);
 

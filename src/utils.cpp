@@ -95,11 +95,10 @@ int mmap_page_size_mask(const uint32_t page_size) {
 void generate_shuffled_access_positions(char* addr, const MemoryRegionDefinition& region,
                                         const BenchmarkConfig& config) {
   auto buffer = reinterpret_cast<std::byte*>(addr);
-  const auto total_entry_count = region.size / config.access_size;
 
   const auto chunk_size = config.min_io_chunk_size;
   const auto chunk_entry_count = chunk_size / config.access_size;
-  auto chunk_count = region.size / chunk_size;
+  const auto chunk_count = region.size / chunk_size;
 
   std::random_device rd;
   std::mt19937 gen(rd());

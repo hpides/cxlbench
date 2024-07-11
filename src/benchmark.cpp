@@ -357,6 +357,7 @@ void Benchmark::run_custom_ops_in_thread(ThreadConfig* thread_config, const Benc
   *(thread_config->total_operation_size) = total_num_ops;
 }
 
+template <size_t ACCESS_COUNT_64B>
 void Benchmark::run_dependent_reads_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config) {
   spdlog::debug("Thread {}: Running dependent reads.", thread_config->thread_idx);
 
@@ -367,7 +368,8 @@ void Benchmark::run_dependent_reads_in_thread(ThreadConfig* thread_config, const
   auto begin_ts = std::chrono::steady_clock::now();
 
   for (auto op_idx = u64{0}; op_idx < access_count; ++op_idx) {
-    auto res = rw_ops::read_64(reinterpret_cast<char*>(&buffer[next_pos * config.access_size]));
+    auto res =
+        rw_ops::read_64B_accesses<ACCESS_COUNT_64B>(reinterpret_cast<char*>(&buffer[next_pos * config.access_size]));
     next_pos = *(reinterpret_cast<u64*>(&res));
   }
   auto end_ts = std::chrono::steady_clock::now();
@@ -402,7 +404,32 @@ void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig
   }
 
   if (config.exec_mode == Mode::DependentReads) {
-    return run_dependent_reads_in_thread(thread_config, config);
+    switch (config.access_size) {
+      case 64:
+        return run_dependent_reads_in_thread<1>(thread_config, config);
+      case 128:
+        return run_dependent_reads_in_thread<2>(thread_config, config);
+      case 256:
+        return run_dependent_reads_in_thread<4>(thread_config, config);
+      case 512:
+        return run_dependent_reads_in_thread<8>(thread_config, config);
+      case 1024:
+        return run_dependent_reads_in_thread<16>(thread_config, config);
+      case 2048:
+        return run_dependent_reads_in_thread<32>(thread_config, config);
+      case 4096:
+        return run_dependent_reads_in_thread<64>(thread_config, config);
+      case 8192:
+        return run_dependent_reads_in_thread<128>(thread_config, config);
+      case 16384:
+        return run_dependent_reads_in_thread<256>(thread_config, config);
+      case 32768:
+        return run_dependent_reads_in_thread<512>(thread_config, config);
+      case 65536:
+        return run_dependent_reads_in_thread<1024>(thread_config, config);
+      default:
+        throw MemaException("Dependent Reads only supports specific access sizes between 64 and 65536");
+    }
   }
 
   const size_t seed = std::chrono::steady_clock::now().time_since_epoch().count() * (thread_config->thread_idx + 1);

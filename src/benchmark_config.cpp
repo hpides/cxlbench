@@ -218,13 +218,16 @@ BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
 void BenchmarkConfig::validate() const {
   bool is_custom_or_random = exec_mode == Mode::Random || exec_mode == Mode::Custom;
 
-  // Check if access size is at least 512-bit, i.e., 64byte (cache line)
-  const bool is_access_size_greater_64_byte = access_size >= 64;
-  CHECK_ARGUMENT(is_access_size_greater_64_byte, "Access size must be at least 64-byte, i.e., a cache line.");
+  // Check if access size is supported
+  std::set<size_t> unrolled_access_sizes({64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536});
+  std::ostringstream error;
+  error << "Access Size must be one of {";
+  for (auto it = unrolled_access_sizes.begin(); it != unrolled_access_sizes.end(); ++it) {
+    error << *it << ((std::next(it) != unrolled_access_sizes.end()) ? ", " : "}");
+  }
+  error << "or greater 65536.";
 
-  // Check if access size is a power of two
-  const bool is_access_size_power_of_two = (access_size & (access_size - 1)) == 0;
-  CHECK_ARGUMENT(is_access_size_power_of_two, "Access size must be a power of 2.");
+  CHECK_ARGUMENT(unrolled_access_sizes.contains(access_size) || (access_size > 65536), error.str());
 
   // Check if at least one thread
   const bool is_at_least_one_thread = number_threads > 0;
@@ -326,10 +329,6 @@ void BenchmarkConfig::validate() const {
 
   if (thread_pin_mode == ThreadPinMode::SingleCoreFixed) {
     CHECK_ARGUMENT(thread_core_ids.size() == number_threads, "Number of Core IDs and thread count must be equal.");
-  }
-
-  if (exec_mode == Mode::DependentReads) {
-    CHECK_ARGUMENT(access_size == 64, "DependentReads only supports 64B accesses.");
   }
 
 #ifdef HAS_CLWB

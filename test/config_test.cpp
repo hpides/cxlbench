@@ -439,13 +439,13 @@ TEST_F(ConfigTest, SingleDecodeInvalidNumaTaskNodes) {
 TEST_F(ConfigTest, InvalidSmallAccessSize) {
   bm_config.access_size = 32;
   EXPECT_THROW(bm_config.validate(), MemaException);
-  check_log_for_critical("at least 64-byte");
+  check_log_for_critical("Access Size must be one of");
 }
 
 TEST_F(ConfigTest, InvalidPowerAccessSize) {
   bm_config.access_size = 100;
   EXPECT_THROW(bm_config.validate(), MemaException);
-  check_log_for_critical("power of 2");
+  check_log_for_critical("Access Size must be one of");
 }
 
 TEST_F(ConfigTest, InvalidMemoryRangeAccessSizeMultiple) {
