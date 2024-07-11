@@ -1,22 +1,22 @@
 
 ## Python Tooling
-We define a [pyproject.toml](./pyproject.toml) to manage python tooling and dependencies.
+We define a [pyproject.toml](../pyproject.toml) to manage python tooling and dependencies.
 
 ### Python dependency management
 We use [Python-Poetry](https://python-poetry.org/docs) as our package manager.
 All dependencies are managed by poetry and automatically added the pyproject.toml.
-[poetry.lock](poetry.lock) is managed by poetry.
+[poetry.lock](../poetry.lock) is managed by poetry.
 
-To install the python dependencies cd to the location of pyproject.toml and run :
+To install the python dependencies, run:
 
 ```shell script
 $ poetry install
 ```
 This will setup a your poetry environment.
 
-To execute python modules with your poetry environment, run the following from the location of pyproject.toml:
+To execute python modules with your poetry environment, run:
 ```
-$ poetry run <module>
+$ poetry run <path-to-module>
 ```
 
 
@@ -28,7 +28,7 @@ We use [Ruff](https://docs.astral.sh/ruff/) for Linting and Formatting.
 
 Alternatively, you can run ruff using ```poetry run ruff <ruff_args>```.
 For example, ```poetry run ruff check --fix``` will fix linting errors for you.
-The configuration of ruff is defined in [pyproject.toml](./pyproject.toml).
+The configuration of ruff is defined in [pyproject.toml](../pyproject.toml).
 
 ## Visualizing Results
 MemA bench offers different Python visualization scripts to plot measurement results.

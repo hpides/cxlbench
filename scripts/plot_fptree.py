@@ -109,7 +109,7 @@ def main():
     dfs = []
     for path in matrix_jsons:
         # Get the tag from the file name.
-        tag = ""
+        _tag = ""
         if FILE_TAG_SUBSTRING in path:
             path_parts = path.split(FILE_TAG_SUBSTRING)
             assert (
@@ -117,7 +117,7 @@ def main():
             ), "Make sure that the substring {} appears only once in a result file name.".format(FILE_TAG_SUBSTRING)
             tag_part = path_parts[-1]
             assert "-" not in tag_part, "Make sure that the tag is the last part of the name before the file extension."
-            tag = tag_part.split(".")[0]
+            _tag = tag_part.split(".")[0]
 
         df = pd.read_json(path)
         dfs.append(df)

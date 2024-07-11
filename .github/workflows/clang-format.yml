@@ -29,5 +29,4 @@ jobs:
           ./scripts/lint.sh
       - name: Python Formatting
         run: |
-          cd scripts
           poetry run ruff format --check .

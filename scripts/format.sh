@@ -5,6 +5,5 @@ find "$DIR/../src" -iname '*.hpp' -o -iname '*.cpp' | xargs clang-format -i -sty
 find "$DIR/../test" -iname '*.hpp' -o -iname '*.cpp' | xargs clang-format -i -style=file
 
 # Python formatting
-cd "$DIR" || exit 1 # cd scripts
 poetry run ruff format .
 
