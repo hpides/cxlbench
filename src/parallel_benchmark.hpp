@@ -18,6 +18,12 @@ class ParallelBenchmark : public Benchmark {
   ParallelBenchmark& operator=(const ParallelBenchmark& other) = delete;
   ParallelBenchmark& operator=(ParallelBenchmark&& other) = delete;
 
+  void log_config();
+
+  void debug_log_json_config(size_t benchmark_idx);
+
+  void log_information();
+
   bool run() final;
 
   void generate_data() final;

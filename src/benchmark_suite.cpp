@@ -108,21 +108,6 @@ nlohmann::json benchmark_results_to_json(const mema::Benchmark& bm, const nlohma
   }
 }
 
-void print_bm_information(const mema::Benchmark& bm) {
-  if (bm.get_benchmark_type() == mema::BenchmarkType::Single) {
-    spdlog::info("Running single benchmark {} with matrix args {}", bm.benchmark_name(),
-                 nlohmann::json(bm.get_benchmark_configs()[0].matrix_args).dump());
-  } else if (bm.get_benchmark_type() == mema::BenchmarkType::Parallel) {
-    const auto& benchmark = dynamic_cast<const mema::ParallelBenchmark&>(bm);
-    spdlog::info("Running parallel benchmark {} with sub benchmarks {} and {}.", benchmark.benchmark_name(),
-                 benchmark.get_benchmark_name_one(), benchmark.get_benchmark_name_two());
-  } else {
-    // This should never happen
-    spdlog::critical("Unknown benchmark type: {}", bm.get_benchmark_type());
-    mema::utils::crash_exit();
-  }
-}
-
 void print_summary(nlohmann::json result, const std::string& bm_name, const bool parallel = false) {
   if (result["benchmarks"].size() == 0) {
     spdlog::critical("No results found for benchmark '{}'.", bm_name);
@@ -308,15 +293,9 @@ void BenchmarkSuite::run_benchmarks(const MemaOptions& options) {
   const auto benchmark_count = benchmarks.size();
   for (auto bench_idx = uint64_t{0}; bench_idx < benchmark_count; ++bench_idx) {
     auto& benchmark = *benchmarks[bench_idx];
-    const auto is_parallel = benchmark.get_benchmark_type() == BenchmarkType::Parallel;
 
     spdlog::info("Starting benchmark {0} ({1}):", bench_idx + 1, benchmark.benchmark_name());
-    if (is_parallel) {
-      spdlog::info("Parallel worklaod 0: {0}", benchmark.get_benchmark_configs()[0].to_string());
-      spdlog::info("Parallel worklaod 1: {0}", benchmark.get_benchmark_configs()[1].to_string());
-    } else {
-      spdlog::info("Single workload: {0}", benchmark.get_benchmark_configs()[0].to_string());
-    }
+    benchmark.log_config();
 
     if (previous_bm && previous_bm->benchmark_name() != benchmark.benchmark_name()) {
       // Started new benchmark, force delete old data in case it was a matrix. If it is not a matrix, this does nothing.
@@ -328,17 +307,11 @@ void BenchmarkSuite::run_benchmarks(const MemaOptions& options) {
     }
 
     if (!printed_info) {
-      print_bm_information(benchmark);
+      benchmark.log_information();
       printed_info = true;
     }
 
-    if (is_parallel) {
-      spdlog::debug("Preparing parallel benchmark #{} with two configs: {} AND {}", benchmark_count,
-                    to_string(benchmark.get_json_config(0)), to_string(benchmark.get_json_config(1)));
-    } else {
-      spdlog::debug("Preparing single benchmark #{} with config: {}", benchmark_count,
-                    to_string(benchmark.get_json_config(0)));
-    }
+    benchmark.debug_log_json_config(bench_idx + 1);
 
     spdlog::info("Starting data generation.");
     benchmark.generate_data();

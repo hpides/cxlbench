@@ -53,6 +53,9 @@ namespace mema {
 
 const std::string& Benchmark::benchmark_name() const { return benchmark_name_; }
 
+void Benchmark::log_config() {}
+void Benchmark::log_information() {}
+void Benchmark::debug_log_json_config(size_t benchmark_idx) {}
 std::string Benchmark::benchmark_type_as_str() const {
   return utils::get_enum_as_string(BenchmarkEnums::str_to_benchmark_type, benchmark_type_);
 }

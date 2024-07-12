@@ -17,6 +17,12 @@ class SingleBenchmark : public Benchmark {
   SingleBenchmark& operator=(const SingleBenchmark& other) = delete;
   SingleBenchmark& operator=(SingleBenchmark&& other) = delete;
 
+  void log_config();
+
+  void debug_log_json_config(size_t benchmark_idx);
+
+  void log_information();
+
   bool run() final;
 
   void generate_data() final;

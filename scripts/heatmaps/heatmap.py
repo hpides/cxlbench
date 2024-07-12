@@ -178,13 +178,15 @@ class Heatmap:
         for zone_idx, zone in enumerate(zones):
             (x1, y1), (x2, y2) = zone
             self.print_zone_summary(zone)
-
-            linestyle_idx = zone_idx % len(linestyles)
+            linestyle = linestyles[0]
+            # Add the following lines if you want to use different linestyles per zone.
+            # linestyle_idx = zone_idx % len(linestyles)
+            # linestyle = linestyles[linestyle_idx]
             zone = patches.Rectangle(
                 (x1, y1),
                 x2 - x1 + 1,
                 y2 - y1 + 1,
-                linestyle=linestyles[0],
+                linestyle=linestyle,
                 linewidth=self.mark_linewidth,
                 edgecolor="grey",
                 facecolor="none",

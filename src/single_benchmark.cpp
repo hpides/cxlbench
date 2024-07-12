@@ -13,6 +13,16 @@ void thread_error_handler(int) { thread_error = 1; }
 
 namespace mema {
 
+void SingleBenchmark::log_config() { spdlog::info("Single workload: {0}", configs_[0].to_string()); }
+
+void SingleBenchmark::debug_log_json_config(size_t benchmark_idx) {
+  spdlog::debug("Preparing single benchmark #{} with config: {}", benchmark_idx, to_string(get_json_config(0)));
+}
+void SingleBenchmark::log_information() {
+  spdlog::info("Running single benchmark {} with matrix args {}", benchmark_name(),
+               nlohmann::json(get_benchmark_configs()[0].matrix_args).dump());
+}
+
 bool SingleBenchmark::run() {
   signal(SIGSEGV, thread_error_handler);
 

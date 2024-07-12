@@ -38,6 +38,21 @@ bool ParallelBenchmark::run() {
   return true;
 }
 
+void ParallelBenchmark::log_config() {
+  spdlog::info("Parallel workload 0: {0}", configs_[0].to_string());
+  spdlog::info("Parallel workload 1: {0}", configs_[1].to_string());
+}
+
+void ParallelBenchmark::log_information() {
+  spdlog::info("Running parallel benchmark {} with sub benchmarks {} and {}.", benchmark_name(),
+               get_benchmark_name_one(), get_benchmark_name_two());
+}
+
+void ParallelBenchmark::debug_log_json_config(size_t benchmark_idx) {
+  spdlog::debug("Preparing parallel benchmark #{} with two configs: {} AND {}", benchmark_idx,
+                to_string(get_json_config(0)), to_string(get_json_config(1)));
+}
+
 void ParallelBenchmark::generate_data() {
   if (!memory_regions_.empty()) {
     spdlog::critical("generate_data() called more than once for the same benchmark.");

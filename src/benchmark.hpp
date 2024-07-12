@@ -151,6 +151,15 @@ class Benchmark {
   /** Return the name of the benchmark. */
   const std::string& benchmark_name() const;
 
+  /** Log benchmark config */
+  virtual void log_config();
+
+  /** Log benchmark information */
+  virtual void log_information();
+
+  /** Debug Log configs as json. */
+  virtual void debug_log_json_config(size_t benchmark_idx);
+
   /** Return the type of the benchmark. */
   std::string benchmark_type_as_str() const;
 
