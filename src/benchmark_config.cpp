@@ -328,7 +328,8 @@ void BenchmarkConfig::validate() const {
                  "Core IDs must be specified if thread pinning is not NUMA-specific.");
 
   if (thread_pin_mode == ThreadPinMode::SingleCoreFixed) {
-    CHECK_ARGUMENT(thread_core_ids.size() == number_threads, "Number of Core IDs and thread count must be equal.");
+    CHECK_ARGUMENT(thread_core_ids.size() >= number_threads,
+                   "Number of Core IDs must be greater than or equal thread count.");
   }
 
 #ifdef HAS_CLWB

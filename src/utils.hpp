@@ -115,5 +115,13 @@ std::string numbers_to_string(const NumberSequence& numbers) {
                          [](std::string str, int number) { return std::move(str) + ',' + std::to_string(number); });
 }
 
+template <typename T>
+bool is_subset(std::vector<T> containing_vector, std::vector<T> included_vector) {
+  std::sort(containing_vector.begin(), containing_vector.end());
+  std::sort(included_vector.begin(), included_vector.end());
+  return std::includes(containing_vector.begin(), containing_vector.end(), included_vector.begin(),
+                       included_vector.end());
+}
+
 }  // namespace utils
 }  // namespace mema

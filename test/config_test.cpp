@@ -542,7 +542,7 @@ TEST_F(ConfigTest, InvalidThreadSingleCoreFixed) {
   check_log_for_critical("Core IDs must be specified if thread pinning is not");
   bm_config.thread_core_ids = {CoreID{1}, CoreID{3}, CoreID{5}};
   EXPECT_THROW(bm_config.validate(), MemaException);
-  check_log_for_critical("Number of Core IDs and thread count must be equal");
+  check_log_for_critical("Number of Core IDs must be greater than or equal thread count.");
   bm_config.number_threads = 3;
   EXPECT_NO_THROW(bm_config.validate());
 }

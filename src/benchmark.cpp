@@ -394,9 +394,8 @@ void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig
 
   // Check if thread is pinned to the configured NUMA node.
   const auto allowed_cores = allowed_thread_core_ids();
-  if (!expected_run_cores.empty() &&
-      !std::equal(expected_run_cores.begin(), expected_run_cores.end(), allowed_cores.begin(), allowed_cores.end())) {
-    spdlog::critical("Thread #{}: Thread not pinned to the configured CPUs. Expected: [{}], Actual: [{}]",
+  if (!expected_run_cores.empty() && !utils::is_subset<uint64_t>(allowed_cores, expected_run_cores)) {
+    spdlog::critical("Thread #{}: Thread not pinned to the configured CPUs. Expected: [{}], Allowed: [{}]",
                      thread_config->thread_idx, utils::numbers_to_string(expected_run_cores),
                      utils::numbers_to_string(allowed_cores));
     utils::crash_exit();
