@@ -360,6 +360,24 @@ void Benchmark::run_custom_ops_in_thread(ThreadConfig* thread_config, const Benc
   *(thread_config->total_operation_size) = total_num_ops;
 }
 
+
+#if defined(__powerpc64__)
+#define __mtspr(spr, value) \
+  __asm__ volatile("mtspr %0,%1" : : "n"(spr), "r"(value))
+
+// Data stream control register
+#define PPC_DSCR 3
+
+// Disable strided prefetch and set maximum prefetch depth with 7ULL
+// set minimal depth with 1ULL
+#define PPC_TUNE_DSCR 7ULL
+
+// Set this once in your function
+inline void tuneHardwarePrefetcher() {
+  __mtspr(PPC_DSCR, PPC_TUNE_DSCR);
+}
+#endif
+
 template <size_t ACCESS_COUNT_64B>
 void Benchmark::run_dependent_reads_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config) {
   spdlog::debug("Thread {}: Running dependent reads.", thread_config->thread_idx);
@@ -536,6 +554,7 @@ void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig
     thread_config->execution->generation_done.wait(gen_lock, [&] { return threads_remaining == 0; });
   }
 
+  tuneHardwarePrefetcher();
   // Generation is done in all threads, start execution
   const auto execution_begin_ts = std::chrono::steady_clock::now();
   std::atomic<uint64_t>* io_position = &thread_config->execution->io_position;
