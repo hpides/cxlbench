@@ -363,7 +363,7 @@ void Benchmark::run_custom_ops_in_thread(ThreadConfig* thread_config, const Benc
 template <size_t ACCESS_COUNT_64B>
 void Benchmark::run_dependent_reads_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config) {
   spdlog::debug("Thread {}: Running dependent reads.", thread_config->thread_idx);
-
+  sleep(3);
   auto buffer = reinterpret_cast<std::byte*>(thread_config->start_addr);
   const auto access_count = thread_config->partition_size / config.access_size;
 
