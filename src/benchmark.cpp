@@ -419,6 +419,10 @@ void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig
     utils::crash_exit();
   }
 
+#if defined(__powerpc64__)
+  tuneHardwarePrefetcher();
+#endif
+
   if (config.exec_mode == Mode::Custom) {
     return run_custom_ops_in_thread(thread_config, config);
   }
@@ -554,7 +558,6 @@ void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig
     thread_config->execution->generation_done.wait(gen_lock, [&] { return threads_remaining == 0; });
   }
 
-  tuneHardwarePrefetcher();
   // Generation is done in all threads, start execution
   const auto execution_begin_ts = std::chrono::steady_clock::now();
   std::atomic<uint64_t>* io_position = &thread_config->execution->io_position;
