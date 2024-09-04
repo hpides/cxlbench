@@ -15,7 +15,7 @@ namespace {
 
 template <typename T>
 double calculate_standard_deviation(const std::vector<T>& values, const double average) {
-  const uint16_t num_values = values.size();
+  const u16 num_values = values.size();
   std::vector<double> diffs_to_avg(num_values);
   std::transform(values.begin(), values.end(), diffs_to_avg.begin(), [&](double x) { return x - average; });
   const double sq_sum = std::inner_product(diffs_to_avg.begin(), diffs_to_avg.end(), diffs_to_avg.begin(), 0.0);
@@ -41,7 +41,7 @@ nlohmann::json hdr_histogram_to_json(hdr_histogram* hdr) {
   return result;
 }
 
-inline double get_bandwidth(const uint64_t total_data_size, const std::chrono::steady_clock::duration total_duration) {
+inline double get_bandwidth(const u64 total_data_size, const std::chrono::steady_clock::duration total_duration) {
   const double duration_in_s = static_cast<double>(total_duration.count()) / mema::SECONDS_IN_NANOSECONDS;
   const double data_in_gib = static_cast<double>(total_data_size) / mema::GiB;
   return data_in_gib / duration_in_s;
@@ -76,7 +76,7 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, MemoryRegions& memo
   result->total_operation_durations.resize(config.number_threads);
   result->total_operation_sizes.resize(config.number_threads, 0);
 
-  uint64_t latency_measurement_count = 0;
+  u64 latency_measurement_count = 0;
   if (is_custom_execution) {
     result->custom_operation_latencies.resize(config.number_threads);
 
@@ -86,10 +86,10 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, MemoryRegions& memo
   }
 
   // If number_partitions is 0, each thread gets its own partition.
-  const uint16_t partition_count = config.number_partitions == 0 ? config.number_threads : config.number_partitions;
+  const u16 partition_count = config.number_partitions == 0 ? config.number_threads : config.number_partitions;
 
-  const uint16_t thread_count_per_partition = config.number_threads / partition_count;
-  const uint64_t partition_size = config.memory_regions[0].size / partition_count;
+  const u16 thread_count_per_partition = config.number_threads / partition_count;
+  const u64 partition_size = config.memory_regions[0].size / partition_count;
   MemaAssert(config.memory_regions[1].size == 0 || partition_count == 1,
              "With a secondary partition size, only one partition is supported.");
   const auto secondary_partition_size = config.memory_regions[1].size;
@@ -97,7 +97,7 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, MemoryRegions& memo
   // Set up thread synchronization and execution parameters
   const auto& access_size =
       is_custom_execution ? CustomOp::cumulative_size(config.custom_operations) : config.access_size;
-  const uint64_t ops_per_chunk = access_size < config.min_io_chunk_size ? config.min_io_chunk_size / access_size : 1;
+  const u64 ops_per_chunk = access_size < config.min_io_chunk_size ? config.min_io_chunk_size / access_size : 1;
 
   // Add one chunk for random execution and non-divisible numbers so that we perform at least number_operations ops and
   // not fewer. Adding a chunk in sequential access exceeds the memory range and segfaults.
@@ -108,7 +108,7 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, MemoryRegions& memo
   execution->threads_remaining = config.number_threads;
   execution->io_position = 0;
   execution->io_operations.resize(chunk_count);
-  execution->num_custom_chunks_remaining = static_cast<int64_t>(chunk_count);
+  execution->num_custom_chunks_remaining = static_cast<i64>(chunk_count);
 
   auto* primary_region = memory_regions[0];
   // Assumption: only one partition exists for secondary region. Secondary region is only used for custom operations.
@@ -123,12 +123,12 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, MemoryRegions& memo
       is_numa_thread_pinning ? core_ids_of_nodes(config.numa_thread_nodes) : config.thread_core_ids;
 
   // TODO(MW) remove partitioning. Always assume one partition.
-  for (uint16_t partition_idx = 0; partition_idx < partition_count; ++partition_idx) {
+  for (u16 partition_idx = 0; partition_idx < partition_count; ++partition_idx) {
     char* partition_start = (config.exec_mode == Mode::Sequential_Desc)
                                 ? primary_region + ((partition_count - partition_idx) * partition_size) - access_size
                                 : primary_region + (partition_idx * partition_size);
 
-    for (uint16_t partition_thread_idx = 0; partition_thread_idx < thread_count_per_partition; ++partition_thread_idx) {
+    for (u16 partition_thread_idx = 0; partition_thread_idx < thread_count_per_partition; ++partition_thread_idx) {
       const auto thread_idx = (partition_idx * thread_count_per_partition) + partition_thread_idx;
 
       // Reserve space for custom operation latency measurements to avoid resizing during benchmark execution.
@@ -137,8 +137,8 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, MemoryRegions& memo
       }
 
       ExecutionDuration* total_op_duration = &result->total_operation_durations[thread_idx];
-      uint64_t* total_op_size = &result->total_operation_sizes[thread_idx];
-      std::vector<uint64_t>* custom_op_latencies =
+      u64* total_op_size = &result->total_operation_sizes[thread_idx];
+      std::vector<u64>* custom_op_latencies =
           is_custom_execution ? &result->custom_operation_latencies[thread_idx] : nullptr;
 
       auto thread_affinity_cores = config.thread_pin_mode == ThreadPinMode::AllNumaCores
@@ -157,7 +157,7 @@ MemoryRegions Benchmark::prepare_data(const BenchmarkConfig& config) {
   auto region_start_addresses = MemoryRegions(MEM_REGION_COUNT);
   MemaAssert(config.memory_regions.size() == MEM_REGION_COUNT, "Unexpected number of memory regions.");
   // Determines if data shall be written to the memory region so that reads can read the data.
-  for (auto region_idx = uint64_t{0}; auto& region_definition : config.memory_regions) {
+  for (auto region_idx = u64{0}; auto& region_definition : config.memory_regions) {
     if (region_definition.size == 0) {
       region_start_addresses[region_idx] = nullptr;
       ++region_idx;
@@ -224,7 +224,7 @@ char* Benchmark::prepare_partitioned_data(const MemoryRegionDefinition& region, 
 
   const auto region_page_count = region.size / utils::PAGE_SIZE;
   const auto first_partition_page_count =
-      static_cast<uint32_t>((*region.percentage_pages_first_partition / 100.f) * region_page_count);
+      static_cast<u32>((*region.percentage_pages_first_partition / 100.f) * region_page_count);
 
   const auto first_partition_length = first_partition_page_count * utils::PAGE_SIZE;
   const auto nodes_first_partition =
@@ -266,7 +266,7 @@ void Benchmark::verify_page_locations(const MemoryRegions& memory_regions,
                                       const MemoryRegionDefinitions& region_definitions) {
   MemaAssert(memory_regions.size() == MEM_REGION_COUNT, "Number of passed memory regions incorrect.");
   MemaAssert(region_definitions.size() == MEM_REGION_COUNT, "Number of passed memory region definitions incorrect.");
-  for (auto region_idx = uint64_t{0}; region_idx < MEM_REGION_COUNT; ++region_idx) {
+  for (auto region_idx = u64{0}; region_idx < MEM_REGION_COUNT; ++region_idx) {
     spdlog::info("Verify page locations of region {}.", region_idx);
     auto verified = false;
     auto& region = memory_regions[region_idx];
@@ -294,15 +294,15 @@ void Benchmark::run_custom_ops_in_thread(ThreadConfig* thread_config, const Benc
   operation_chain.reserve(num_ops);
 
   // Determine maximum access size to ensure that operations don't write beyond the end of the range.
-  auto max_access_size = uint64_t{0};
+  auto max_access_size = u64{0};
   for (const CustomOp& op : operations) {
     max_access_size = std::max(op.size, max_access_size);
   }
 
-  const auto aligned_range_size = uint64_t{thread_config->partition_size - max_access_size};
-  const auto aligned_secondary_range_size = uint64_t{thread_config->secondary_partition_size - max_access_size};
+  const auto aligned_range_size = u64{thread_config->partition_size - max_access_size};
+  const auto aligned_secondary_range_size = u64{thread_config->secondary_partition_size - max_access_size};
 
-  for (auto op_idx = uint64_t{0}; op_idx < num_ops; ++op_idx) {
+  for (auto op_idx = u64{0}; op_idx < num_ops; ++op_idx) {
     const CustomOp& op = operations[op_idx];
 
     if (op.memory_type == MemoryType::Primary) {
@@ -324,7 +324,7 @@ void Benchmark::run_custom_ops_in_thread(ThreadConfig* thread_config, const Benc
   auto start_ts = std::chrono::steady_clock::now();
 
   const auto ops_count_per_chunk = thread_config->ops_count_per_chunk;
-  auto total_num_ops = uint64_t{0};
+  auto total_num_ops = u64{0};
 
   while (true) {
     if (thread_config->execution->num_custom_chunks_remaining.fetch_sub(1) <= 0) {
@@ -338,7 +338,7 @@ void Benchmark::run_custom_ops_in_thread(ThreadConfig* thread_config, const Benc
       }
     } else {
       // Latency sampling requested, measure the latency every x iterations.
-      const uint64_t freq = config.latency_sample_frequency;
+      const u64 freq = config.latency_sample_frequency;
       // Start at 1 to avoid measuring latency of first request.
       for (size_t iteration = 1; iteration <= ops_count_per_chunk; ++iteration) {
         if (iteration % freq == 0) {
@@ -394,7 +394,7 @@ void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig
 
   // Check if thread is pinned to the configured NUMA node.
   const auto allowed_cores = allowed_thread_core_ids();
-  if (!expected_run_cores.empty() && !utils::is_subset<uint64_t>(allowed_cores, expected_run_cores)) {
+  if (!expected_run_cores.empty() && !utils::is_subset<u64>(allowed_cores, expected_run_cores)) {
     spdlog::critical("Thread #{}: Thread not pinned to the configured CPUs. Expected: [{}], Allowed: [{}]",
                      thread_config->thread_idx, utils::numbers_to_string(expected_run_cores),
                      utils::numbers_to_string(allowed_cores));
@@ -437,7 +437,7 @@ void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig
   const size_t seed = std::chrono::steady_clock::now().time_since_epoch().count() * (thread_config->thread_idx + 1);
   lehmer64_seed(seed);
 
-  const uint32_t access_count_in_range = thread_config->partition_size / config.access_size;
+  const u32 access_count_in_range = thread_config->partition_size / config.access_size;
 
   auto access_distribution = [&]() { return lehmer64() % access_count_in_range; };
 
@@ -474,11 +474,11 @@ void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig
       switch (config.exec_mode) {
         case Mode::Random: {
           char* partition_start;
-          std::function<uint64_t()> random_distribution;
+          std::function<u64()> random_distribution;
           partition_start = thread_config->start_addr;
           random_distribution = access_distribution;
 
-          uint64_t random_value;
+          u64 random_value;
           // Get a random number in the range [0, target_access_count_in_range - 1].
           if (config.random_distribution == RandomDistribution::Uniform) {
             random_value = random_distribution();
@@ -517,12 +517,12 @@ void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig
   }
 
   const auto generation_end_ts = std::chrono::steady_clock::now();
-  const uint64_t generation_duration_us =
+  const u64 generation_duration_us =
       std::chrono::duration_cast<std::chrono::milliseconds>(generation_end_ts - generation_begin_ts).count();
   spdlog::debug("Thread {}: Finished address generation in {} ms", thread_config->thread_idx, generation_duration_us);
 
   auto is_last = bool{false};
-  uint16_t& threads_remaining = thread_config->execution->threads_remaining;
+  u16& threads_remaining = thread_config->execution->threads_remaining;
   {
     std::lock_guard<std::mutex> gen_lock{thread_config->execution->generation_lock};
     threads_remaining -= 1;
@@ -538,9 +538,9 @@ void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig
 
   // Generation is done in all threads, start execution
   const auto execution_begin_ts = std::chrono::steady_clock::now();
-  std::atomic<uint64_t>* io_position = &thread_config->execution->io_position;
+  std::atomic<u64>* io_position = &thread_config->execution->io_position;
 
-  auto executed_op_count = uint64_t{0};
+  auto executed_op_count = u64{0};
   if (config.run_time == 0) {
     executed_op_count = run_fixed_sized_benchmark(&thread_config->execution->io_operations, io_position);
   } else {
@@ -554,18 +554,17 @@ void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig
       std::chrono::duration_cast<std::chrono::milliseconds>(execution_end_ts - execution_begin_ts);
   spdlog::debug("Thread {}: Finished execution in {} ms", thread_config->thread_idx, execution_duration.count());
 
-  const uint64_t chunk_size = config.access_size * thread_config->ops_count_per_chunk;
+  const u64 chunk_size = config.access_size * thread_config->ops_count_per_chunk;
   *(thread_config->total_operation_size) = executed_op_count * chunk_size;
   *(thread_config->total_operation_duration) = ExecutionDuration{execution_begin_ts, execution_end_ts};
 }
 
-uint64_t Benchmark::run_fixed_sized_benchmark(std::vector<IoOperation>* io_operations,
-                                              std::atomic<uint64_t>* io_position) {
-  const uint64_t total_op_count = io_operations->size();
-  uint64_t executed_op_count = 0;
+u64 Benchmark::run_fixed_sized_benchmark(std::vector<IoOperation>* io_operations, std::atomic<u64>* io_position) {
+  const u64 total_op_count = io_operations->size();
+  u64 executed_op_count = 0;
 
   while (true) {
-    const uint64_t op_pos = io_position->fetch_add(1);
+    const u64 op_pos = io_position->fetch_add(1);
     if (op_pos >= total_op_count) {
       break;
     }
@@ -577,14 +576,13 @@ uint64_t Benchmark::run_fixed_sized_benchmark(std::vector<IoOperation>* io_opera
   return executed_op_count;
 }
 
-uint64_t Benchmark::run_duration_based_benchmark(std::vector<IoOperation>* io_operations,
-                                                 std::atomic<uint64_t>* io_position,
-                                                 std::chrono::steady_clock::time_point execution_end) {
-  const uint64_t total_op_count = io_operations->size();
-  uint64_t executed_op_count = 0;
+u64 Benchmark::run_duration_based_benchmark(std::vector<IoOperation>* io_operations, std::atomic<u64>* io_position,
+                                            std::chrono::steady_clock::time_point execution_end) {
+  const u64 total_op_count = io_operations->size();
+  u64 executed_op_count = 0;
 
   while (true) {
-    const uint64_t work_package = io_position->fetch_add(1) % total_op_count;
+    const u64 work_package = io_position->fetch_add(1) % total_op_count;
 
     (*io_operations)[work_package].run();
     ++executed_op_count;
@@ -605,17 +603,17 @@ const std::vector<MemoryRegions>& Benchmark::get_memory_regions() const { return
 const std::vector<std::vector<ThreadConfig>>& Benchmark::get_thread_configs() const { return thread_configs_; }
 const std::vector<std::unique_ptr<BenchmarkResult>>& Benchmark::get_benchmark_results() const { return results_; }
 
-nlohmann::json Benchmark::get_json_config(uint8_t config_index) { return configs_[config_index].as_json(); }
+nlohmann::json Benchmark::get_json_config(u8 config_index) { return configs_[config_index].as_json(); }
 
 void Benchmark::tear_down(bool force) {
   executions_.clear();
   results_.clear();
 
-  for (auto workload_idx = uint64_t{0}; workload_idx < memory_regions_.size(); ++workload_idx) {
+  for (auto workload_idx = u64{0}; workload_idx < memory_regions_.size(); ++workload_idx) {
     auto& workload_regions = memory_regions_[workload_idx];
     auto& region_definitions = configs_[workload_idx].memory_regions;
     MemaAssert(workload_regions.size() == MEM_REGION_COUNT, "Unexpected memory region count.");
-    for (auto region_idx = uint64_t{0}; region_idx < MEM_REGION_COUNT; ++region_idx) {
+    for (auto region_idx = u64{0}; region_idx < MEM_REGION_COUNT; ++region_idx) {
       if (workload_regions[region_idx] != nullptr) {
         munmap(workload_regions[region_idx], region_definitions[region_idx].size);
         workload_regions[region_idx] = nullptr;
@@ -667,12 +665,12 @@ nlohmann::json BenchmarkResult::get_result_as_json() const {
   std::vector<u64> per_thread_op_latency(config.number_threads);
   nlohmann::json per_thread_results = nlohmann::json::array();
 
-  for (uint16_t thread_idx = 0; thread_idx < config.number_threads; ++thread_idx) {
+  for (u16 thread_idx = 0; thread_idx < config.number_threads; ++thread_idx) {
     const ExecutionDuration& thread_timestamps = total_operation_durations[thread_idx];
     const std::chrono::steady_clock::duration thread_duration = thread_timestamps.duration();
     const auto thread_duration_s = std::chrono::duration<double>(std::chrono::nanoseconds{thread_duration}).count();
 
-    const uint64_t thread_op_size = total_operation_sizes[thread_idx];
+    const u64 thread_op_size = total_operation_sizes[thread_idx];
 
     const double thread_bandwidth = get_bandwidth(thread_op_size, thread_duration);
     per_thread_bandwidth[thread_idx] = thread_bandwidth;
@@ -744,18 +742,18 @@ nlohmann::json BenchmarkResult::get_custom_results_as_json() const {
   nlohmann::json custom_op_results;
   nlohmann::json per_thread_results = nlohmann::json::array();
 
-  uint64_t total_num_ops = 0;
+  u64 total_num_ops = 0;
   std::vector<double> per_thread_ops_per_s(config.number_threads);
 
   std::chrono::steady_clock::time_point earliest_begin = total_operation_durations[0].begin;
   std::chrono::steady_clock::time_point latest_end = total_operation_durations[0].end;
 
-  for (uint64_t thread_idx = 0; thread_idx < config.number_threads; ++thread_idx) {
+  for (u64 thread_idx = 0; thread_idx < config.number_threads; ++thread_idx) {
     const ExecutionDuration& thread_timestamps = total_operation_durations[thread_idx];
     const std::chrono::steady_clock::duration thread_duration = thread_timestamps.duration();
     const auto thread_duration_s = std::chrono::duration<double>(std::chrono::nanoseconds{thread_duration}).count();
 
-    const uint64_t num_ops = total_operation_sizes[thread_idx];
+    const u64 num_ops = total_operation_sizes[thread_idx];
     total_num_ops += num_ops;
     const double thread_ops_per_s = static_cast<double>(num_ops) / thread_duration_s;
     per_thread_ops_per_s[thread_idx] = thread_ops_per_s;
@@ -785,9 +783,9 @@ nlohmann::json BenchmarkResult::get_custom_results_as_json() const {
   custom_op_results["threads"] = per_thread_results;
 
   if (config.latency_sample_frequency > 0) {
-    for (const std::vector<uint64_t>& thread_latencies : custom_operation_latencies) {
-      for (const uint64_t latency : thread_latencies) {
-        hdr_record_value(latency_hdr, static_cast<int64_t>(latency));
+    for (const std::vector<u64>& thread_latencies : custom_operation_latencies) {
+      for (const u64 latency : thread_latencies) {
+        hdr_record_value(latency_hdr, static_cast<i64>(latency));
       }
     }
     custom_op_results["latency"] = hdr_histogram_to_json(latency_hdr);

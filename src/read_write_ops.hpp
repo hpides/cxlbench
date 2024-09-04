@@ -41,10 +41,10 @@ inline CharVecBase read_64B_accesses(char* address) {
   auto result_vec_simd = reinterpret_cast<CharVecSIMD*>(&result);
   // The maximum access size is 64 KiB. With a 64 B base access size, we need 1024 accesses.
 #pragma GCC unroll 1024
-  for (auto base_access_idx = uint64_t{0}; base_access_idx < ACCESS_COUNT_64B; ++base_access_idx) {
+  for (auto base_access_idx = u64{0}; base_access_idx < ACCESS_COUNT_64B; ++base_access_idx) {
 // Perform base access with SIMD_VECTOR_SIZE_FACTOR * vector accesses.
 #pragma GCC unroll SIMD_VECTOR_SIZE_FACTOR
-    for (auto sub_access_idx = uint64_t{0}; sub_access_idx < SIMD_VECTOR_SIZE_FACTOR; ++sub_access_idx) {
+    for (auto sub_access_idx = u64{0}; sub_access_idx < SIMD_VECTOR_SIZE_FACTOR; ++sub_access_idx) {
       const auto index = base_access_idx * SIMD_VECTOR_SIZE_FACTOR + sub_access_idx;
       result_vec_simd[index] = volatile_addr[index];
     }
@@ -152,7 +152,7 @@ inline void write_data_scalar(char* start_address, const char* end_address) {
 template <int ACCESS_COUNT_64B>
 inline void write_64B_accesses(char* address) {
   const auto* data = reinterpret_cast<const uint8x16x4_t*>(WRITE_DATA);
-  auto* base_address = reinterpret_cast<uint8_t*>(address);
+  auto* base_address = reinterpret_cast<u8*>(address);
   constexpr size_t vector_access_count = SIMD_VECTOR_SIZE_FACTOR * ACCESS_COUNT_64B;
 #pragma GCC unroll 4096
   for (size_t access_idx = 0; access_idx < vector_access_count; ++access_idx) {

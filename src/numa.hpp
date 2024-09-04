@@ -15,7 +15,7 @@ constexpr auto PAGE_ERROR_LIMIT = 0.005f;
 using PageLocations = std::vector<int>;
 
 // Sets the numa policy to strict if numa is available and returns the number of available numa nodes.
-uint8_t init_numa();
+u8 init_numa();
 
 CoreIDs core_ids_of_nodes(const NumaNodeIDs& node_ids);
 
@@ -31,8 +31,8 @@ void fill_page_locations_round_robin(PageLocations& page_locations, size_t memor
                                      const NumaNodeIDs& target_nodes);
 
 void fill_page_locations_partitioned(PageLocations& page_locations, size_t memory_region_size,
-                                     const NumaNodeIDs& target_nodes, const uint64_t percentage_first_node,
-                                     const uint64_t node_count_first_node);
+                                     const NumaNodeIDs& target_nodes, const u64 percentage_first_node,
+                                     const u64 node_count_first_node);
 
 void place_pages(char* const start_addr, size_t memory_region_size, const PageLocations& target_page_locations);
 
@@ -43,13 +43,12 @@ bool verify_interleaved_page_placement(char* const start_addr, size_t memory_reg
 
 // Check page locations. Based on the given target nodes and percentage, the expected locations are calulated first,
 // before the current page locations are compared with the expected ones.
-bool verify_partitioned_page_placement(char* const start_addr, uint64_t memory_region_size,
-                                       const NumaNodeIDs& target_nodes, const uint64_t percentage_first_node,
-                                       const uint64_t node_count_first_node);
+bool verify_partitioned_page_placement(char* const start_addr, u64 memory_region_size, const NumaNodeIDs& target_nodes,
+                                       const u64 percentage_first_node, const u64 node_count_first_node);
 
 void log_numa_nodes(spdlog::level::level_enum log_level, const std::string& message, const NumaNodeIDs& nodes);
 
-void log_permissions_for_numa_nodes(spdlog::level::level_enum log_level, uint64_t thread_id);
+void log_permissions_for_numa_nodes(spdlog::level::level_enum log_level, u64 thread_id);
 
 void log_permissions_for_numa_nodes(spdlog::level::level_enum log_level, std::string thread_description);
 

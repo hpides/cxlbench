@@ -108,7 +108,7 @@ void bind_memory_interleaved(void* addr, const size_t memory_size, const NumaNod
   log_numa_nodes(spdlog::level::debug, stream.str(), node_ids);
 }
 
-uint8_t init_numa() {
+u8 init_numa() {
   if (numa_available() < 0) {
     spdlog::critical("NUMA supported but could not be found!");
     utils::crash_exit();
@@ -121,7 +121,7 @@ uint8_t init_numa() {
   return numa_num_configured_nodes();
 }
 
-void log_permissions_for_numa_nodes(spdlog::level::level_enum log_level, uint64_t thread_id) {
+void log_permissions_for_numa_nodes(spdlog::level::level_enum log_level, u64 thread_id) {
   log_permissions_for_numa_nodes(log_level, std::to_string(thread_id));
 }
 
@@ -151,7 +151,7 @@ void log_permissions_for_numa_nodes(spdlog::level::level_enum log_level, const s
 }
 
 NumaNodeID numa_node_index_by_address(char* const addr) {
-  auto node = int32_t{};
+  auto node = i32{};
 
   auto addr_ptr = reinterpret_cast<void*>(addr);
   const auto ret = move_pages(0, 1, &addr_ptr, NULL, &node, 0);
@@ -182,14 +182,14 @@ void fill_page_locations_round_robin(PageLocations& page_locations, size_t memor
   spdlog::debug("Page count of memory region: {}.", region_page_count);
   page_locations.resize(region_page_count);
 
-  for (auto page_idx = uint64_t{0}; page_idx < region_page_count; ++page_idx) {
+  for (auto page_idx = u64{0}; page_idx < region_page_count; ++page_idx) {
     page_locations[page_idx] = sorted_target_nodes[page_idx % node_count];
   }
 }
 
 void fill_page_locations_partitioned(PageLocations& page_locations, size_t memory_region_size,
-                                     const NumaNodeIDs& target_nodes, const uint64_t percentage_first_node,
-                                     const uint64_t node_count_first_node) {
+                                     const NumaNodeIDs& target_nodes, const u64 percentage_first_node,
+                                     const u64 node_count_first_node) {
   spdlog::debug("Start filling page locations (partitioned).");
   MemaAssert(target_nodes.size() >= 2, "When using partitioned page placements, at least two NUMA nodes are required.");
   MemaAssert(percentage_first_node >= 0 && percentage_first_node <= 100,
@@ -197,7 +197,7 @@ void fill_page_locations_partitioned(PageLocations& page_locations, size_t memor
   MemaAssert(memory_region_size % utils::PAGE_SIZE == 0, "Memory region size needs to be a multiple of the page size.");
   // Calculate page counts
   const auto region_page_count = memory_region_size / utils::PAGE_SIZE;
-  const auto first_node_page_count = static_cast<uint32_t>((percentage_first_node / 100.f) * region_page_count);
+  const auto first_node_page_count = static_cast<u32>((percentage_first_node / 100.f) * region_page_count);
 
   auto nodes_first_partition = NumaNodeIDs(target_nodes.begin(), target_nodes.begin() + node_count_first_node);
   std::sort(nodes_first_partition.begin(), nodes_first_partition.end());
@@ -215,7 +215,7 @@ void fill_page_locations_partitioned(PageLocations& page_locations, size_t memor
 
   // Fill locations
   page_locations.resize(region_page_count);
-  auto page_idx = uint32_t{0};
+  auto page_idx = u32{0};
   auto next_node_idx = 0u;
   for (; page_idx < first_node_page_count; page_idx++) {
     page_locations[page_idx] = nodes_first_partition[next_node_idx];
@@ -243,7 +243,7 @@ void place_pages(char* const start_addr, size_t memory_region_size, const PageLo
   auto pages = std::vector<void*>{};
   pages.resize(region_page_count);
 
-  for (auto page_idx = uint64_t{0}; page_idx < region_page_count; ++page_idx) {
+  for (auto page_idx = u64{0}; page_idx < region_page_count; ++page_idx) {
     pages[page_idx] = reinterpret_cast<void*>(start_addr + page_idx * utils::PAGE_SIZE);
   }
 
@@ -279,7 +279,7 @@ bool verify_interleaved_page_placement(char* const start_addr, size_t memory_reg
   auto pages = std::vector<void*>{};
   pages.resize(region_page_count);
 
-  for (auto page_idx = uint64_t{0}; page_idx < region_page_count; ++page_idx) {
+  for (auto page_idx = u64{0}; page_idx < region_page_count; ++page_idx) {
     pages[page_idx] = reinterpret_cast<void*>(start_addr + page_idx * utils::PAGE_SIZE);
   }
 
@@ -300,11 +300,11 @@ bool verify_interleaved_page_placement(char* const start_addr, size_t memory_reg
   std::sort(sorted_target_nodes.begin(), sorted_target_nodes.end());
   const auto node_count = sorted_target_nodes.size();
 
-  auto incorrect_placement_count = uint32_t{0};
+  auto incorrect_placement_count = u32{0};
   // offset in sorted target nodes
   auto sorted_position_offset = -1;
-  auto inital_incorrect_page_locations = uint32_t{0};
-  for (auto page_idx = uint64_t{0}; page_idx < region_page_count; ++page_idx) {
+  auto inital_incorrect_page_locations = u32{0};
+  for (auto page_idx = u64{0}; page_idx < region_page_count; ++page_idx) {
     // initial offset, if page location is one of the target nodes.
     if (sorted_position_offset == -1) {
       const auto iter = std::find(sorted_target_nodes.begin(), sorted_target_nodes.end(), page_status[page_idx]);
@@ -313,7 +313,7 @@ bool verify_interleaved_page_placement(char* const start_addr, size_t memory_reg
         inital_incorrect_page_locations++;
 
         // --- early out ---
-        static constexpr auto early_out_threshold = uint32_t{10};
+        static constexpr auto early_out_threshold = u32{10};
         if (inital_incorrect_page_locations >= early_out_threshold) {
           spdlog::warn("Stopped page location verification sinice initial {} pages are on incorrect nodes.",
                        early_out_threshold);
@@ -339,19 +339,18 @@ bool verify_interleaved_page_placement(char* const start_addr, size_t memory_reg
 
   if (incorrect_placement_count > 0) {
     spdlog::warn("Page placement verification: {}/{} pages ({}%) are incorrectly placed.", incorrect_placement_count,
-                 region_page_count,
-                 static_cast<uint32_t>(((1.f * incorrect_placement_count) / region_page_count) * 100));
+                 region_page_count, static_cast<u32>(((1.f * incorrect_placement_count) / region_page_count) * 100));
   }
 
   return incorrect_placement_count <= PAGE_ERROR_LIMIT * region_page_count;
 }
 
 bool verify_partitioned_page_placement(char* const start_addr, size_t memory_region_size,
-                                       const NumaNodeIDs& target_nodes, const uint64_t percentage_first_node,
-                                       const uint64_t node_count_first_node) {
+                                       const NumaNodeIDs& target_nodes, const u64 percentage_first_node,
+                                       const u64 node_count_first_node) {
   spdlog::info("Verify partitioned page placement.");
   const auto region_page_count = memory_region_size / utils::PAGE_SIZE;
-  const auto first_partition_page_count = static_cast<uint32_t>((percentage_first_node / 100.f) * region_page_count);
+  const auto first_partition_page_count = static_cast<u32>((percentage_first_node / 100.f) * region_page_count);
   const auto first_partition_nodes = NumaNodeIDs(target_nodes.begin(), target_nodes.begin() + node_count_first_node);
   const auto first_partition_size = first_partition_page_count * utils::PAGE_SIZE;
   auto first_partition_verified =

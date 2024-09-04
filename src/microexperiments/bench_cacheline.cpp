@@ -22,22 +22,31 @@ namespace {
   }                               \
   static_assert(true, "End call of macro with a semicolon")
 
-constexpr auto KiB = uint32_t{1024};
+using u8 = uint8_t;
+using u16 = uint16_t;
+using u32 = uint32_t;
+using u64 = uint64_t;
+using i8 = int8_t;
+using i16 = int16_t;
+using i32 = int32_t;
+using i64 = int64_t;
+
+constexpr auto KiB = u32{1024};
 constexpr auto MiB = 1024 * KiB;
 
 // Used to clear the caches. Let's assume 500 MiB is sufficient.
 constexpr auto LLCache_SIZE = 500 * MiB;
-constexpr auto VALUE_COUNT = LLCache_SIZE / sizeof(uint64_t);
+constexpr auto VALUE_COUNT = LLCache_SIZE / sizeof(u64);
 
-constexpr auto RUNS = uint16_t{10};
+constexpr auto RUNS = u16{10};
 
 // Access the first byte of all cache lines.
-constexpr auto CACHE_LINE_SIZE = uint32_t{64};
+constexpr auto CACHE_LINE_SIZE = u32{64};
 
 // Use Clock::now().
 using Clock = std::chrono::steady_clock;
 
-uint64_t duration_in_nanoseconds(const auto& start, const auto& end) {
+u64 duration_in_nanoseconds(const auto& start, const auto& end) {
   return std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 }
 
@@ -46,7 +55,7 @@ std::vector<std::byte> generate_random_data(size_t length) {
   const size_t max_index = strlen(chars) - 1;
 
   std::mt19937 rng{};
-  std::uniform_int_distribution<uint64_t> dist(0, max_index);
+  std::uniform_int_distribution<u64> dist(0, max_index);
   auto randchar = [&] { return static_cast<std::byte>(chars[dist(rng)]); };
 
   std::vector<std::byte> data(length);
@@ -61,7 +70,7 @@ int main(int argc, char** argv) {
     throw std::invalid_argument{"Need to specify <numa node index>"};
   }
 
-  const uint32_t numa_node_idx = std::stoi(argv[1]);
+  const u32 numa_node_idx = std::stoi(argv[1]);
   std::cout << "Numa node index: " << numa_node_idx << std::endl;
 
   const auto numa_node_count = numa_num_configured_nodes();
@@ -79,7 +88,7 @@ int main(int argc, char** argv) {
 
   // Check if data is on correct node.
   {
-    auto identified_node_idx = int32_t{};
+    auto identified_node_idx = i32{};
     const auto ret = move_pages(0, 1, &addr, NULL, &identified_node_idx, 0);
     Assert(ret == 0, "Failed to determine the NUMA node for a given address.");
     Assert(numa_node_idx == identified_node_idx, "Local node idx and identified node idx are not eqal.");
@@ -87,8 +96,8 @@ int main(int argc, char** argv) {
 
   // Clear all caches.
   std::cout << "Clearing the caches..." << std::endl;
-  auto values = std::make_unique<std::array<uint64_t, VALUE_COUNT>>();
-  for (auto counter = uint32_t{0}; auto& value : *values) {
+  auto values = std::make_unique<std::array<u64, VALUE_COUNT>>();
+  for (auto counter = u32{0}; auto& value : *values) {
     value = counter;
     ++counter;
   }
@@ -99,13 +108,13 @@ int main(int argc, char** argv) {
   auto res = std::byte{};
   // Local memory access.
   std::cout << "Benchmarkinkg local access..." << std::endl;
-  auto access_durations = std::array<uint64_t, RUNS>{};
+  auto access_durations = std::array<u64, RUNS>{};
   auto bytes = reinterpret_cast<std::byte*>(addr);
 
-  for (auto run = uint16_t{0}; run < RUNS; ++run) {
+  for (auto run = u16{0}; run < RUNS; ++run) {
     const auto start = Clock::now();
 
-    for (auto access_idx = uint32_t{0}; access_idx < cache_line_count; ++access_idx) {
+    for (auto access_idx = u32{0}; access_idx < cache_line_count; ++access_idx) {
       const auto& res = bytes[access_idx * CACHE_LINE_SIZE];
       benchmark::DoNotOptimize(res);
     }

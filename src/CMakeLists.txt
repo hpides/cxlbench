@@ -24,6 +24,7 @@ set(
         read_write_ops.hpp
         threads.cpp
         threads.hpp
+        types.hpp
         utils.cpp
         utils.hpp
 )

@@ -81,7 +81,7 @@ bool get_enum_if_present(YAML::Node& data, const std::string& name, const std::u
 }
 
 template <typename T>
-bool get_size_if_present(YAML::Node& data, const std::string& name, const std::unordered_map<char, uint64_t>& enum_map,
+bool get_size_if_present(YAML::Node& data, const std::string& name, const std::unordered_map<char, u64>& enum_map,
                          T* attribute) {
   YAML::Node entry = data[name];
   if (!entry) {
@@ -92,7 +92,7 @@ bool get_size_if_present(YAML::Node& data, const std::string& name, const std::u
   const auto size_string = entry.as<std::string>();
   const char size_suffix = size_string.back();
   size_t size_end = size_string.length();
-  uint64_t factor = 1;
+  u64 factor = 1;
 
   auto it = enum_map.find(size_suffix);
   if (it != enum_map.end()) {
@@ -105,7 +105,7 @@ bool get_size_if_present(YAML::Node& data, const std::string& name, const std::u
 
   char* end;
   const std::string size_number = size_string.substr(0, size_end);
-  const uint64_t size = std::strtoull(size_number.data(), &end, 10);
+  const u64 size = std::strtoull(size_number.data(), &end, 10);
   *attribute = size * factor;
 
   entry.SetTag(VISITED_TAG);
@@ -296,14 +296,14 @@ void BenchmarkConfig::validate() const {
   CHECK_ARGUMENT(is_valid_min_io_chunk_size, "Minimum IO chunk must be >= 64 Byte and a power of two.");
 
   // Assumption: We need enough operations to give each thread at least one chunk
-  const uint64_t min_required_number_ops = (min_io_chunk_size / access_size) * number_threads;
+  const u64 min_required_number_ops = (min_io_chunk_size / access_size) * number_threads;
   const bool has_enough_number_operations = !is_custom_or_random || number_operations >= min_required_number_ops;
   CHECK_ARGUMENT(has_enough_number_operations,
                  "Need enough number_operations to have at least one chunk per thread. Consider at least 100 "
                  "operations in total to actually perform a significant amount of work. Need minimum of " +
                      std::to_string(min_required_number_ops) + " ops for this workload.");
 
-  const uint64_t total_accessed_memory = number_operations * access_size;
+  const u64 total_accessed_memory = number_operations * access_size;
   if (total_accessed_memory < 5 * GiB) {
     spdlog::warn(
         "Accessing less then 5 GiB of data. This short run may lead to inaccurate results due to the very short "
@@ -357,7 +357,7 @@ bool BenchmarkConfig::contains_write_op() const {
 
 std::string BenchmarkConfig::to_string(const std::string sep) const {
   auto stream = std::stringstream{};
-  for (auto region_idx = uint64_t{0}; auto& region : memory_regions) {
+  for (auto region_idx = u64{0}; auto& region : memory_regions) {
     if (region.size == 0) {
       continue;
     }
@@ -428,7 +428,7 @@ bool BenchmarkConfig::contains_secondary_memory_op() const {
 
 nlohmann::json BenchmarkConfig::as_json() const {
   nlohmann::json config;
-  for (auto region_idx = uint64_t{0}; auto& region : memory_regions) {
+  for (auto region_idx = u64{0}; auto& region : memory_regions) {
     auto prefix = MEM_REGION_PREFIX + std::to_string(region_idx) + "_";
     config[prefix + "explicit_hugepages_size"] = region.explicit_hugepages_size;
     config[prefix + "region_size"] = region.size;
@@ -478,8 +478,8 @@ nlohmann::json BenchmarkConfig::as_json() const {
   return config;
 }
 
-uint64_t CustomOp::cumulative_size(const std::vector<CustomOp>& ops) {
-  auto size = uint64_t{0};
+u64 CustomOp::cumulative_size(const std::vector<CustomOp>& ops) {
+  auto size = u64{0};
   for (const auto& op : ops) {
     size += op.size;
   }
@@ -578,7 +578,7 @@ CustomOp CustomOp::from_string(const std::string& str) {
       utils::crash_exit();
     }
 
-    const uint64_t absolute_offset = std::abs(custom_op.offset);
+    const u64 absolute_offset = std::abs(custom_op.offset);
     if ((absolute_offset % 64) != 0) {
       spdlog::critical("Offset of custom write operation must be multiple of 64. Got: {}", custom_op.offset);
       utils::crash_exit();
@@ -680,11 +680,11 @@ const std::unordered_map<std::string, ThreadPinMode> ConfigEnums::str_to_thread_
     {"single-numa", ThreadPinMode::SingleNumaCoreIncrement},
     {"single-fixed", ThreadPinMode::SingleCoreFixed}};
 
-const std::unordered_map<char, uint64_t> ConfigEnums::scale_suffix_to_factor{{'k', 1024},
-                                                                             {'K', 1024},
-                                                                             {'m', 1024 * 1024},
-                                                                             {'M', 1024 * 1024},
-                                                                             {'g', 1024 * 1024 * 1024},
-                                                                             {'G', 1024 * 1024 * 1024}};
+const std::unordered_map<char, u64> ConfigEnums::scale_suffix_to_factor{{'k', 1024},
+                                                                        {'K', 1024},
+                                                                        {'m', 1024 * 1024},
+                                                                        {'M', 1024 * 1024},
+                                                                        {'g', 1024 * 1024 * 1024},
+                                                                        {'G', 1024 * 1024 * 1024}};
 
 }  // namespace mema

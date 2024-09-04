@@ -20,8 +20,7 @@
 
 namespace mema::utils {
 
-char* map(const uint64_t expected_length, const bool use_transparent_huge_pages,
-          const uint64_t explicit_hugepages_size) {
+char* map(const u64 expected_length, const bool use_transparent_huge_pages, const u64 explicit_hugepages_size) {
   spdlog::debug("Mapping memory region of size {}, explicit huge page size {}, use transparent huge pages {}.",
                 expected_length, explicit_hugepages_size, use_transparent_huge_pages);
   // Do not mmap any data if length is 0
@@ -68,7 +67,7 @@ char* map(const uint64_t expected_length, const bool use_transparent_huge_pages,
   return static_cast<char*>(addr);
 }
 
-void populate_memory(char* addr, const uint64_t memory_size) {
+void populate_memory(char* addr, const u64 memory_size) {
   MemaAssert(memory_size % utils::PAGE_SIZE == 0, "Memory region needs to be a multiple of the page size.");
   if (memory_size == 0) {
     spdlog::warn("Did not populate/pre-fault the memory region as the memory size was 0.");
@@ -77,12 +76,12 @@ void populate_memory(char* addr, const uint64_t memory_size) {
 
   spdlog::debug("Populating/pre-faulting data.");
   const auto page_count = memory_size / utils::PAGE_SIZE;
-  for (auto page_id = uint64_t{0}; page_id < page_count; ++page_id) {
+  for (auto page_id = u64{0}; page_id < page_count; ++page_id) {
     addr[page_id * utils::PAGE_SIZE] = '\0';
   }
 }
 
-int mmap_page_size_mask(const uint32_t page_size) {
+int mmap_page_size_mask(const u32 page_size) {
   if (((page_size) & (page_size - 1)) != 0) {
     spdlog::critical("Given page size {} is not a power of 2.", page_size);
     utils::crash_exit();
@@ -121,7 +120,7 @@ bool verify_shuffled_access_positions(char* addr, const MemoryRegionDefinition& 
   spdlog::info("Verify shuffled access positions.");
   auto buffer = reinterpret_cast<std::byte*>(addr);
   const auto total_entry_count = region.size / config.access_size;
-  auto index_historgram = std::vector<uint64_t>(total_entry_count, false);
+  auto index_historgram = std::vector<u64>(total_entry_count, false);
   // Create histogram
   for (auto entry_idx = u64{0}; entry_idx < total_entry_count; ++entry_idx) {
     auto* index = reinterpret_cast<u64*>(&buffer[entry_idx * config.access_size]);
@@ -153,7 +152,7 @@ bool verify_shuffled_access_positions(char* addr, const MemoryRegionDefinition& 
   return verified;
 }
 
-void generate_read_data(char* addr, const uint64_t memory_size) {
+void generate_read_data(char* addr, const u64 memory_size) {
   if (memory_size == 0) {
     spdlog::debug("Did not generate data as the memory size was 0.");
     return;
@@ -164,7 +163,7 @@ void generate_read_data(char* addr, const uint64_t memory_size) {
   thread_pool.reserve(DATA_GEN_THREAD_COUNT - 1);
   auto thread_memory_size = memory_size / DATA_GEN_THREAD_COUNT;
 
-  for (uint8_t thread_count = 0; thread_count < DATA_GEN_THREAD_COUNT - 1; thread_count++) {
+  for (u8 thread_count = 0; thread_count < DATA_GEN_THREAD_COUNT - 1; thread_count++) {
     char* from = addr + thread_count * thread_memory_size;
     const char* to = addr + (thread_count + 1) * thread_memory_size;
     thread_pool.emplace_back(rw_ops::write_data, from, to);
@@ -184,15 +183,15 @@ void generate_read_data(char* addr, const uint64_t memory_size) {
 void clear_caches() {
   // ~200 MB
   static constexpr auto value_count = 27000000;
-  auto values = std::make_unique<std::array<uint64_t, value_count>>();
-  for (auto counter = uint32_t{0}; auto& value : *values) {
+  auto values = std::make_unique<std::array<u64, value_count>>();
+  for (auto counter = u32{0}; auto& value : *values) {
     value = counter;
     ++counter;
   }
   benchmark::DoNotOptimize(values);
 }
 
-uint64_t duration_to_nanoseconds(const std::chrono::steady_clock::duration duration) {
+u64 duration_to_nanoseconds(const std::chrono::steady_clock::duration duration) {
   return std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
 }
 
@@ -203,7 +202,7 @@ uint64_t duration_to_nanoseconds(const std::chrono::steady_clock::duration durat
 //=    - Input: alpha and N                                                 =
 //=    - Output: Returns with Zipf distributed random variable              =
 //===========================================================================
-uint64_t zipf(const double alpha, const uint64_t n) {
+u64 zipf(const double alpha, const u64 n) {
   static thread_local bool first = true;  // Static first time flag
   static thread_local double c = 0;       // Normalization constant
   static thread_local double* sum_probs;  // Pre-calculated sum of probabilities
@@ -212,14 +211,14 @@ uint64_t zipf(const double alpha, const uint64_t n) {
 
   // Compute normalization constant on first call only
   if (first) {
-    for (uint64_t i = 1; i <= n; i++) {
+    for (u64 i = 1; i <= n; i++) {
       c = c + (1.0 / pow(static_cast<double>(i), alpha));
     }
     c = 1.0 / c;
 
     sum_probs = static_cast<double*>(malloc((n + 1) * sizeof(*sum_probs)));
     sum_probs[0] = 0;
-    for (uint64_t i = 1; i <= n; i++) {
+    for (u64 i = 1; i <= n; i++) {
       sum_probs[i] = sum_probs[i - 1] + c / pow(static_cast<double>(i), alpha);
     }
     first = false;
@@ -255,14 +254,14 @@ uint64_t zipf(const double alpha, const uint64_t n) {
 //=     John Wiley & Sons, 1991. (Page 443, Figure 26.2)                  =
 //=========================================================================
 double rand_val() {
-  const int64_t a = 16807;       // Multiplier
-  const int64_t m = 2147483647;  // Modulus
-  const int64_t q = 127773;      // m div a
-  const int64_t r = 2836;        // m mod a
-  static int64_t x = 1687248;    // Random int value
-  int64_t x_div_q;               // x divided by q
-  int64_t x_mod_q;               // x modulo q
-  int64_t x_new;                 // New x value
+  const i64 a = 16807;       // Multiplier
+  const i64 m = 2147483647;  // Modulus
+  const i64 q = 127773;      // m div a
+  const i64 r = 2836;        // m mod a
+  static i64 x = 1687248;    // Random int value
+  i64 x_div_q;               // x divided by q
+  i64 x_mod_q;               // x modulo q
+  i64 x_new;                 // New x value
 
   // RNG using integer arithmetic
   x_div_q = x / q;

@@ -291,7 +291,7 @@ void BenchmarkSuite::run_benchmarks(const MemaOptions& options) {
   auto matrix_bm_results = nlohmann::json::array();
 
   const auto benchmark_count = benchmarks.size();
-  for (auto bench_idx = uint64_t{0}; bench_idx < benchmark_count; ++bench_idx) {
+  for (auto bench_idx = u64{0}; bench_idx < benchmark_count; ++bench_idx) {
     auto& benchmark = *benchmarks[bench_idx];
 
     spdlog::info("Starting benchmark {0} ({1}):", bench_idx + 1, benchmark.benchmark_name());

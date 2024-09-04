@@ -15,8 +15,7 @@ class IoOperation {
   friend class Benchmark;
 
  public:
-  IoOperation(std::vector<char*>&& op_addresses, uint32_t access_size, Operation op_type,
-              FlushInstruction flush_instruction)
+  IoOperation(std::vector<char*>&& op_addresses, u32 access_size, Operation op_type, FlushInstruction flush_instruction)
       : op_addresses_{std::move(op_addresses)},
         access_size_{access_size},
         op_type_{op_type},
@@ -178,7 +177,7 @@ class IoOperation {
   }
 
   std::vector<char*> op_addresses_;
-  uint32_t access_size_;
+  u32 access_size_;
   Operation op_type_;
   FlushInstruction flush_instruction_;
 };
@@ -209,10 +208,10 @@ class ChainedOperation {
   }
 
   inline char* get_random_address(char* addr) {
-    const uint64_t base = (uint64_t)addr;
-    const uint64_t random_offset = base + lehmer64();
-    const uint64_t offset_in_range = random_offset % range_size_;
-    const uint64_t aligned_offset = offset_in_range & align_;
+    const u64 base = (u64)addr;
+    const u64 random_offset = base + lehmer64();
+    const u64 offset_in_range = random_offset % range_size_;
+    const u64 aligned_offset = offset_in_range & align_;
     return range_start_ + aligned_offset;
   }
 
@@ -369,7 +368,7 @@ class ChainedOperation {
   ChainedOperation* next_ = nullptr;
   const Operation type_;
   const FlushInstruction flush_instruction_;
-  const int64_t offset_;
+  const i64 offset_;
 };
 
 }  // namespace mema

@@ -17,7 +17,7 @@
 
 namespace mema {
 
-enum class BenchmarkType : uint8_t { Single, Parallel };
+enum class BenchmarkType : u8 { Single, Parallel };
 
 struct BenchmarkEnums {
   static const std::unordered_map<std::string, BenchmarkType> str_to_benchmark_type;
@@ -34,12 +34,12 @@ struct BenchmarkExecution {
   // Owning instance for thread synchronization
   std::mutex generation_lock{};
   std::condition_variable generation_done{};
-  uint16_t threads_remaining;
-  std::atomic<uint64_t> io_position = 0;
+  u16 threads_remaining;
+  std::atomic<u64> io_position = 0;
 
   // For custom operations, we don't have chunks but only simulate them by running chunk-sized blocks.
   // This is a *signed* integer, as our atomic -= operations my go below 0.
-  std::atomic<int64_t> num_custom_chunks_remaining = 0;
+  std::atomic<i64> num_custom_chunks_remaining = 0;
 
   // The main list of all IO operations to steal work from
   std::vector<IoOperation> io_operations;
@@ -50,12 +50,12 @@ struct ThreadConfig {
   char* start_addr;
   char* secondary_start_addr;
 
-  const uint64_t partition_size;
-  const uint64_t secondary_partition_size;
-  const uint64_t thread_count_per_partition;
-  const uint64_t thread_idx;
-  const uint64_t ops_count_per_chunk;
-  const uint64_t chunk_count;
+  const u64 partition_size;
+  const u64 secondary_partition_size;
+  const u64 thread_count_per_partition;
+  const u64 thread_idx;
+  const u64 ops_count_per_chunk;
+  const u64 chunk_count;
   const BenchmarkConfig& config;
   // Defines the CPU cores to run on.
   CoreIDs affinity_core_ids;
@@ -63,16 +63,15 @@ struct ThreadConfig {
   BenchmarkExecution* execution;
 
   // Pointers to store performance data in.
-  uint64_t* total_operation_size;
+  u64* total_operation_size;
   ExecutionDuration* total_operation_duration;
-  std::vector<uint64_t>* custom_op_latencies;
+  std::vector<u64>* custom_op_latencies;
 
-  ThreadConfig(char* partition_start_addr, char* secondary_partition_start_addr, const uint64_t partition_size,
-               const uint64_t secondary_partition_size, const uint64_t thread_count_per_partition,
-               const uint64_t thread_idx, const uint64_t ops_count_per_chunk, const uint64_t chunk_count,
-               const BenchmarkConfig& config, CoreIDs affinity_core_ids, BenchmarkExecution* execution,
-               ExecutionDuration* total_operation_duration, uint64_t* total_operation_size,
-               std::vector<uint64_t>* custom_op_latencies)
+  ThreadConfig(char* partition_start_addr, char* secondary_partition_start_addr, const u64 partition_size,
+               const u64 secondary_partition_size, const u64 thread_count_per_partition, const u64 thread_idx,
+               const u64 ops_count_per_chunk, const u64 chunk_count, const BenchmarkConfig& config,
+               CoreIDs affinity_core_ids, BenchmarkExecution* execution, ExecutionDuration* total_operation_duration,
+               u64* total_operation_size, std::vector<u64>* custom_op_latencies)
       : start_addr{partition_start_addr},
         secondary_start_addr{secondary_partition_start_addr},
         partition_size{partition_size},
@@ -97,11 +96,11 @@ struct BenchmarkResult {
   nlohmann::json get_custom_results_as_json() const;
 
   // Result vectors for raw operation workloads
-  std::vector<uint64_t> total_operation_sizes;
+  std::vector<u64> total_operation_sizes;
   std::vector<ExecutionDuration> total_operation_durations;
 
   // Result vectors for custom operation workloads
-  std::vector<std::vector<uint64_t>> custom_operation_latencies;
+  std::vector<std::vector<u64>> custom_operation_latencies;
 
   hdr_histogram* latency_hdr = nullptr;
   const BenchmarkConfig config;
@@ -173,7 +172,7 @@ class Benchmark {
   const std::vector<std::vector<ThreadConfig>>& get_thread_configs() const;
   const std::vector<std::unique_ptr<BenchmarkResult>>& get_benchmark_results() const;
 
-  nlohmann::json get_json_config(uint8_t config_index);
+  nlohmann::json get_json_config(u8 config_index);
 
  protected:
   static void single_set_up(const BenchmarkConfig& config, MemoryRegions& memory_regions, BenchmarkExecution* execution,
@@ -199,10 +198,9 @@ class Benchmark {
   static void run_dependent_reads_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config);
   static void run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config);
 
-  static uint64_t run_fixed_sized_benchmark(std::vector<IoOperation>* vector, std::atomic<uint64_t>* io_position);
-  static uint64_t run_duration_based_benchmark(std::vector<IoOperation>* io_operations,
-                                               std::atomic<uint64_t>* io_position,
-                                               std::chrono::steady_clock::time_point execution_end);
+  static u64 run_fixed_sized_benchmark(std::vector<IoOperation>* vector, std::atomic<u64>* io_position);
+  static u64 run_duration_based_benchmark(std::vector<IoOperation>* io_operations, std::atomic<u64>* io_position,
+                                          std::chrono::steady_clock::time_point execution_end);
 
   const std::string benchmark_name_;
 

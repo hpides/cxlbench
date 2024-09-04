@@ -17,8 +17,8 @@ bool ParallelBenchmark::run() {
   signal(SIGSEGV, thread_error_handler);
 
   utils::clear_caches();
-  for (auto workload_idx = uint64_t{0}; workload_idx < configs_.size(); ++workload_idx) {
-    for (auto thread_idx = uint64_t{0}; thread_idx < configs_[workload_idx].number_threads; thread_idx++) {
+  for (auto workload_idx = u64{0}; workload_idx < configs_.size(); ++workload_idx) {
+    for (auto thread_idx = u64{0}; thread_idx < configs_[workload_idx].number_threads; thread_idx++) {
       thread_pools_[workload_idx].emplace_back(&run_in_thread, &thread_configs_[workload_idx][thread_idx],
                                                std::ref(configs_[workload_idx]));
     }
@@ -59,7 +59,7 @@ void ParallelBenchmark::generate_data() {
     utils::crash_exit();
   }
   memory_regions_.resize(PAR_WORKLOAD_COUNT);
-  for (auto workload_idx = uint64_t{0}; workload_idx < PAR_WORKLOAD_COUNT; ++workload_idx) {
+  for (auto workload_idx = u64{0}; workload_idx < PAR_WORKLOAD_COUNT; ++workload_idx) {
     memory_regions_[workload_idx] = prepare_data(configs_[workload_idx]);
   }
 }
@@ -67,14 +67,14 @@ void ParallelBenchmark::generate_data() {
 void ParallelBenchmark::set_up() {
   thread_pools_.resize(PAR_WORKLOAD_COUNT);
   thread_configs_.resize(PAR_WORKLOAD_COUNT);
-  for (auto workload_idx = uint64_t{0}; workload_idx < PAR_WORKLOAD_COUNT; ++workload_idx) {
+  for (auto workload_idx = u64{0}; workload_idx < PAR_WORKLOAD_COUNT; ++workload_idx) {
     single_set_up(configs_[workload_idx], memory_regions_[workload_idx], executions_[workload_idx].get(),
                   results_[workload_idx].get(), &thread_pools_[workload_idx], &thread_configs_[workload_idx]);
   }
 }
 
 void ParallelBenchmark::verify() {
-  for (auto workload_idx = uint32_t{0}; workload_idx < PAR_WORKLOAD_COUNT; ++workload_idx) {
+  for (auto workload_idx = u32{0}; workload_idx < PAR_WORKLOAD_COUNT; ++workload_idx) {
     verify_page_locations(memory_regions_[workload_idx], configs_[workload_idx].memory_regions);
   }
 }

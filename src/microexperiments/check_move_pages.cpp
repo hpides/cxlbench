@@ -17,7 +17,16 @@ namespace {
   }                               \
   static_assert(true, "End call of macro with a semicolon")
 
-constexpr auto KiB = uint64_t{1024};
+using u8 = uint8_t;
+using u16 = uint16_t;
+using u32 = uint32_t;
+using u64 = uint64_t;
+using i8 = int8_t;
+using i16 = int16_t;
+using i32 = int32_t;
+using i64 = int64_t;
+
+constexpr auto KiB = u64{1024};
 constexpr auto MiB = KiB * 1024;
 constexpr auto PAGE_SIZE = 4 * KiB;
 constexpr auto NODES_SIZE = 2;
@@ -43,7 +52,7 @@ int main(int argc, char** argv) {
   const auto memory_size = memory_size_in_mib * MiB;
 
   // create node array
-  auto nodes = std::array<int32_t, NODES_SIZE>{first_node, second_node};
+  auto nodes = std::array<i32, NODES_SIZE>{first_node, second_node};
 
   // allocate
   auto addr = mmap(nullptr, memory_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
@@ -82,7 +91,7 @@ int main(int argc, char** argv) {
   auto* data = reinterpret_cast<char*>(addr);
 
   const auto page_count = memory_size / PAGE_SIZE;
-  for (auto page_id = uint64_t{0}; page_id < page_count; ++page_id) {
+  for (auto page_id = u64{0}; page_id < page_count; ++page_id) {
     data[page_id * PAGE_SIZE] = '\0';
   }
 
@@ -93,7 +102,7 @@ int main(int argc, char** argv) {
   //   auto pages = std::vector<void*>{};
   //   pages.resize(page_count);
 
-  //   for (auto page_idx = uint64_t{0}; page_idx < page_count; ++page_idx) {
+  //   for (auto page_idx = u64{0}; page_idx < page_count; ++page_idx) {
   //     page_target_nodes[page_idx] = nodes[page_idx % NODES_SIZE];
   //     pages[page_idx] = reinterpret_cast<void*>(data + page_idx * PAGE_SIZE);
   //   }
@@ -114,7 +123,7 @@ int main(int argc, char** argv) {
     auto pages = std::vector<void*>{};
     pages.resize(page_count);
 
-    for (auto page_idx = uint64_t{0}; page_idx < page_count; ++page_idx) {
+    for (auto page_idx = u64{0}; page_idx < page_count; ++page_idx) {
       pages[page_idx] = reinterpret_cast<void*>(data + page_idx * PAGE_SIZE);
     }
 
@@ -130,7 +139,7 @@ int main(int argc, char** argv) {
     auto counter_first = 0u;
     auto counter_second = 0u;
     auto false_pages = 0u;
-    for (auto page_idx = uint64_t{0}; page_idx < page_count; ++page_idx) {
+    for (auto page_idx = u64{0}; page_idx < page_count; ++page_idx) {
       auto& status = page_status[page_idx];
 
       if (status == first_node) {

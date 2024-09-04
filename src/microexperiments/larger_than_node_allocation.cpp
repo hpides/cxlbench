@@ -27,7 +27,16 @@ namespace {
   }                               \
   static_assert(true, "End call of macro with a semicolon")
 
-constexpr auto KiB = uint64_t{1024u};
+using u8 = uint8_t;
+using u16 = uint16_t;
+using u32 = uint32_t;
+using u64 = uint64_t;
+using i8 = int8_t;
+using i16 = int16_t;
+using i32 = int32_t;
+using i64 = int64_t;
+
+constexpr auto KiB = u64{1024u};
 constexpr auto MiB = 1024 * KiB;
 constexpr auto GiB = 1024 * MiB;
 
@@ -56,25 +65,25 @@ int main(int argc, char** argv) {
   const auto size_in_gb = std::stoi(argv[1]);
   Assert(size_in_gb > 0, "Size must be greater than 0.");
 
-  const auto value_count = ((static_cast<uint64_t>(size_in_gb) * GiB) / sizeof(uint64_t)) + 1;
+  const auto value_count = ((static_cast<u64>(size_in_gb) * GiB) / sizeof(u64)) + 1;
   const auto value_count_per_thread = (value_count / thread_count) + 1;
-  std::cout << "Total required uint64_t values: " << value_count << std::endl;
-  std::cout << "Total required uint64_t values per thread: " << value_count_per_thread << std::endl;
+  std::cout << "Total required u64 values: " << value_count << std::endl;
+  std::cout << "Total required u64 values per thread: " << value_count_per_thread << std::endl;
 
-  auto values = std::make_shared<std::vector<uint64_t>>();
+  auto values = std::make_shared<std::vector<u64>>();
   values->resize(value_count_per_thread * thread_count);
 
-  auto write_data = [&](uint16_t thread_idx) {
+  auto write_data = [&](u16 thread_idx) {
     std::cout << "Writing " << value_count_per_thread << " values..." << std::endl;
 
-    auto last_node = int32_t{-1};
+    auto last_node = i32{-1};
     const auto start_offset = thread_idx * value_count_per_thread;
-    for (auto value_idx = uint64_t{0}; value_idx < value_count_per_thread; ++value_idx) {
+    for (auto value_idx = u64{0}; value_idx < value_count_per_thread; ++value_idx) {
       auto& value = (*values)[start_offset + value_idx];
       value = value_idx;
 
       if (!(value_idx % 50000000)) {
-        auto identified_node_idx = int32_t{};
+        auto identified_node_idx = i32{};
         auto value_ptr = reinterpret_cast<void*>(&value);
 
         const auto ret = move_pages(0, 1, &value_ptr, NULL, &identified_node_idx, 0);
@@ -93,7 +102,7 @@ int main(int argc, char** argv) {
     benchmark::DoNotOptimize(values);
   };
 
-  for (auto i = uint16_t{0}; i < thread_count; ++i) {
+  for (auto i = u16{0}; i < thread_count; ++i) {
     threads.emplace_back(write_data, i);
   }
 
