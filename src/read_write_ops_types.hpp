@@ -59,16 +59,4 @@ inline void sfence_barrier() { _mm_sfence(); }
 /** no memory order is guaranteed. */
 inline void no_barrier() {}
 
-template <typename Fn, size_t... indices>
-void unroll_impl(Fn fn, std::index_sequence<indices...>) {
-  // Call fn for sequence of passed indices.
-  (fn(indices), ...);
-}
-
-template <int N, typename Fn>
-void unroll(Fn fn) {
-  // Call unroll_impl with passed function and a compile-time sequence of integers [0, ..., N - 1].
-  unroll_impl(fn, std::make_index_sequence<N>());
-}
-
 }  // namespace mema::rw_ops
