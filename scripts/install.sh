@@ -10,14 +10,15 @@ sudo apt install -y \
     git \
     hwloc \
     libnuma-dev \
+    lstopo \
     lshw \
     ninja-build \
     numactl \
     pciutils \
+    pipx \
     ruby \
     vim \
-    zlib1g-dev \
-    pipx
+    zlib1g-dev
 
 pipx install poetry  # python package manager
 pipx ensurepath
