@@ -10,6 +10,7 @@
 #if !(defined(USE_AVX_2) || defined(USE_AVX_512))
 #include "read_write_ops_types.hpp"
 #endif
+#include "types.hpp"
 
 /** Neon intrinsics for ARM */
 #if defined(__ARM_NEON)
