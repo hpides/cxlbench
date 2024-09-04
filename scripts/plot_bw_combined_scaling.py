@@ -217,10 +217,11 @@ if __name__ == "__main__":
     df.to_csv("{}/{}.csv".format(output_dir, "manual_check"))
 
     w1_thread_counts = df["workload_1_thread_count"].unique()
-    selected = [1, 4, 8, 16]
-    all_present = all(count in w1_thread_counts for count in selected)
+    w1_selected_thread_counts = [1, 8, 16]
+    w2_selected_thread_counts = [4, 8, 12, 16]
+    all_present = all(count in w1_thread_counts for count in w1_selected_thread_counts)
     assert all_present
-    w1_thread_counts = selected
+    w1_thread_counts = w1_selected_thread_counts
 
     # Transform GiB/s to GB/s
     df["combined_bandwidth_gb"] = df["combined_bandwidth"] * (1024**3 / 1e9)
@@ -238,16 +239,12 @@ if __name__ == "__main__":
     LABEL_LOC_REMOTE_SOCKET_W2 = "B{}Remote Socket (W2)".format(SEPARATOR)
 
     # Prepare subplots
-    hatches_w1 = ["/", "\\", "+"]
-    hatches_w2 = ["//", "\\\\", "xx"]  # "*", "-", "|"
-    colors_w1 = ["#CC79A7", "#F0E442", "#56B4E9"]
-    colors_w2 = ["#0072B2", "#D55E00", "#009E73"]
-    styles_w1 = [(color, hatch) for color, hatch in zip(colors_w1, hatches_w1)]
-    styles_w2 = [(color, hatch) for color, hatch in zip(colors_w2, hatches_w2)]
-    fig, axes = plt.subplots(2, 2, figsize=(8, 6), sharey=False)
+    hatches = ["/", "\\", "X", "o", "//", "xx"]
+    colors = sns.color_palette("colorblind", 6)
+    fig, axes = plt.subplots(1, 3, figsize=(17, 7), sharey=False)
     axes = axes.flatten()
 
-    fontsize = 20
+    fontsize = 32
     plt.rcParams.update({"font.size": fontsize})
     plt.rcParams["axes.titlesize"] = fontsize
     plt.rcParams["axes.labelsize"] = fontsize
@@ -255,9 +252,15 @@ if __name__ == "__main__":
     plt.rcParams["ytick.labelsize"] = fontsize
     plt.rcParams["legend.fontsize"] = fontsize
     plt.rcParams["legend.title_fontsize"] = fontsize
+    plt.rcParams["hatch.linewidth"] = 3
 
     for ax, thread_count in zip(axes, w1_thread_counts):
-        df_plot = df[df["workload_1_thread_count"] == thread_count]
+        df_plot = df[
+            (df["workload_1_thread_count"] == thread_count)
+            & (df["workload_2_thread_count"].isin(w2_selected_thread_counts))
+        ]
+        w2_threadcounts = df_plot["workload_2_thread_count"].unique()
+        len_w2_threadcounts = len(w2_threadcounts)
 
         # Plot combined bandwidth
         df_plot["combined_bandwidth_label"] = df_plot["tag"]
@@ -275,16 +278,10 @@ if __name__ == "__main__":
             x="workload_2_thread_count",
             y="combined_bandwidth",
             data=df_plot,
-            palette=colors_w2,
             hue="combined_bandwidth_label",
             hue_order=hue_order,
             ax=ax,
         )
-
-        # Apply hatches and colors
-        # for i, bar in enumerate(ax.patches):
-        #     bar.set_hatch(styles_w2[i % len(styles_w2)][1])
-        #     bar.set_facecolor(styles_w2[i % len(styles_w2)][0])
 
         # Plot workload 1 bandwidth
         df_plot["workload_1_bandwidth_label"] = df_plot["tag"]
@@ -301,11 +298,28 @@ if __name__ == "__main__":
             x="workload_2_thread_count",
             y="workload_1_bandwidth",
             data=df_plot,
-            palette=colors_w1,
             hue="workload_1_bandwidth_label",
             hue_order=hue_order_w1,
             ax=ax,
         )
+
+        plot_patch_count = hue_count * len_w2_threadcounts
+        workload_patch_count = plot_patch_count + hue_count
+        for i, bar in enumerate(ax.patches):
+            workload_idx = int(i / workload_patch_count)
+            i = i % workload_patch_count
+            if bar.get_x() == 0 & bar.get_y() == 0:
+                style_idx = int(i - plot_patch_count)
+            else:
+                style_idx = int(i / len_w2_threadcounts)
+            bar.set_hatch(hatches[style_idx])
+            if workload_idx == 1:
+                bar.set_edgecolor("#E1E1E1")  # Set edge color for the hatch
+                bar.set_facecolor(colors[style_idx])
+            else:
+                bar.set_edgecolor(colors[style_idx])  # Set edge color for the hatch
+                bar.set_facecolor("white")
+            bar.set_linewidth(3)
 
         ax.yaxis.grid()
         if y_tick_distance is not None:
@@ -344,7 +358,7 @@ if __name__ == "__main__":
         ordered_handles,
         ordered_labels,
         loc="upper center",
-        bbox_to_anchor=(0.5, 1.12),
+        bbox_to_anchor=(0.5, 1.18),
         ncol=3,  # Limit legend to 3 columns
         frameon=False,
         handlelength=0.8,  # reduce handle size

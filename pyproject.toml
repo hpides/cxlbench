@@ -14,6 +14,9 @@ ruff = "^0.5.1"
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
+include = [
+    "scripts/**/*.py"
+]
 exclude = [
     ".bzr",
     ".direnv",
@@ -36,7 +39,7 @@ exclude = [
     "__pypackages__",
     "_build",
     "buck-out",
-    "build",
+    "build*",
     "dist",
     "node_modules",
     "site-packages",

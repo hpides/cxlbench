@@ -173,70 +173,92 @@ if __name__ == "__main__":
         "sequential write": TAG_SEQ_WRITES,
     }
 
-    df[BMKeys.TAG].replace(tag_replacements, inplace=True)
+    df[BMKeys.TAG] = df[BMKeys.TAG].replace(tag_replacements)
 
-    # x ticks in steps of 10, 0 to 100.
+    # x ticks in steps of 10, 0 to 100
     page_share_on_device = [x * 10 for x in range(0, 11)]
 
     sns.set_context("paper")
     sns.set_theme(style="ticks")
 
     hpi_palette = [(0.9609, 0.6563, 0), (0.8633, 0.3789, 0.0313), (0.6914, 0.0234, 0.2265)]
-    palette = {
-        TAG_RND_READS: hpi_palette[0],
-        TAG_SEQ_READS: hpi_palette[0],
-        TAG_RND_WRITES: hpi_palette[2],
-        TAG_SEQ_WRITES: hpi_palette[2],
-    }
+    palette = sns.color_palette("colorblind", len(df[BMKeys.THREAD_COUNT].unique()))
 
-    markers = {TAG_RND_READS: ".", TAG_SEQ_READS: ".", TAG_RND_WRITES: "X", TAG_SEQ_WRITES: "X"}
+    markers = ["o", "X", "D", "s", "P", "*"]
+    dashes = {count: "" for count in df[BMKeys.THREAD_COUNT].unique()}  # No dashes for different thread counts
 
-    dashes = {TAG_RND_READS: [1, 0], TAG_SEQ_READS: [1, 0], TAG_RND_WRITES: [1, 0], TAG_SEQ_WRITES: [1, 0]}
-
-    hue_order = [TAG_RND_READS, TAG_RND_WRITES]
-
+    # Unique values
     thread_counts = df[BMKeys.THREAD_COUNT].unique()
     access_sizes = df[BMKeys.ACCESS_SIZE].unique()
+    tags = [TAG_RND_READS, TAG_RND_WRITES]
+    colors = [hpi_palette[0], hpi_palette[2]]
 
     # Create a grid of subplots
     fig, axes = plt.subplots(
-        len(access_sizes),
-        len(thread_counts),
-        figsize=(3 * len(thread_counts), 2 * len(access_sizes)),
-        sharex=True,
-        sharey=True,
+        len(access_sizes), len(tags), figsize=(3.1 * len(tags), 1.8 * len(access_sizes)), sharex=True, sharey=False
     )
 
     for i, access_size in enumerate(access_sizes):
-        for j, thread_count in enumerate(thread_counts):
+        for j, tag in enumerate(tags):
             ax = axes[i, j]
-            sub_df = df[(df[BMKeys.THREAD_COUNT] == thread_count) & (df[BMKeys.ACCESS_SIZE] == access_size)]
+            sub_df = df[(df[BMKeys.TAG] == tag) & (df[BMKeys.ACCESS_SIZE] == access_size)]
+            print(
+                sub_df[
+                    [
+                        BMKeys.BANDWIDTH_GB,
+                        BMKeys.THREAD_COUNT,
+                        BMKeys.ACCESS_SIZE,
+                        BMKeys.TAG,
+                        PERCENTAGE_SECOND_PARTITION,
+                    ]
+                ].to_string()
+            )
 
-            lineplot = sns.lineplot(
+            sns.lineplot(
                 data=sub_df,
                 x=PERCENTAGE_SECOND_PARTITION,
                 y=BMKeys.BANDWIDTH_GB,
-                palette=palette,
-                style=BMKeys.TAG,
-                dashes=dashes,
+                hue=BMKeys.THREAD_COUNT,
+                style=BMKeys.THREAD_COUNT,
                 markers=markers,
-                hue_order=hue_order,
-                hue=BMKeys.TAG,
+                palette=[colors[j]],
+                dashes=dashes,
                 ax=ax,
             )
-            lineplot.set_xticks(page_share_on_device)
-            lineplot.set_xticklabels(page_share_on_device)
-            lineplot.yaxis.grid()
+            ax.set_title("{}, Access Size: {}".format(tag, access_size))
+            ax.legend().remove()
+
+            ax.set_xticks(page_share_on_device)
+            ax.set_xticklabels(page_share_on_device)
+            ax.yaxis.grid()
             if y_tick_distance is not None:
-                lineplot.yaxis.set_major_locator(ticker.MultipleLocator(y_tick_distance))
+                print_label_interval = 2
+                if tag == TAG_RND_READS and access_size == 4096:
+                    y_tick_distance = y_tick_distance * 2
+                ax.yaxis.set_major_locator(ticker.MultipleLocator(y_tick_distance))
+                ticks = ax.get_yticks()
+                tick_labels = [
+                    "" if (tick_idx - 1) % print_label_interval != 0 else f"{int(tick)}"
+                    for tick_idx, tick in enumerate(ticks)
+                ]
+                ax.set_yticklabels(tick_labels)
 
-            lineplot.legend().remove()
-
-            ax.set_title(f"Threads: {thread_count}, Access Size: {access_size}")
+                # Make every print_label_interval tick bigger
+                for tick_idx, tick in enumerate(ax.yaxis.get_major_ticks()):
+                    if (tick_idx - 1) % print_label_interval == 0:
+                        tick.tick1line.set_markersize(7)  # Set a larger tick size
+                        tick.tick2line.set_markersize(7)  # Set a larger tick size
+                        tick.tick1line.set_markeredgewidth(1.2)  # Set a thicker tick width
+                        tick.tick2line.set_markeredgewidth(1.2)  # Set a thicker tick width
+                    else:
+                        tick.tick1line.set_markersize(5)  # Set a smaller tick size
+                        tick.tick2line.set_markersize(5)  # Set a smaller tick size
+                        tick.tick1line.set_markeredgewidth(1)  # Set a thinner tick width
+                        tick.tick2line.set_markeredgewidth(1)  # Set a thinner tick width
 
     # Set common labels
-    fig.text(0.5, 0.04, "Pages on device memory in %", ha="center")
-    fig.text(0.045, 0.5, "Throughput in GB/s", va="center", rotation="vertical")
+    fig.text(0.55, 0.055, "Pages on device memory in %", ha="center")
+    fig.text(0.04, 0.45, "Throughput in GB/s", va="center", rotation="vertical")
 
     # Remove individual subplot labels
     for ax in axes.flat:
@@ -245,12 +267,16 @@ if __name__ == "__main__":
 
     # Center the shared legend at the top middle with two columns
     handles, labels = ax.get_legend_handles_labels()
+    for handle in handles:
+        handle.set_color("black")
+
     fig.legend(
         handles,
         labels,
+        title="Thread Count",
         loc="upper center",
-        bbox_to_anchor=(0.5, 1.0),
-        ncol=2,
+        bbox_to_anchor=(0.55, 1.05),
+        ncol=5,
         frameon=False,
         columnspacing=0.5,
         handlelength=1.2,

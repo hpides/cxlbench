@@ -15,6 +15,7 @@ import sys
 from enums.benchmark_keys import BMKeys
 from enums.file_names import PLOT_FILE_PREFIX, FILE_TAG_SUBSTRING
 
+SHOW_LEGEND = False
 BM_SUPPORTED_CONFIGS = ["tree_index_lookup", "tree_index_update"]
 KEY_LOCATION_M0 = "m0_memory_location"
 KEY_LOCATION_M1 = "m1_memory_location"
@@ -174,7 +175,17 @@ def main():
     # Define the number of rows and columns for the subplots
     num_cols = len(unique_workloads)
 
-    fig, axes = plt.subplots(1, num_cols, figsize=(2.6 * num_cols, 2.8), sharey=True)
+    fontsize = 11
+    plt.rcParams.update({"font.size": fontsize})
+    plt.rcParams["axes.titlesize"] = fontsize
+    plt.rcParams["axes.labelsize"] = fontsize
+    plt.rcParams["xtick.labelsize"] = fontsize
+    plt.rcParams["ytick.labelsize"] = fontsize
+    plt.rcParams["legend.fontsize"] = fontsize
+    plt.rcParams["legend.title_fontsize"] = fontsize
+
+    fig_height = 3
+    fig, axes = plt.subplots(1, num_cols, figsize=(3.5 * num_cols, fig_height), sharey=True)
 
     # Iterate over each workload
     for j, workload in enumerate(unique_workloads):
@@ -193,7 +204,8 @@ def main():
             markers=True,
             dashes=False,
             ax=ax,
-            palette="colorblind",
+            palette="dark",
+            markersize=10,
         )
 
         ax.set_title(workload.split("\n")[0])
@@ -214,27 +226,27 @@ def main():
         ax.set_xticks(subset_df[BMKeys.THREAD_COUNT].unique())
 
     # Set shared labels
-    fig.supxlabel("Thread Count", x=0.5, y=0.095)
-    fig.supylabel("Million Ops/s", x=0.05, y=0.5)
+    fig.supxlabel("Thread Count", x=0.55, y=0.08)
+    fig.supylabel("Million Ops/s", x=0.04, y=0.5)
 
     # Create a shared legend
-    handles, labels = ax.get_legend_handles_labels()
-    fig.legend(
-        handles=handles,
-        labels=labels,
-        title="Node Location",
-        # title="Node Location: Inner, Leaf",
-        loc="center left",
-        bbox_to_anchor=(0.83, 0.5),
-        frameon=False,
-        ncol=1,  # Split legend into two columns
-        handlelength=1,  # Reduce handle length
-        handletextpad=0.5,  # Reduce space between handle and text
-        columnspacing=0.5,  # Reduce space between columns
-    )
+    if SHOW_LEGEND:
+        handles, labels = ax.get_legend_handles_labels()
+        fig.legend(
+            handles=handles,
+            labels=labels,
+            title="Node Location",
+            loc="upper center",
+            bbox_to_anchor=(0.525, 1.28),
+            frameon=False,
+            ncol=3,  # Split legend into two columns
+            handlelength=1.2,  # Reduce handle length
+            handletextpad=0.5,  # Reduce space between handle and text
+            columnspacing=0.5,  # Reduce space between columns
+        )
 
     # Adjust layout
-    plt.tight_layout(rect=[0, 0, 0.85, 0.95])
+    plt.tight_layout()
 
     # Save the figure
     fig.savefig(

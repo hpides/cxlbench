@@ -1,6 +1,7 @@
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt, patches
+# from matplotlib import gridspec
 
 from enums.benchmark_keys import BMKeys
 from enums.file_names import PLOT_FILE_PREFIX
@@ -18,12 +19,12 @@ class Heatmap:
         color_theme: str = "magma",
         min_color="red",
         max_color="green",
-        value_format="d",
         compact=True,
         access_size_limit=8192,
-        thread_limit=60,
+        thread_limit=28,
         mark_linewidth=3,
-        # value_format=".2f",
+        value_format="d",
+        # value_format=".1f",
     ):
         self.df = df
         if thread_limit is not None:
@@ -40,7 +41,7 @@ class Heatmap:
         self.compact = compact
         self.mark_linewidth = mark_linewidth
         if self.compact:
-            self.mark_linewidth = 1
+            self.mark_linewidth = 2
 
         self.df_heatmap = pd.pivot_table(
             self.df, index=BMKeys.ACCESS_SIZE, columns=BMKeys.THREAD_COUNT, values=value_key
@@ -67,13 +68,16 @@ class Heatmap:
         y_scale = 0.1
         minimum = 2
 
-        compact_heatmap_groups = ["random_reads", "sequential_writes", "random_writes"]
+        compact_heatmap_groups = ["random_reads", "sequential_writes", "random_writes"]  # EMR cxl heatmap
+        # compact_heatmap_groups = ["random_writes"] # EMR local cxl random pattern comparison
         assert len(self.df[BMKeys.BM_GROUP].unique()) == 1
         bm_group = self.df[BMKeys.BM_GROUP].unique()[0]
 
         if self.compact:
-            x_scale = 0.16
-            y_scale = 0.25
+            x_scale = 0.28  # EMR local
+            # x_scale = 0.3 # EMR CXL with 1 decimal
+            # x_scale = 0.25  # EMR cxl
+            y_scale = 0.26  # EMR local
             x_padding = 3 * x_scale
             y_padding = 0
             minimum = 0
@@ -88,17 +92,33 @@ class Heatmap:
         )
 
         rounded_df_heatmap = self.df_heatmap.round().astype(int)
+        # rounded_df_heatmap = self.df_heatmap.round(decimals=1)
+
+        # Create a GridSpec for the layout
+        # gs = gridspec.GridSpec(2, 1, height_ratios=[1, 20])  # Adjusted ratios
+
+        # Create the color bar above the heatmap
+        # cbar_ax = plt.subplot(gs[0])
+        # ax = plt.subplot(gs[1])
+
         self.heatmap = sns.heatmap(
             self.df_heatmap,
+            # ax=ax,
             annot=rounded_df_heatmap,
-            annot_kws={"fontsize": 7, "va": "center_baseline"},
+            # annot_kws={"fontsize": 8, "rotation": 90, "va": "center"},
+            annot_kws={"fontsize": 8, "rotation": 0, "va": "center"},  # EMR local
             fmt=self.value_format,
             cmap=self.color_theme,
-            linewidths=0.5,  # Add thin grid lines between cells
-            linecolor="white",  # Color of the grid lines
+            linewidths=0.05,  # EMR cxl disable | EMR local
+            linecolor="black",  # EMR cxl disable | EMR local
             cbar_kws={"label": self.value_label, "pad": 0.02},
-            cbar=not self.compact,
+            cbar=False,
         )
+
+        # self.heatmap.figure.colorbar(self.heatmap.collections[0], cax=cbar_ax, orientation="horizontal")
+        # pos = cbar_ax.get_position()  # Get current position
+        # new_pos = [pos.x0, pos.y0 + 0.06, pos.width, pos.height]
+        # cbar_ax.set_position(new_pos)  # Set the new position
 
         self.heatmap.set_xlabel("Thread Count")
         self.heatmap.set_ylabel("Access size (Byte)")
@@ -109,11 +129,13 @@ class Heatmap:
             # Ensure that get_xticklabels always has labels for all x values
             x_ticks = [x + 0.5 for x in range(len(self.df_heatmap.columns))]
             self.heatmap.set_xticks(x_ticks)
-            self.heatmap.set_xticklabels(self.df_heatmap.columns, rotation=90)
+            x_labels = [label for i, label in enumerate(self.df_heatmap.columns)]  # local EMR
+            # x_labels = [label if i % 2 == 0 else "" for i, label in enumerate(self.df_heatmap.columns)]
+            self.heatmap.set_xticklabels(x_labels, rotation=0)
             self.heatmap.set_title("")
             if bm_group in compact_heatmap_groups:
                 self.heatmap.set_ylabel("")
-                self.heatmap.set_yticks([])
+                self.heatmap.set_yticklabels(["" for _ in self.heatmap.get_yticklabels()])
 
         self.heatmap.set_yticklabels(self.heatmap.get_yticklabels(), rotation=0)
 
