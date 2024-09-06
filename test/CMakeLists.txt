@@ -14,7 +14,7 @@ set(BUILD_GMOCK ON CACHE BOOL "" FORCE)
 set(BUILD_GTEST ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-set(MEMA_TEST_SOURCES
+set(CXLBENCH_TEST_SOURCES
         benchmark_test.cpp
         config_test.cpp
         custom_operations_test.cpp
@@ -25,14 +25,14 @@ set(MEMA_TEST_SOURCES
         utils_test.cpp
         read_write_test.cpp)
 
-add_executable(mema-test mema_test.cpp ${MEMA_TEST_SOURCES})
-add_dependencies(mema-test copy_test_resources)
-target_link_libraries(mema-test gtest gmock mema ${NUMS_LIBRARIES})
-add_test(mema-test mema-test)
+add_executable(cxlbench-test cxlbench_test.cpp ${CXLBENCH_TEST_SOURCES})
+add_dependencies(cxlbench-test copy_test_resources)
+target_link_libraries(cxlbench-test gtest gmock cxlbench-lib ${NUMS_LIBRARIES})
+add_test(cxlbench-test cxlbench-test)
 
 ############# Explicit Huge Pages #############
 # This flag enables tests with 2 MiB and 1 GiB huge page tables. Note that free pages of these sizes need to be
 # available. IF the OS does not support these page sizes or not enough page sizes are allocated, the test cases fail.
 if (${ENABLE_HUGE_PAGE_TESTS})
-    target_compile_definitions(mema-test PRIVATE HUGE_PAGE_TESTS)
+    target_compile_definitions(cxlbench-test PRIVATE HUGE_PAGE_TESTS)
 endif ()

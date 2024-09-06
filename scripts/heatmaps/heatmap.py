@@ -6,6 +6,8 @@ from matplotlib import pyplot as plt, patches
 from enums.benchmark_keys import BMKeys
 from enums.file_names import PLOT_FILE_PREFIX
 
+plt.rcParams.update({"text.usetex": True, "font.family": "serif", "text.latex.preamble": r"\usepackage{libertine}"})
+
 
 class Heatmap:
     def __init__(
@@ -19,7 +21,7 @@ class Heatmap:
         color_theme: str = "magma",
         min_color="red",
         max_color="green",
-        compact=True,
+        compact=False,
         access_size_limit=8192,
         thread_limit=28,
         mark_linewidth=3,
@@ -77,7 +79,7 @@ class Heatmap:
             x_scale = 0.28  # EMR local
             # x_scale = 0.3 # EMR CXL with 1 decimal
             # x_scale = 0.25  # EMR cxl
-            y_scale = 0.26  # EMR local
+            y_scale = 0.20  # EMR local
             x_padding = 3 * x_scale
             y_padding = 0
             minimum = 0
@@ -106,7 +108,7 @@ class Heatmap:
             # ax=ax,
             annot=rounded_df_heatmap,
             # annot_kws={"fontsize": 8, "rotation": 90, "va": "center"},
-            annot_kws={"fontsize": 8, "rotation": 0, "va": "center"},  # EMR local
+            annot_kws={"fontsize": 10, "rotation": 0, "va": "center"},  # EMR local
             fmt=self.value_format,
             cmap=self.color_theme,
             linewidths=0.05,  # EMR cxl disable | EMR local
@@ -121,7 +123,7 @@ class Heatmap:
         # cbar_ax.set_position(new_pos)  # Set the new position
 
         self.heatmap.set_xlabel("Thread Count")
-        self.heatmap.set_ylabel("Access size (Byte)")
+        self.heatmap.set_ylabel("Access size [Bytes]")
         self.heatmap.invert_yaxis()
         self.heatmap.set_title(self.title)
 

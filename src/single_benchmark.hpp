@@ -4,7 +4,7 @@
 
 #include "benchmark.hpp"
 
-namespace mema {
+namespace cxlbench {
 
 class SingleBenchmark : public Benchmark {
  public:
@@ -36,4 +36,4 @@ class SingleBenchmark : public Benchmark {
   ~SingleBenchmark() { SingleBenchmark::tear_down(false); }
 };
 
-}  // namespace mema
+}  // namespace cxlbench

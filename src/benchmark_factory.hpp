@@ -4,7 +4,7 @@
 #include "parallel_benchmark.hpp"
 #include "single_benchmark.hpp"
 
-namespace mema {
+namespace cxlbench {
 
 static constexpr auto CONFIG_FILE_EXTENSION = ".yaml";
 
@@ -23,4 +23,4 @@ class BenchmarkFactory {
                               std::string& unique_name);
 };
 
-}  // namespace mema
+}  // namespace cxlbench

@@ -3,7 +3,7 @@
 #include "gtest/gtest.h"
 #include "json.hpp"
 
-namespace mema {
+namespace cxlbench {
 
 using BaseTest = ::testing::Test;
 
@@ -17,4 +17,4 @@ void check_json_result(const nlohmann::json& result_json, uint64_t total_bytes, 
 
 std::vector<int> retrieve_page_status(const uint64_t page_count, char* data);
 
-}  // namespace mema
+}  // namespace cxlbench

@@ -12,7 +12,7 @@
 #include "numa.hpp"
 #include "test_utils.hpp"
 
-namespace mema::utils {
+namespace cxlbench::utils {
 
 namespace fs = std::filesystem;
 
@@ -114,7 +114,7 @@ TEST_F(UtilsTest, MmapValidPageSizeMask) {
 TEST_F(UtilsTest, MmapInvalidPageSizeMask) {
   const auto page_size = 2000000;
   const auto expected_mask = 21 << MAP_HUGE_SHIFT;
-  EXPECT_THROW(utils::mmap_page_size_mask(page_size), MemaException);
+  EXPECT_THROW(utils::mmap_page_size_mask(page_size), BenchException);
 }
 
 #ifdef HUGE_PAGE_TESTS
@@ -147,9 +147,9 @@ TEST_F(UtilsTest, MapInvalidPageSize) {
   const auto page_size = 2000000;
   const auto mmap_length = 1 << 24;
   void* addr = nullptr;
-  EXPECT_THROW(auto addr = utils::map(mmap_length, true, page_size), MemaException);
+  EXPECT_THROW(auto addr = utils::map(mmap_length, true, page_size), BenchException);
   EXPECT_EQ(addr, nullptr);
   munmap(addr, mmap_length);
 }
 
-}  // namespace mema::utils
+}  // namespace cxlbench::utils

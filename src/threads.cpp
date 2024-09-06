@@ -5,7 +5,7 @@
 #include "benchmark.hpp"
 #include "utils.hpp"
 
-namespace mema {
+namespace cxlbench {
 
 CoreIDs allowed_thread_core_ids() {
   auto cpu_set = cpu_set_t{};
@@ -47,4 +47,4 @@ void pin_thread_to_cores(const CoreIDs& core_ids) {
   spdlog::debug("Pinned thread {} to cores [{}]", thread_id, utils::numbers_to_string(core_ids));
 }
 
-}  // namespace mema
+}  // namespace cxlbench

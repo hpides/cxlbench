@@ -20,4 +20,4 @@
 #SBATCH --hint=nomultithread
 #SBATCH --cpu-freq=Performance
 
-enroot start --rw -r -m /hpi/fs00/home/marcel.weisgut/enroot_mount:/enroot_mount mrclw+dev+x86 bash /enroot_mount/mema-bench/scripts/run_log.sh icelake ddr_bw
+enroot start --rw -r -m /hpi/fs00/home/marcel.weisgut/enroot_mount:/enroot_mount mrclw+dev+x86 bash /enroot_mount/cxlbench/scripts/run_log.sh icelake ddr_bw

@@ -8,7 +8,7 @@
 #include "benchmark.hpp"
 #include "utils.hpp"
 
-namespace mema {
+namespace cxlbench {
 
 constexpr auto PAGE_ERROR_LIMIT = 0.005f;
 
@@ -58,4 +58,4 @@ NumaNodeID numa_node_index_by_address(char* const addr);
 
 PageLocations get_page_locations(char* const start_addr, size_t memory_region_size);
 
-}  // namespace mema
+}  // namespace cxlbench

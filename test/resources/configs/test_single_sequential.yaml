@@ -7,6 +7,6 @@ test_seq:
     numa_task_nodes: [ 0 ]
     number_threads: 2
     operation: read
-    min_io_chunk_size: 16384
+    min_io_batch_size: 16384
     percentage_pages_first_partition: 37
     node_count_first_partition: 1

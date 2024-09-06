@@ -1,3 +1,12 @@
 [submodule "third_party/cpplint"]
 	path = third_party/cpplint
 	url = https://github.com/cpplint/cpplint.git
+[submodule "third_party/in-memory-hash-joins"]
+	path = third_party/in-memory-hash-joins
+	url = git@github.com:mweisgut/in-memory-hash-joins.git
+[submodule "third_party/btree-benchmarks"]
+	path = third_party/btree-benchmarks
+	url = git@github.com:mweisgut/btree-benchmarks.git
+[submodule "third_party/autovec-db"]
+	path = third_party/autovec-db
+	url = git@github.com:mweisgut/autovec-db.git

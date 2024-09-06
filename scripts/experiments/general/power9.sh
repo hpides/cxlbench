@@ -28,4 +28,4 @@ fi
 
 enroot import docker://mrclw/dev:ppc64le
 enroot create mrclw+dev+ppc64le.sqsh
-enroot start --rw -r -m /hpi/fs00/home/marcel.weisgut/enroot_mount:/enroot_mount mrclw+dev+ppc64le bash /enroot_mount/mema-bench/scripts/run_log.sh power9 "$1"
+enroot start --rw -r -m /hpi/fs00/home/marcel.weisgut/enroot_mount:/enroot_mount mrclw+dev+ppc64le bash /enroot_mount/cxlbench/scripts/run_log.sh power9 "$1"

@@ -27,7 +27,7 @@ void ensure_unique_key(const YAML::Node& entry, const std::string& name) {
   if (entry.Tag() == VISITED_TAG) {
     const YAML::Mark& mark = entry.Mark();
     spdlog::critical("Duplicate entry: '{}' (in line: {})", mark.line, name);
-    mema::utils::crash_exit();
+    cxlbench::utils::crash_exit();
   }
 }
 
@@ -72,7 +72,7 @@ bool get_enum_if_present(YAML::Node& data, const std::string& name, const std::u
   auto it = enum_map.find(enum_key);
   if (it == enum_map.end()) {
     spdlog::critical("Unknown '{}': {}", name, enum_key);
-    mema::utils::crash_exit();
+    cxlbench::utils::crash_exit();
   }
 
   *attribute = it->second;
@@ -100,7 +100,7 @@ bool get_size_if_present(YAML::Node& data, const std::string& name, const std::u
     size_end -= 1;
   } else if (isalpha(size_suffix)) {
     spdlog::critical("Unknown size suffix: {}", size_suffix);
-    mema::utils::crash_exit();
+    cxlbench::utils::crash_exit();
   }
 
   char* end;
@@ -121,7 +121,7 @@ bool get_sequence_if_present(YAML::Node& data, const std::string& name, std::vec
 
   if (!entry.IsSequence()) {
     spdlog::critical("Value of key {} must be a YAML sequence, i.e., [0, 2, 3].", name);
-    mema::utils::crash_exit();
+    cxlbench::utils::crash_exit();
   }
 
   values.reserve(entry.size());
@@ -134,13 +134,30 @@ bool get_sequence_if_present(YAML::Node& data, const std::string& name, std::vec
 
 }  // namespace
 
-namespace mema {
+namespace cxlbench {
 
 PagePlacementMode MemoryRegionDefinition::placement_mode() const {
-  if (percentage_pages_first_partition) {
-    return PagePlacementMode::Partitioned;
+  if (memory_mode() == MemoryMode::Numa) {
+    if (percentage_pages_first_partition) {
+      return PagePlacementMode::NumaPartitioned;
+    }
+    return PagePlacementMode::NumaInterleaved;
   }
-  return PagePlacementMode::Interleaved;
+  if (memory_mode() == MemoryMode::Device) {
+    return PagePlacementMode::DeviceLinear;
+  }
+  return PagePlacementMode::Invalid;
+}
+
+MemoryMode MemoryRegionDefinition::memory_mode() const {
+  BenchAssert(node_ids.empty() != device_path.empty(), "Either NUMA nodes or device path should be specified");
+  if (!node_ids.empty()) {
+    return MemoryMode::Numa;
+  }
+  if (!device_path.empty()) {
+    return MemoryMode::Device;
+  }
+  return MemoryMode::Invalid;
 }
 
 BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
@@ -156,9 +173,16 @@ BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
                                        &bm_config.memory_regions[1].size);
     found_count += get_sequence_if_present(node, "numa_memory_nodes", bm_config.memory_regions[0].node_ids);
     found_count += get_sequence_if_present(node, "secondary_numa_memory_nodes", bm_config.memory_regions[1].node_ids);
+    found_count += get_if_present(node, "device_path", &bm_config.memory_regions[0].device_path);
+    found_count += get_if_present(node, "secondary_device_path", &bm_config.memory_regions[1].device_path);
+    found_count += get_size_if_present(node, "region_offset", ConfigEnums::scale_suffix_to_factor,
+                                       &bm_config.memory_regions[0].offset);
+    found_count += get_size_if_present(node, "secondary_region_offset", ConfigEnums::scale_suffix_to_factor,
+                                       &bm_config.memory_regions[1].offset);
     found_count += get_if_present(node, "transparent_huge_pages", &bm_config.memory_regions[0].transparent_huge_pages);
     found_count +=
         get_if_present(node, "secondary_transparent_huge_pages", &bm_config.memory_regions[1].transparent_huge_pages);
+    found_count += get_if_present(node, "generate_read_data", &bm_config.generate_read_data);
     found_count += get_size_if_present(node, "explicit_hugepages_size", ConfigEnums::scale_suffix_to_factor,
                                        &bm_config.memory_regions[0].explicit_hugepages_size);
     found_count += get_size_if_present(node, "secondary_explicit_hugepages_size", ConfigEnums::scale_suffix_to_factor,
@@ -171,19 +195,20 @@ BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
 
     found_count +=
         get_size_if_present(node, "access_size", ConfigEnums::scale_suffix_to_factor, &bm_config.access_size);
-    found_count += get_size_if_present(node, "min_io_chunk_size", ConfigEnums::scale_suffix_to_factor,
-                                       &bm_config.min_io_chunk_size);
+    found_count += get_size_if_present(node, "min_io_batch_size", ConfigEnums::scale_suffix_to_factor,
+                                       &bm_config.min_io_batch_size);
     found_count += get_if_present(node, "number_operations", &bm_config.number_operations);
     found_count += get_if_present(node, "run_time", &bm_config.run_time);
     found_count += get_if_present(node, "number_threads", &bm_config.number_threads);
+    found_count += get_if_present(node, "replications", &bm_config.benchmark_replications);
     found_count += get_if_present(node, "zipf_alpha", &bm_config.zipf_alpha);
     found_count += get_if_present(node, "latency_sample_frequency", &bm_config.latency_sample_frequency);
     found_count += get_enum_if_present(node, "exec_mode", ConfigEnums::str_to_mode, &bm_config.exec_mode);
     found_count += get_enum_if_present(node, "operation", ConfigEnums::str_to_operation, &bm_config.operation);
     found_count += get_enum_if_present(node, "random_distribution", ConfigEnums::str_to_random_distribution,
                                        &bm_config.random_distribution);
-    found_count += get_enum_if_present(node, "flush_instruction", ConfigEnums::str_to_flush_instruction,
-                                       &bm_config.flush_instruction);
+    found_count +=
+        get_enum_if_present(node, "cache_instruction", ConfigEnums::str_to_cache_instr, &bm_config.cache_instruction);
     found_count += get_sequence_if_present(node, "numa_task_nodes", bm_config.numa_thread_nodes);
     found_count +=
         get_enum_if_present(node, "thread_pin_mode", ConfigEnums::str_to_thread_pin_mode, &bm_config.thread_pin_mode);
@@ -218,7 +243,8 @@ void BenchmarkConfig::validate() const {
   bool is_custom_or_random = exec_mode == Mode::Random || exec_mode == Mode::Custom;
 
   // Check if access size is supported
-  std::set<size_t> unrolled_access_sizes({64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536});
+  std::set<size_t> unrolled_access_sizes(
+      {4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536});
   std::ostringstream error;
   error << "Access Size must be one of {";
   for (auto it = unrolled_access_sizes.begin(); it != unrolled_access_sizes.end(); ++it) {
@@ -239,8 +265,16 @@ void BenchmarkConfig::validate() const {
     CHECK_ARGUMENT(is_memory_region_size_multiple_of_access_size, "Memory range must be a multiple of access size.");
 
     // Check if NUMA memory nodes are specified for the memory region.
-    const bool numa_memory_nodes_present = region.size == 0 || region.node_ids.size() > 0;
-    CHECK_ARGUMENT(numa_memory_nodes_present, "NUMA memory nodes must be specified.");
+    const bool only_one_memory_interface_present = region.node_ids.empty() != region.device_path.empty();
+    CHECK_ARGUMENT(region.size == 0 || only_one_memory_interface_present,
+                   "NUMA memory nodes or device path must be specified.");
+
+    if (!region.device_path.empty()) {
+      // As we primarily evaluate CXL memory performance with this tool, we expect the memory region size to be 2 MiB-
+      // aligned. This is required when CXL memory is exposed as a DAX device.
+      const bool is_memory_region_size_multiple_of_2mib = (region.size % (1024u * 1024 * 2)) == 0;
+      CHECK_ARGUMENT(is_memory_region_size_multiple_of_2mib, "Memory range must be a multiple of 2 MiB.");
+    }
 
     // Check if share of pages on first node has a valid value if set.
     if (region.percentage_pages_first_partition) {
@@ -254,38 +288,54 @@ void BenchmarkConfig::validate() const {
       CHECK_ARGUMENT(has_gte_two_numa_memory_nodes,
                      "When a share of pages located on first node is specified, >=2 nodes need to be specified.");
     }
+
+    if (region.size > 0 && is_generate_shuffled_access_positions()) {
+      // Assuming fixed 64 B alignment
+      const auto aligned_access_size = (access_size + 64 - 1) & ~(64 - 1);
+      const auto accesses_in_region = region.size / aligned_access_size;
+      CHECK_ARGUMENT(number_operations <= accesses_in_region,
+                     "Number of operations (" + std::to_string(number_operations) +
+                         ") exceeds number of accesses in region (" + std::to_string(accesses_in_region) + ")");
+    }
   }
 
   const bool has_secondary_memory_region_for_operations = !contains_secondary_memory_op() || memory_regions[1].size > 0;
   CHECK_ARGUMENT(has_secondary_memory_region_for_operations,
                  "Must set secondary_memory_region_size > 0 if the benchmark contains secondary memory operations.");
 
-  // Assumption: total memory needs to fit into N chunks exactly
-  const bool is_total_memory_chunkable = (memory_regions[0].size % min_io_chunk_size) == 0;
-  CHECK_ARGUMENT(is_total_memory_chunkable,
-                 "The primary memory range needs to be multiple of chunk size " + std::to_string(min_io_chunk_size));
+  // Assumption: total memory needs to fit into N batches exactly
+  const bool is_total_memory_batchable = (memory_regions[0].size % min_io_batch_size) == 0;
+  CHECK_ARGUMENT(is_total_memory_batchable,
+                 "The primary memory range needs to be multiple of batch size " + std::to_string(min_io_batch_size));
 
-  if (exec_mode != Mode::DependentReads) {
-    // Assumption: we chunk operations, so we need enough data to fill at least one chunk
-    const bool is_total_memory_large_enough = (memory_regions[0].size / number_threads) >= min_io_chunk_size;
-    CHECK_ARGUMENT(is_total_memory_large_enough, "Each thread needs at least " + std::to_string(min_io_chunk_size) +
+  CHECK_ARGUMENT(!is_latency_mode() || number_threads == 1, "Only one thread supported for latency measurements.");
+
+  if (!is_latency_mode()) {
+    // Assumption: we batch operations, so we need enough data to fill at least one batch
+    const bool is_total_memory_large_enough = (memory_regions[0].size / number_threads) >= min_io_batch_size;
+    CHECK_ARGUMENT(is_total_memory_large_enough, "Each thread needs at least " + std::to_string(min_io_batch_size) +
                                                      " Bytes of memory in primary region.");
+  }
+
+  if (is_latency_mode()) {
+    CHECK_ARGUMENT(latency_sample_frequency > 0, "Latency sample frequency needs to be >0 for latency measurements.");
   }
 
   // Assumption: number_operations should only be set for random/custom access. It is ignored in sequential IO.
   const bool is_number_operations_set_random =
-      number_operations == BenchmarkConfig{}.number_operations || is_custom_or_random;
-  CHECK_ARGUMENT(is_number_operations_set_random, "Number of operations should only be set for random/custom access.");
+      number_operations == BenchmarkConfig{}.number_operations || is_custom_or_random || is_latency_mode();
+  CHECK_ARGUMENT(is_number_operations_set_random,
+                 "Number of operations should only be set for random/custom access or latency measurements.");
 
-  // Assumption: min_io_chunk size must be a power of two
-  const bool is_valid_min_io_chunk_size = min_io_chunk_size >= 64 && (min_io_chunk_size & (min_io_chunk_size - 1)) == 0;
-  CHECK_ARGUMENT(is_valid_min_io_chunk_size, "Minimum IO chunk must be >= 64 Byte and a power of two.");
+  // Assumption: min_io_batch size must be a power of two
+  const bool is_valid_min_io_batch_size = min_io_batch_size >= 64 && (min_io_batch_size & (min_io_batch_size - 1)) == 0;
+  CHECK_ARGUMENT(is_valid_min_io_batch_size, "Minimum IO batch must be >= 64 Byte and a power of two.");
 
-  // Assumption: We need enough operations to give each thread at least one chunk
-  const u64 min_required_number_ops = (min_io_chunk_size / access_size) * number_threads;
+  // Assumption: We need enough operations to give each thread at least one batch
+  const u64 min_required_number_ops = (min_io_batch_size / access_size) * number_threads;
   const bool has_enough_number_operations = !is_custom_or_random || number_operations >= min_required_number_ops;
-  CHECK_ARGUMENT(has_enough_number_operations,
-                 "Need enough number_operations to have at least one chunk per thread. Consider at least 100 "
+  CHECK_ARGUMENT(true || has_enough_number_operations,
+                 "Need enough number_operations to have at least one batch per thread. Consider at least 100 "
                  "operations in total to actually perform a significant amount of work. Need minimum of " +
                      std::to_string(min_required_number_ops) + " ops for this workload.");
 
@@ -302,8 +352,9 @@ void BenchmarkConfig::validate() const {
   const bool has_no_custom_ops = exec_mode == Mode::Custom || custom_operations.empty();
   CHECK_ARGUMENT(has_no_custom_ops, "Cannot specify custom_operations for non-custom execution.");
 
-  const bool latency_sample_is_custom = exec_mode == Mode::Custom || latency_sample_frequency == 0;
-  CHECK_ARGUMENT(latency_sample_is_custom, "Latency sampling can only be used with custom operations.");
+  const bool latency_sample_is_custom = exec_mode == Mode::Custom || is_latency_mode() || latency_sample_frequency == 0;
+  CHECK_ARGUMENT(latency_sample_is_custom,
+                 "Latency sampling can only be used with custom operations or a latency measurement mode.");
 
   const bool numa_thread_nodes_present = numa_thread_nodes.size() > 0;
   const bool numa_thread_pinning_mode =
@@ -318,22 +369,38 @@ void BenchmarkConfig::validate() const {
                    "Number of Core IDs must be greater than or equal thread count.");
   }
 
+  CHECK_ARGUMENT(!is_memory_management_op() || number_threads == 1,
+                 "Only one thread supported for benchchmarking memory management operations.");
+
 #ifdef HAS_CLWB
   const bool clwb_supported_or_not_used = true;
 #else
-  const bool clwb_supported_or_not_used = flush_instruction != FlushInstruction::Cache;
+  const bool clwb_supported_or_not_used = cache_instruction != CacheInstruction::Cache;
 #endif
-  CHECK_ARGUMENT(clwb_supported_or_not_used, "MemA must be compiled with support for clwb to use clwb flushes.");
+  CHECK_ARGUMENT(clwb_supported_or_not_used, "cxlbench must be compiled with support for clwb to use clwb flushes.");
 
 #if defined(USE_AVX_2) || defined(USE_AVX_512)
   const bool nt_stores_supported_or_not_used = true;
 #else
-  const bool nt_stores_supported_or_not_used = flush_instruction != FlushInstruction::NoCache;
+  const bool nt_stores_supported_or_not_used = cache_instruction != CacheInstruction::NoCache;
 #endif
-  CHECK_ARGUMENT(nt_stores_supported_or_not_used, "MemA must be compiled with support for NT stores to use NT stores.");
+  CHECK_ARGUMENT(nt_stores_supported_or_not_used,
+                 "cxlbench must be compiled with support for NT stores to use NT stores.");
 }
 
-bool BenchmarkConfig::contains_read_op() const { return operation == Operation::Read || exec_mode == Mode::Custom; }
+bool BenchmarkConfig::is_generate_read_data() const {
+  return generate_read_data &&
+         (operation == Operation::Read || operation == Operation::StreamRead || exec_mode == Mode::Custom);
+}
+
+bool BenchmarkConfig::is_generate_shuffled_access_positions() const {
+  return exec_mode == Mode::RandomLatency || exec_mode == Mode::Latency;
+}
+
+bool BenchmarkConfig::is_memory_management_op() const {
+  return operation == Operation::MemoryMapShared || operation == Operation::MemoryMapPrivate ||
+         operation == Operation::MemoryUnmapShared || operation == Operation::MemoryUnmapPrivate;
+}
 
 bool BenchmarkConfig::contains_write_op() const {
   auto find_custom_write_op = [](const CustomOp& op) { return op.type == Operation::Write; };
@@ -341,6 +408,11 @@ bool BenchmarkConfig::contains_write_op() const {
          std::any_of(custom_operations.begin(), custom_operations.end(), find_custom_write_op);
 }
 
+bool BenchmarkConfig::is_latency_mode() const {
+  return exec_mode == Mode::SequentialLatency || exec_mode == Mode::RandomLatency || exec_mode == Mode::Latency;
+}
+
+// TODO(MW) update / align with support of DAX device changes
 std::string BenchmarkConfig::to_string(const std::string sep) const {
   auto stream = std::stringstream{};
   for (auto region_idx = u64{0}; auto& region : memory_regions) {
@@ -358,31 +430,31 @@ std::string BenchmarkConfig::to_string(const std::string sep) const {
       delim = ", ";
     }
     stream << "]";
+    stream << sep << "path: " << region.device_path;
     stream << sep << "page placement: ";
     if (region.percentage_pages_first_partition) {
-      stream << "partitioned with " << *region.percentage_pages_first_partition << "% on first partition. ";
+      stream << "NUMA partitioned with " << *region.percentage_pages_first_partition << "% on first partition. ";
       stream << "The first " << *region.node_count_first_partition << "nodes belong to the first partition.";
-    } else {
-      stream << "interleaved";
+    } else if (region.placement_mode() == PagePlacementMode::NumaInterleaved) {
+      stream << "NUMA interleaved";
+    } else if (region.placement_mode() == PagePlacementMode::DeviceLinear) {
+      stream << "device linear";
+      stream << " (offset: " << region.offset << ")";
     }
     ++region_idx;
   }
   stream << sep << "exec mode: " << utils::get_enum_as_string(ConfigEnums::str_to_mode, exec_mode);
+  stream << sep << "cache instr: " << utils::get_enum_as_string(ConfigEnums::str_to_cache_instr, cache_instruction);
   stream << sep << "thread numa nodes: [" << utils::numbers_to_string(numa_thread_nodes) << "]";
   stream << sep << "thread count: " << number_threads;
   stream << sep
          << "thread pinning: " << utils::get_enum_as_string(ConfigEnums::str_to_thread_pin_mode, thread_pin_mode);
   stream << sep << "thread core IDs: [" << utils::numbers_to_string(thread_core_ids) << "]";
-  stream << sep << "min io chunk size: " << min_io_chunk_size;
+  stream << sep << "min io batch size: " << min_io_batch_size;
 
   if (exec_mode != Mode::Custom) {
     stream << sep << "access size: " << access_size;
     stream << sep << "operation: " << utils::get_enum_as_string(ConfigEnums::str_to_operation, operation);
-
-    if (operation == Operation::Write) {
-      stream << sep << "flush instruction: "
-             << utils::get_enum_as_string(ConfigEnums::str_to_flush_instruction, flush_instruction);
-    }
   }
 
   if (exec_mode == Mode::Random) {
@@ -424,21 +496,21 @@ nlohmann::json BenchmarkConfig::as_json() const {
         region.node_count_first_partition ? *region.node_count_first_partition : -1;
     config[prefix + "transparent_huge_pages"] = region.transparent_huge_pages;
     ++region_idx;
+    config[prefix + "device_path"] = region.device_path;
+    config[prefix + "offset"] = region.offset;
   }
+  config["cache_instruction"] = utils::get_enum_as_string(ConfigEnums::str_to_cache_instr, cache_instruction);
   config["exec_mode"] = utils::get_enum_as_string(ConfigEnums::str_to_mode, exec_mode);
-  config["min_io_chunk_size"] = min_io_chunk_size;
+  config["min_io_batch_size"] = min_io_batch_size;
   config["numa_task_nodes"] = numa_thread_nodes;
   config["number_threads"] = number_threads;
   config["thread_pin_mode"] = utils::get_enum_as_string(ConfigEnums::str_to_thread_pin_mode, thread_pin_mode);
   config["thread_cores"] = thread_core_ids;
+  config["generate_read_data"] = generate_read_data;
 
   if (exec_mode != Mode::Custom) {
     config["access_size"] = access_size;
     config["operation"] = utils::get_enum_as_string(ConfigEnums::str_to_operation, operation);
-
-    if (operation == Operation::Write) {
-      config["flush_instruction"] = utils::get_enum_as_string(ConfigEnums::str_to_flush_instruction, flush_instruction);
-    }
   }
 
   if (exec_mode == Mode::Random) {
@@ -453,6 +525,11 @@ nlohmann::json BenchmarkConfig::as_json() const {
   if (exec_mode == Mode::Custom) {
     config["number_operations"] = number_operations;
     config["custom_operations"] = CustomOp::all_to_string(custom_operations);
+    config["latency_sample_frequency"] = latency_sample_frequency;
+  }
+
+  if (is_latency_mode()) {
+    config["latency_sample_frequency"] = latency_sample_frequency;
   }
 
   if (run_time > 0) {
@@ -540,18 +617,18 @@ CustomOp CustomOp::from_string(const std::string& str) {
   }
 
   if (op_str_part_count < 3 + has_memory_region_idx) {
-    spdlog::critical("Custom write op must have '_<flush_instruction>' after size, e.g., w64_cache. Got: '{}'", str);
+    spdlog::critical("Custom write op must have '_<cache_instruction>' after size, e.g., w64_cache. Got: '{}'", str);
     utils::crash_exit();
   }
 
-  const std::string& flush_str = op_str_parts[2 + has_memory_region_idx];
-  auto flush_it = ConfigEnums::str_to_flush_instruction.find(flush_str);
-  if (flush_it == ConfigEnums::str_to_flush_instruction.end()) {
-    spdlog::critical("Could not parse the flush instruction in write op: '{}'", flush_str);
+  const std::string& cache_fn_str = op_str_parts[2 + has_memory_region_idx];
+  auto cache_fn_it = ConfigEnums::str_to_cache_instr.find(cache_fn_str);
+  if (cache_fn_it == ConfigEnums::str_to_cache_instr.end()) {
+    spdlog::critical("Could not parse the cache instruction in write op: '{}'", cache_fn_str);
     utils::crash_exit();
   }
 
-  custom_op.flush = flush_it->second;
+  custom_op.cache_fn = cache_fn_it->second;
 
   const bool has_offset_information = op_str_part_count == 4 + has_memory_region_idx;
   if (has_offset_information) {
@@ -597,7 +674,7 @@ std::string CustomOp::to_string() const {
   out << utils::get_enum_as_string(ConfigEnums::str_to_operation, type, true);
   out << '_' << size;
   if (type == Operation::Write) {
-    out << '_' << utils::get_enum_as_string(ConfigEnums::str_to_flush_instruction, flush);
+    out << '_' << utils::get_enum_as_string(ConfigEnums::str_to_cache_instr, cache_fn);
     if (offset != 0) {
       out << '_' << offset;
     }
@@ -639,7 +716,7 @@ void CustomOp::validate(const std::vector<CustomOp>& operations) {
 }
 
 bool CustomOp::operator==(const CustomOp& rhs) const {
-  return type == rhs.type && size == rhs.size && flush == rhs.flush && offset == rhs.offset;
+  return type == rhs.type && size == rhs.size && cache_fn == rhs.cache_fn && offset == rhs.offset;
 }
 bool CustomOp::operator!=(const CustomOp& rhs) const { return !(rhs == *this); }
 std::ostream& operator<<(std::ostream& os, const CustomOp& op) { return os << op.to_string(); }
@@ -648,13 +725,31 @@ const std::unordered_map<std::string, Mode> ConfigEnums::str_to_mode{{"sequentia
                                                                      {"sequential_desc", Mode::Sequential_Desc},
                                                                      {"random", Mode::Random},
                                                                      {"custom", Mode::Custom},
-                                                                     {"dependent_reads", Mode::DependentReads}};
+                                                                     {"sequential_latency", Mode::SequentialLatency},
+                                                                     {"random_latency", Mode::RandomLatency},
+                                                                     {"latency", Mode::Latency}};
 
 const std::unordered_map<std::string, Operation> ConfigEnums::str_to_operation{
-    {"read", Operation::Read}, {"write", Operation::Write}, {"r", Operation::Read}, {"w", Operation::Write}};
+    {"read", Operation::Read},
+    {"write", Operation::Write},
+    {"r", Operation::Read},
+    {"w", Operation::Write},
+    {"stream-read", Operation::StreamRead},
+    {"stream-write", Operation::StreamWrite},
+    {"sr", Operation::StreamRead},
+    {"sw", Operation::StreamWrite},
+    {"compare-and-swap", Operation::CompareAndSwap},
+    {"fetch-and-add", Operation::FetchAndAdd},
+    {"memory-map-shared", Operation::MemoryMapShared},
+    {"memory-map-private", Operation::MemoryMapPrivate},
+    {"memory-unmap-shared", Operation::MemoryUnmapShared},
+    {"memory-unmap-private", Operation::MemoryUnmapPrivate}};
 
-const std::unordered_map<std::string, FlushInstruction> ConfigEnums::str_to_flush_instruction{
-    {"nocache", FlushInstruction::NoCache}, {"cache", FlushInstruction::Cache}, {"none", FlushInstruction::None}};
+const std::unordered_map<std::string, CacheInstruction> ConfigEnums::str_to_cache_instr{
+    {"write-back", CacheInstruction::WriteBack},
+    {"none", CacheInstruction::None},
+    {"flush", CacheInstruction::Flush},
+    {"flush-opt", CacheInstruction::FlushOpt}};
 
 const std::unordered_map<std::string, RandomDistribution> ConfigEnums::str_to_random_distribution{
     {"uniform", RandomDistribution::Uniform}, {"zipf", RandomDistribution::Zipf}};
@@ -671,4 +766,4 @@ const std::unordered_map<char, u64> ConfigEnums::scale_suffix_to_factor{{'k', 10
                                                                         {'g', 1024 * 1024 * 1024},
                                                                         {'G', 1024 * 1024 * 1024}};
 
-}  // namespace mema
+}  // namespace cxlbench

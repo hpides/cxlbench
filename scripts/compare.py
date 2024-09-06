@@ -1,5 +1,5 @@
 """
-This is the main module that has to be executed from the root directory, i.e. "mema-bench". It creates result PNGs and
+This is the main module that has to be executed from the root directory, i.e. "cxlbench". It creates result PNGs and
 displays them on an user interface.
 """
 

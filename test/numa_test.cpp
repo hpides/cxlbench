@@ -11,7 +11,7 @@
 #include "threads.hpp"
 #include "utils.hpp"
 
-namespace mema {
+namespace cxlbench {
 
 class NumaTest : public BaseTest {
  protected:
@@ -55,7 +55,7 @@ TEST_F(NumaTest, MemoryAllocationOnNode) {
   auto* const allowed_memory_nodes_mask = numa_get_mems_allowed();
 
   constexpr auto memory_region_size = 1 * GiB;
-  MemaAssert(memory_region_size % utils::PAGE_SIZE == 0, "Memory region needs to be a multiple of the page size.");
+  BenchAssert(memory_region_size % utils::PAGE_SIZE == 0, "Memory region needs to be a multiple of the page size.");
   constexpr auto region_page_count = memory_region_size / utils::PAGE_SIZE;
 
   SCOPED_TRACE("Max node id: " + std::to_string(numa_max_node_id));
@@ -140,7 +140,7 @@ TEST_F(NumaTest, FillPageLocationsPartitionedFailure) {
   // Expect throw since at least two nodes are required.
   EXPECT_THROW(fill_page_locations_partitioned(page_locations, memory_region_size, one_target_node,
                                                percentage_first_partition, 1),
-               MemaException);
+               BenchException);
 }
 
 TEST_F(NumaTest, FillPageLocationsRoundRobin) {
@@ -181,7 +181,7 @@ TEST_F(NumaTest, PlacePages) {
   }
 
   constexpr auto memory_region_size = 1 * MiB;
-  MemaAssert(memory_region_size % utils::PAGE_SIZE == 0, "Memory region needs to be a multiple of the page size.");
+  BenchAssert(memory_region_size % utils::PAGE_SIZE == 0, "Memory region needs to be a multiple of the page size.");
   char* data = utils::map(memory_region_size, true, 0);
   utils::populate_memory(data, memory_region_size);
   constexpr auto region_page_count = memory_region_size / utils::PAGE_SIZE;
@@ -236,7 +236,7 @@ TEST_F(NumaTest, VerifyPagePlacement) {
   }
 
   constexpr auto memory_region_size = 1 * MiB;
-  MemaAssert(memory_region_size % utils::PAGE_SIZE == 0, "Memory region needs to be a multiple of the page size.");
+  BenchAssert(memory_region_size % utils::PAGE_SIZE == 0, "Memory region needs to be a multiple of the page size.");
   char* data = utils::map(memory_region_size, true, 0);
   utils::populate_memory(data, memory_region_size);
   constexpr auto region_page_count = memory_region_size / utils::PAGE_SIZE;
@@ -291,4 +291,4 @@ TEST_F(NumaTest, VerifyPagePlacement) {
   }
 }
 
-}  // namespace mema
+}  // namespace cxlbench

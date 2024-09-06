@@ -2,8 +2,8 @@
 
 #include <cstdint>
 
-namespace mema {
+namespace cxlbench {
 
 thread_local __uint128_t g_lehmer64_state = 0;
 
-}  // namespace mema
+}  // namespace cxlbench

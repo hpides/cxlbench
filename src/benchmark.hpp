@@ -10,12 +10,13 @@
 #include <utility>
 #include <vector>
 
+#include "access_batch.hpp"
 #include "benchmark_config.hpp"
-#include "io_operation.hpp"
 #include "json.hpp"
+#include "read_write_ops_types.hpp"
 #include "utils.hpp"
 
-namespace mema {
+namespace cxlbench {
 
 enum class BenchmarkType : u8 { Single, Parallel };
 
@@ -35,14 +36,14 @@ struct BenchmarkExecution {
   std::mutex generation_lock{};
   std::condition_variable generation_done{};
   u16 threads_remaining;
-  std::atomic<u64> io_position = 0;
+  std::atomic<u64> batch_position = 0;
 
-  // For custom operations, we don't have chunks but only simulate them by running chunk-sized blocks.
+  // For custom operations, we don't have batches but only simulate them by running batch-sized blocks.
   // This is a *signed* integer, as our atomic -= operations my go below 0.
-  std::atomic<i64> num_custom_chunks_remaining = 0;
+  std::atomic<i64> num_custom_batches_remaining = 0;
 
   // The main list of all IO operations to steal work from
-  std::vector<IoOperation> io_operations;
+  std::vector<AccessBatch> access_batches;
 };
 
 struct ThreadConfig {
@@ -53,8 +54,8 @@ struct ThreadConfig {
   const u64 secondary_region_size;
   const u64 thread_count;
   const u64 thread_idx;
-  const u64 ops_count_per_chunk;
-  const u64 chunk_count;
+  const u64 ops_count_per_batch;
+  const u64 batch_count;
   const BenchmarkConfig& config;
   // Defines the CPU cores to run on.
   CoreIDs affinity_core_ids;
@@ -64,27 +65,27 @@ struct ThreadConfig {
   // Pointers to store performance data in.
   u64* total_operation_size;
   ExecutionDuration* total_operation_duration;
-  std::vector<u64>* custom_op_latencies;
+  std::vector<u64>* op_latencies;
 
   ThreadConfig(char* primary_region_start_addr, char* secondary_region_start_addr, const u64 primary_region_size,
                const u64 secondary_region_size, const u64 thread_count, const u64 thread_idx,
-               const u64 ops_count_per_chunk, const u64 chunk_count, const BenchmarkConfig& config,
+               const u64 ops_count_per_batch, const u64 batch_count, const BenchmarkConfig& config,
                CoreIDs affinity_core_ids, BenchmarkExecution* execution, ExecutionDuration* total_operation_duration,
-               u64* total_operation_size, std::vector<u64>* custom_op_latencies)
+               u64* total_operation_size, std::vector<u64>* op_latencies)
       : primary_start_addr{primary_region_start_addr},
         secondary_start_addr{secondary_region_start_addr},
         primary_region_size{primary_region_size},
         secondary_region_size{secondary_region_size},
         thread_count{thread_count},
         thread_idx{thread_idx},
-        ops_count_per_chunk{ops_count_per_chunk},
-        chunk_count{chunk_count},
+        ops_count_per_batch{ops_count_per_batch},
+        batch_count{batch_count},
         config{config},
         affinity_core_ids{affinity_core_ids},
         execution{execution},
         total_operation_duration{total_operation_duration},
         total_operation_size{total_operation_size},
-        custom_op_latencies{custom_op_latencies} {}
+        op_latencies{op_latencies} {}
 };
 
 struct BenchmarkResult {
@@ -93,16 +94,19 @@ struct BenchmarkResult {
 
   nlohmann::json get_result_as_json() const;
   nlohmann::json get_custom_results_as_json() const;
+  nlohmann::json get_latency_mode_results_as_json() const;
 
   // Result vectors for raw operation workloads
   std::vector<u64> total_operation_sizes;
   std::vector<ExecutionDuration> total_operation_durations;
 
   // Result vectors for custom operation workloads
-  std::vector<std::vector<u64>> custom_operation_latencies;
+  std::vector<std::vector<u64>> operation_latencies;
 
   hdr_histogram* latency_hdr = nullptr;
   const BenchmarkConfig config;
+
+  TimePointMS start_timestamp;
 };
 
 class Benchmark {
@@ -161,6 +165,8 @@ class Benchmark {
   /** Return the type of the benchmark. */
   std::string benchmark_type_as_str() const;
 
+  void set_start_timestamp(const TimePointMS& start);
+
   // Return the benchmark Type.
   BenchmarkType get_benchmark_type() const;
 
@@ -178,11 +184,14 @@ class Benchmark {
                             BenchmarkResult* result, std::vector<std::thread>* pool,
                             std::vector<ThreadConfig>* thread_config);
 
-  // Pepares the memory regions and returns the start pointer. A start address is nullptr if the corresponding memory
+  // Prepares the memory regions and returns the start pointer. A start address is nullptr if the corresponding memory
   // region has a size of 0.
   static MemoryRegions prepare_data(const BenchmarkConfig& config);
 
-  // Prepares the memory region with pages interleaved accross the given NUMA nodes.
+  // Prepares the memory region when memory is exposed as device (e.g., dax device).
+  static char* prepare_device_data(const MemoryRegionDefinition& region, const BenchmarkConfig& config);
+
+  // Prepares the memory region with pages interleaved across the given NUMA nodes.
   static char* prepare_interleaved_data(const MemoryRegionDefinition& region, const BenchmarkConfig& config);
 
   // Prepares the memory region with two partitions each being located on a different NUMA nodes.
@@ -190,23 +199,71 @@ class Benchmark {
 
   // Verifies the page locations
   static void verify_page_locations(const MemoryRegions& memory_regions,
-                                    const MemoryRegionDefinitions& region_definitions);
+                                    const MemoryRegionDefinitions& region_definitions, const u32 workload_idx);
 
   static void run_custom_ops_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config);
-  template <size_t ACCESS_COUNT_64B>
-  static void run_dependent_reads_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config);
   static void run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config);
 
-  static u64 run_fixed_sized_benchmark(std::vector<IoOperation>* vector, std::atomic<u64>* io_position);
-  static u64 run_duration_based_benchmark(std::vector<IoOperation>* io_operations, std::atomic<u64>* io_position,
+  static u64 run_fixed_sized_benchmark(std::vector<AccessBatch>* vector, std::atomic<u64>* batch_position);
+  static u64 run_duration_based_benchmark(std::vector<AccessBatch>* access_batches, std::atomic<u64>* batch_position,
                                           std::chrono::steady_clock::time_point execution_end);
+
+  static void run_latency_measurements_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config);
+
+  static ExecutionDuration run_random_reads_8B(std::byte* buffer, u32 access_count, const BenchmarkConfig& config,
+                                               std::vector<u64>* latencies);
+  static ExecutionDuration run_random_reads_8B_flushed(std::byte* buffer, u32 access_count,
+                                                       const BenchmarkConfig& config, std::vector<u64>* latencies);
+  static ExecutionDuration run_random_writes_8B(std::byte* buffer, u32 access_count, const BenchmarkConfig& config,
+                                                std::vector<u64>* latencies);
+  static ExecutionDuration run_sequential_reads_8B(std::byte* buffer, u32 access_count, const BenchmarkConfig& config,
+                                                   std::vector<u64>* latencies);
+
+  static ExecutionDuration run_random_reads_64B(std::byte* buffer, u32 access_count, const BenchmarkConfig& config,
+                                                std::vector<u64>* latencies);
+  static ExecutionDuration run_random_stream_reads_64B(std::byte* buffer, u32 access_count,
+                                                       const BenchmarkConfig& config, std::vector<u64>* latencies);
+  static ExecutionDuration run_random_reads_64B_flushed(std::byte* buffer, u32 access_count,
+                                                        const BenchmarkConfig& config, std::vector<u64>* latencies);
+
+  static ExecutionDuration run_sequential_reads_64B(std::byte* buffer, u32 access_count, const BenchmarkConfig& config,
+                                                    std::vector<u64>* latencies);
+  static ExecutionDuration run_sequential_stream_reads_64B(std::byte* buffer, u32 access_count,
+                                                           const BenchmarkConfig& config, std::vector<u64>* latencies);
+  static ExecutionDuration run_sequential_reads_64B_flushed(std::byte* buffer, u32 access_count,
+                                                            const BenchmarkConfig& config, std::vector<u64>* latencies);
+
+  static ExecutionDuration run_random_writes_64B(std::byte* buffer, u32 access_count, const BenchmarkConfig& config,
+                                                 std::vector<u64>* latencies);
+  static ExecutionDuration run_random_stream_writes_64B(std::byte* buffer, u32 access_count,
+                                                        const BenchmarkConfig& config, std::vector<u64>* latencies);
+  // Compare and swap, 8 B
+  static ExecutionDuration run_atomic_cas_8B(std::byte* buffer, u32 access_count, const BenchmarkConfig& config,
+                                             std::vector<u64>* latencies);
+
+  // Fetch and add, 8 B
+  static ExecutionDuration run_atomic_faa_8B(std::byte* buffer, u32 access_count, const BenchmarkConfig& config,
+                                             std::vector<u64>* latencies);
+
+  // Measure memory management ------------------------------------------------------------------------------------
+  static ExecutionDuration run_memory_map_shared(std::byte* buffer, const BenchmarkConfig& config,
+                                                 std::vector<u64>* latencies);
+
+  static ExecutionDuration run_memory_map_private(std::byte* buffer, const BenchmarkConfig& config,
+                                                  std::vector<u64>* latencies);
+
+  static ExecutionDuration run_memory_unmap_shared(std::byte* buffer, const BenchmarkConfig& config,
+                                                   std::vector<u64>* latencies);
+
+  static ExecutionDuration run_memory_unmap_private(std::byte* buffer, const BenchmarkConfig& config,
+                                                    std::vector<u64>* latencies);
 
   const std::string benchmark_name_;
 
   const BenchmarkType benchmark_type_;
 
   // Data for different workloads.
-  std::vector<MemoryRegions> memory_regions_;
+  std::vector<MemoryRegions> memory_region_sets_;
   const std::vector<BenchmarkConfig> configs_;
   std::vector<std::unique_ptr<BenchmarkResult>> results_;
   std::vector<std::unique_ptr<BenchmarkExecution>> executions_;
@@ -214,4 +271,4 @@ class Benchmark {
   std::vector<std::vector<std::thread>> thread_pools_;
 };
 
-}  // namespace mema
+}  // namespace cxlbench

@@ -1,0 +1,11 @@
+memory_management:
+  matrix:
+    memory_region_size: [ 16G, 32G, 64G, 128G ]
+    operation: ["memory-map-private", "memory-map-shared", "memory-unmap-private", "memory-unmap-shared"]
+
+  args:
+    numa_memory_nodes: [ 0 ]
+    exec_mode: "latency"
+    numa_task_nodes: [ 1 ]
+    number_operations: 5
+    latency_sample_frequency: 1

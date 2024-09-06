@@ -1,0 +1,14 @@
+seq-read:
+  args:
+    numa_task_nodes: [ 0 ]
+    exec_mode: "sequential"
+    operation: "read"
+    device_path: "/dev/dax0.0"
+    cache_instruction: none
+    access_size: 64
+    number_threads: 96
+    memory_region_size: 16G
+#    min_io_batch_size: 170M
+    run_time: 10
+    generate_read_data: false
+    replications: 40

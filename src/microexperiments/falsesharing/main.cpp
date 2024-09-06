@@ -19,7 +19,7 @@
 #include "json.hpp"
 
 // NOLINTBEGIN
-#define MemaAssert(expr, msg)        \
+#define BenchAssert(expr, msg)       \
   if (!static_cast<bool>(expr)) {    \
     std::cerr << (msg) << std::endl; \
   }                                  \
@@ -73,9 +73,9 @@ std::vector<DurationNs> run_benchmark(u32 thread_count, u32 size_factor_per_thre
   }
   std::cout << "buffer_size: " << buffer_size << std::endl;
 
-  MemaAssert(buffer_size % CACHELINE_SIZE == 0, "buffer_size is not an integral multiple of CACHELINE_SIZE");
+  BenchAssert(buffer_size % CACHELINE_SIZE == 0, "buffer_size is not an integral multiple of CACHELINE_SIZE");
   auto* buffer = std::aligned_alloc(CACHELINE_SIZE, buffer_size);  // NOLINT
-  MemaAssert(buffer != nullptr, "Memory allocation failed.");
+  BenchAssert(buffer != nullptr, "Memory allocation failed.");
 
   // Initialize atomic ints with 0.
   auto values = new (buffer) std::atomic<i64>[value_count];  // NOLINT

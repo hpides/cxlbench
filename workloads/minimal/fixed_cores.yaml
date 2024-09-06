@@ -3,7 +3,6 @@ sequential_reads:
   args:
     numa_memory_nodes: [0]
     access_size: 64
-    number_partitions: 1
     exec_mode: sequential
     memory_region_size: 1G
     numa_task_nodes: [ 0 ]

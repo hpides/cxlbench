@@ -3,6 +3,7 @@
 sudo apt update &&
 sudo apt install -y \
     cmake \
+    daxctl \
     dmidecode \
     g++-12 \
     gcc-12 \
@@ -10,7 +11,6 @@ sudo apt install -y \
     git \
     hwloc \
     libnuma-dev \
-    lstopo \
     lshw \
     ninja-build \
     numactl \
@@ -23,4 +23,3 @@ sudo apt install -y \
 pipx install poetry  # python package manager
 pipx ensurepath
 echo "To install python dependencies run 'poetry install'"
-

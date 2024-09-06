@@ -18,7 +18,7 @@
  * Mathematical Society 68.225 (1999): 249-260.
  */
 
-namespace mema {
+namespace cxlbench {
 
 extern thread_local __uint128_t g_lehmer64_state;
 
@@ -38,4 +38,4 @@ static inline u64 lehmer64() {
   return g_lehmer64_state >> 64;
 }
 
-}  // namespace mema
+}  // namespace cxlbench

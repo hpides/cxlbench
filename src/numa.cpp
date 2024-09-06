@@ -13,7 +13,7 @@
 #include "benchmark.hpp"
 #include "utils.hpp"
 
-namespace mema {
+namespace cxlbench {
 
 void log_numa_nodes(spdlog::level::level_enum log_level, const std::string& message, const NumaNodeIDs& nodes) {
   const auto used_nodes_str = std::accumulate(
@@ -91,7 +91,7 @@ void bind_memory_interleaved(void* addr, const size_t memory_size, const NumaNod
 
   // Note that "[i]f the MPOL_INTERLEAVE policy was specified, pages already residing on the specified nodes will not be
   // moved such that they are interleaved", see mbind(2) manual.
-  MemaAssert(nodemask != nullptr, "When setting the memory nodes, node mask cannot be nullptr.");
+  BenchAssert(nodemask != nullptr, "When setting the memory nodes, node mask cannot be nullptr.");
   const auto mbind_succeeded = mbind(addr, memory_size, MPOL_INTERLEAVE, nodemask->maskp, nodemask->size + 1,
                                      MPOL_MF_STRICT | MPOL_MF_MOVE) == 0;
   const auto mbind_errno = errno;
@@ -191,10 +191,12 @@ void fill_page_locations_partitioned(PageLocations& page_locations, size_t memor
                                      const NumaNodeIDs& target_nodes, const u64 percentage_first_node,
                                      const u64 node_count_first_node) {
   spdlog::debug("Start filling page locations (partitioned).");
-  MemaAssert(target_nodes.size() >= 2, "When using partitioned page placements, at least two NUMA nodes are required.");
-  MemaAssert(percentage_first_node >= 0 && percentage_first_node <= 100,
-             "Percentage of pages on first node needs to be in range [0,100].");
-  MemaAssert(memory_region_size % utils::PAGE_SIZE == 0, "Memory region size needs to be a multiple of the page size.");
+  BenchAssert(target_nodes.size() >= 2,
+              "When using partitioned page placements, at least two NUMA nodes are required.");
+  BenchAssert(percentage_first_node >= 0 && percentage_first_node <= 100,
+              "Percentage of pages on first node needs to be in range [0,100].");
+  BenchAssert(memory_region_size % utils::PAGE_SIZE == 0,
+              "Memory region size needs to be a multiple of the page size.");
   // Calculate page counts
   const auto region_page_count = memory_region_size / utils::PAGE_SIZE;
   const auto first_node_page_count = static_cast<u32>((percentage_first_node / 100.f) * region_page_count);
@@ -236,8 +238,8 @@ void place_pages(char* const start_addr, size_t memory_region_size, const PageLo
   }
 
   const auto region_page_count = memory_region_size / utils::PAGE_SIZE;
-  MemaAssert(region_page_count == target_page_locations.size(),
-             "Passed target page location has incorrect number of locations.");
+  BenchAssert(region_page_count == target_page_locations.size(),
+              "Passed target page location has incorrect number of locations.");
 
   // move_pages requires a vector of void*, one void* per page.
   auto pages = std::vector<void*>{};
@@ -365,4 +367,4 @@ bool verify_partitioned_page_placement(char* const start_addr, size_t memory_reg
   return first_partition_verified & second_partition_verified;
 }
 
-}  // namespace mema
+}  // namespace cxlbench

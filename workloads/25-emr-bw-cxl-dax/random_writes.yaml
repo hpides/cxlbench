@@ -1,0 +1,16 @@
+random_writes:
+  matrix:
+#    number_threads: [ 1 ]
+    number_threads: [ 1, 4, 16, 24, 48 ]
+    memory_region_size: [ 16G ]
+    # number_threads: [ 1, 2, 4, 8, 16, 32, 64, 96, 192]
+    access_size: [ 64 ]
+    cache_instruction: [ none ]
+    operation: ["write"]
+
+  args:
+    numa_task_nodes: [ 1 ]
+    exec_mode: random
+    device_path: "/dev/dax2.0"
+    number_operations: 110000000
+    run_time: 10

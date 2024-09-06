@@ -12,7 +12,7 @@ from enums.benchmark_groups import BMGroups
 from enums.benchmark_keys import BMKeys
 from enums.file_names import DATA_FILE_PREFIX, PLOT_FILE_PREFIX
 from json_util import parse_matrix_jsons
-from memaplot import FLUSH_INSTR_NONE
+from cxlbenchplot import FLUSH_INSTR_NONE
 from heatmaps.bandwidth_heatmap import BandwidthHeatmap
 from heatmaps.latency_heatmap import LatencyHeatmap
 
@@ -65,12 +65,13 @@ class PlotGenerator:
     This class calls the methods of the plotter classes, according go the given JSON.
     """
 
-    def __init__(self, results, output_dir, no_plots, latency_heatmap, memory_nodes):
+    def __init__(self, results, output_dir, no_plots, latency_heatmap, memory_nodes, compact):
         self.results = results
         self.output_dir = output_dir
         self.no_plots = no_plots
         self.latency_heatmap = latency_heatmap
         self.memory_nodes = memory_nodes
+        self.compact = compact
 
     def add_avg_access_latency(self, df):
         df[BMKeys.TOTAL_ACCESSES] = (df[BMKeys.ACCESSED_BYTES] / df[BMKeys.ACCESS_SIZE]).astype(int)
@@ -114,6 +115,8 @@ class PlotGenerator:
             sys.exit("Exiting without generating plots. CSV were stored.")
 
         bm_groups = df[BMKeys.BM_GROUP].unique()
+        if not BMKeys.PARTITION_COUNT in df.columns:
+            df[BMKeys.PARTITION_COUNT] = 1
         partition_counts = df[BMKeys.PARTITION_COUNT].unique()
         flush_types = df[BMKeys.FLUSH_INSTRUCTION].unique()
         tags = df[BMKeys.TAG].unique()
@@ -191,9 +194,9 @@ class PlotGenerator:
                 df_sub.to_csv("{}/{}{}.csv".format(self.output_dir, DATA_FILE_PREFIX, filename))
 
                 if self.latency_heatmap:
-                    heatmap = LatencyHeatmap(df_sub, plot_title, self.output_dir, filename)
+                    heatmap = LatencyHeatmap(df_sub, plot_title, self.output_dir, filename, self.compact)
                 else:
-                    heatmap = BandwidthHeatmap(df_sub, plot_title, self.output_dir, filename)
+                    heatmap = BandwidthHeatmap(df_sub, plot_title, self.output_dir, filename, self.compact)
 
                 heatmap.create()
 

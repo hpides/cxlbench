@@ -3,7 +3,7 @@ latency:
     number_threads: 1
     access_size: 64
     memory_region_size: 2G
-    min_io_chunk_size: 2G
+    min_io_batch_size: 2G
     numa_memory_nodes: [ 2 ]
     numa_task_nodes: [ 0 ]
     exec_mode: dependent_reads

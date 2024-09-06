@@ -11,19 +11,33 @@
 #include "types.hpp"
 #include "yaml-cpp/yaml.h"
 
-namespace mema {
+namespace cxlbench {
 
-enum class Mode : u8 { Sequential, Sequential_Desc, Random, Custom, DependentReads };
+enum class Mode : u8 { Sequential, Sequential_Desc, Random, Custom, SequentialLatency, RandomLatency, Latency };
 
 enum class RandomDistribution : u8 { Uniform, Zipf };
 
-enum class FlushInstruction : u8 { Cache, NoCache, None };
+enum class CacheInstruction : u8 { Flush, FlushOpt, WriteBack, None };
 
-enum class Operation : u8 { Read, Write };
+// TODO(MW) MemoryAlloc, MemoryDealloc, use prefaulting with MAP_POPULATE, use mmap and munmap
+enum class Operation : u8 {
+  Read,
+  Write,
+  StreamRead,
+  StreamWrite,
+  CompareAndSwap,
+  FetchAndAdd,
+  MemoryMapPrivate,
+  MemoryMapShared,
+  MemoryUnmapPrivate,
+  MemoryUnmapShared,
+};
 
 enum class MemoryType : u8 { Primary, Secondary };
 
-enum class PagePlacementMode : u8 { Interleaved, Partitioned };
+enum class PagePlacementMode : u8 { NumaInterleaved, NumaPartitioned, DeviceLinear, Invalid };
+
+enum class MemoryMode : u8 { Numa, Device, Invalid };
 
 // AllNumaCores pins a thread to the set of cores of a given NUMA node.
 // SingleNumaCoreIncrement pins each thread to a single core, which is in the set of cores of a given NUMA node. The
@@ -49,12 +63,12 @@ constexpr auto MEM_REGION_PREFIX = 'm';
  * 'r' for read,
  * <size> is the size of the access (must be power of 2).
  *
- * For writes: w_<size>_<flush_instruction>(_<offset>)
+ * For writes: w_<size>_<cache_instruction>(_<offset>)
  *
  * with:
  * 'w' for write,
  * <size> is the size of the access (must be power of 2),
- * <flush_instruction> is the instruction to use after the write (none, cache, noache),
+ * <cache_instruction> is the instruction to use after the write (none, cache, noache),
  * (optional) <offset> is the offset to the previously accessed address (can be negative, default is 0)
  *
  * */
@@ -62,7 +76,7 @@ struct CustomOp {
   MemoryType memory_type = MemoryType::Primary;
   Operation type;
   u64 size;
-  FlushInstruction flush = FlushInstruction::None;
+  CacheInstruction cache_fn = CacheInstruction::None;
   // This can be signed, e.g., to represent the case when the previous cache line should be written to.
   i64 offset = 0;
 
@@ -89,6 +103,13 @@ struct MemoryRegionDefinition {
    */
   NumaNodeIDs node_ids = {};
 
+  /** Device paths if memory is exposed as device. */
+  std::string device_path = "";
+
+  /** If a device path is given, the offset determines the start address of the memory region. With 0, the memory region
+   * starts at the first byte of the device. */
+  u64 offset = 0;
+
   /** Specifies the number of NUMA nodes for the first partition of the NUMA node list. Ignored if not set. */
   std::optional<u64> node_count_first_partition = std::nullopt;
 
@@ -98,7 +119,7 @@ struct MemoryRegionDefinition {
   /** Represents the total primary memory range to use for the benchmark. Must be a multiple of `access_size`.  */
   u64 size = 10 * GiB;
 
-  /** Sepecify the use of huge pages in combination with `explicit_hugepages_size`. */
+  /** Specify the use of huge pages in combination with `explicit_hugepages_size`. */
   bool transparent_huge_pages = false;
 
   /** Specify the used huge page size. Relevant when the OS supports multiple huge page sizes. Requires
@@ -107,6 +128,7 @@ struct MemoryRegionDefinition {
   u64 explicit_hugepages_size = 0;
 
   PagePlacementMode placement_mode() const;
+  MemoryMode memory_mode() const;
 };
 
 using MemoryRegionDefinitions = std::array<MemoryRegionDefinition, 2>;
@@ -134,12 +156,12 @@ struct BenchmarkConfig {
   /** Type of memory access operation to perform, i.e., read or write. */
   Operation operation = Operation::Read;
 
-  /** Mode of execution, i.e., sequential, random, or custom. See `Mode` for all options. */
+  /** Mode of execution. See `Mode` for all options. */
   Mode exec_mode = Mode::Sequential;
 
   /** Flush instruction to use after write operations. Only works with `Operation::Write`. See
-   * `FlushInstruction` for more details on available options. */
-  FlushInstruction flush_instruction = FlushInstruction::None;
+   * `CacheInstruction` for more details on available options. */
+  CacheInstruction cache_instruction = CacheInstruction::None;
 
   /** Specifies the set of NUMA nodes on which the benchmark threads are to run. */
   NumaNodeIDs numa_thread_nodes;
@@ -161,21 +183,31 @@ struct BenchmarkConfig {
   /** Frequency in which to sample latency of custom operations. Only works in combination with `Mode::Custom`. */
   u64 latency_sample_frequency = 0;
 
-  /** Represents the minimum size of an atomic work package. A chunk contains chunk_size / access_size number of
+  /** Represents the minimum size of an atomic work package. A batch contains batch_size / access_size number of
    * operations. The default value is 64 MiB (67108864B), a ~60 ms execution unit assuming the lowest bandwidth of
-   * 1 GiB/s operations per thread. For dependent reads, this chunk size determines the range in which addresses to
-   * be accessed are randomly generated. For example, with a memory region size of 1 GB, a chunk size of 64 MiB, and an
+   * 1 GiB/s operations per thread. For dependent reads, this batch size determines the range in which addresses to
+   * be accessed are randomly generated. For example, with a memory region size of 1 GB, a batch size of 64 MiB, and an
    * access size of 64 B, the first 1,048,576 (= 64 MiB / 64 B) access addresses point to a memory region of 64 MiB.
    * Narrowing the memory access range reduces TLB misses. */
-  u64 min_io_chunk_size = 64 * MiB;
+  u64 min_io_batch_size = 64 * MiB;
+
+  /** Specify if read data is generated for read workloads. */
+  bool generate_read_data = true;
+
+  /** Specify how often each benchmark case is replicated. This can be helpful for executing benchmarks simultaneously
+   *  on multiple machines. */
+  u64 benchmark_replications = 1;
 
   std::vector<std::string> matrix_args{};
 
   static BenchmarkConfig decode(YAML::Node& raw_config_data);
   void validate() const;
-  bool contains_read_op() const;
+  bool is_generate_read_data() const;
+  bool is_generate_shuffled_access_positions() const;
+  bool is_memory_management_op() const;
   bool contains_write_op() const;
   bool contains_secondary_memory_op() const;
+  bool is_latency_mode() const;
 
   std::string to_string(const std::string sep = ", ") const;
   nlohmann::json as_json() const;
@@ -186,12 +218,13 @@ struct ConfigEnums {
   static const std::unordered_map<std::string, bool> str_to_mem_type;
   static const std::unordered_map<std::string, Mode> str_to_mode;
   static const std::unordered_map<std::string, Operation> str_to_operation;
-  static const std::unordered_map<std::string, FlushInstruction> str_to_flush_instruction;
+  static const std::unordered_map<std::string, CacheInstruction> str_to_cache_instr;
   static const std::unordered_map<std::string, RandomDistribution> str_to_random_distribution;
   static const std::unordered_map<std::string, ThreadPinMode> str_to_thread_pin_mode;
+  static const std::unordered_map<std::string, MemoryMode> str_to_device_mode;
 
   // Map to convert a K/M/G suffix to the correct kibi, mebi-, gibibyte value.
   static const std::unordered_map<char, u64> scale_suffix_to_factor;
 };
 
-}  // namespace mema
+}  // namespace cxlbench

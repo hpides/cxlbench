@@ -11,6 +11,7 @@ class BMKeys(StrEnum):
     BM_NAME = "bm_name"
     BM_SUB_NAMES = "sub_bm_names"
     BM_TYPE = "bm_type"
+    CACHE_INSTRUCTION = "cache_instruction"
     CHUNK_SIZE = "min_io_chunk_size"
     CUSTOM_OPS = "custom_operations"
     EXEC_MODE = "exec_mode"

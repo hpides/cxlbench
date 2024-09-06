@@ -10,7 +10,7 @@
 #include "test_utils.hpp"
 #include "utils.hpp"
 
-namespace mema {
+namespace cxlbench {
 
 constexpr auto MEMORY_REGION_SIZE = size_t{131072};  // 128 KiB
 
@@ -88,15 +88,15 @@ TEST_F(ReadWriteTest, MultiSIMDClwbWrite_512) { run_multi_write_test(rw_ops::wri
 #endif
 
 #if defined(USE_AVX_2) || defined(USE_AVX_512)
-TEST_F(ReadWriteTest, SingleSIMDNonTemporalWrite_64) { run_single_write_test(rw_ops::simd_write_nt_64, 64); }
-TEST_F(ReadWriteTest, SingleSIMDNonTemporalWrite_128) { run_single_write_test(rw_ops::simd_write_nt_128, 128); }
-TEST_F(ReadWriteTest, SingleSIMDNonTemporalWrite_256) { run_single_write_test(rw_ops::simd_write_nt_256, 256); }
-TEST_F(ReadWriteTest, SingleSIMDNonTemporalWrite_512) { run_single_write_test(rw_ops::simd_write_nt_512, 512); }
+TEST_F(ReadWriteTest, SingleSIMDNonTemporalWrite_64) { run_single_write_test(rw_ops::write_stream_64, 64); }
+TEST_F(ReadWriteTest, SingleSIMDNonTemporalWrite_128) { run_single_write_test(rw_ops::write_stream_128, 128); }
+TEST_F(ReadWriteTest, SingleSIMDNonTemporalWrite_256) { run_single_write_test(rw_ops::write_stream_256, 256); }
+TEST_F(ReadWriteTest, SingleSIMDNonTemporalWrite_512) { run_single_write_test(rw_ops::write_stream_512, 512); }
 
-TEST_F(ReadWriteTest, MultiSIMDNonTemporalWrite_64) { run_multi_write_test(rw_ops::simd_write_nt_64, 64); }
-TEST_F(ReadWriteTest, MultiSIMDNonTemporalWrite_128) { run_multi_write_test(rw_ops::simd_write_nt_128, 128); }
-TEST_F(ReadWriteTest, MultiSIMDNonTemporalWrite_256) { run_multi_write_test(rw_ops::simd_write_nt_256, 256); }
-TEST_F(ReadWriteTest, MultiSIMDNonTemporalWrite_512) { run_multi_write_test(rw_ops::simd_write_nt_512, 512); }
+TEST_F(ReadWriteTest, MultiSIMDNonTemporalWrite_64) { run_multi_write_test(rw_ops::write_stream_64, 64); }
+TEST_F(ReadWriteTest, MultiSIMDNonTemporalWrite_128) { run_multi_write_test(rw_ops::write_stream_128, 128); }
+TEST_F(ReadWriteTest, MultiSIMDNonTemporalWrite_256) { run_multi_write_test(rw_ops::write_stream_256, 256); }
+TEST_F(ReadWriteTest, MultiSIMDNonTemporalWrite_512) { run_multi_write_test(rw_ops::write_stream_512, 512); }
 #endif
 
 TEST_F(ReadWriteTest, ScalarWriteTest) {
@@ -121,4 +121,4 @@ TEST_F(ReadWriteTest, ScalarWriteTest) {
   verify_data(addr, MEMORY_REGION_SIZE);
 }
 
-}  // namespace mema
+}  // namespace cxlbench

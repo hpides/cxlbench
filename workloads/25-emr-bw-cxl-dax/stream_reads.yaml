@@ -1,0 +1,15 @@
+sequential_stream_reads:
+  matrix:
+#    number_threads: [ 1 ]
+    number_threads: [ 1, 4, 16, 24, 48 ]
+#    number_threads: [ 1, 2, 4, 8 ]
+    memory_region_size: [ 16G ]
+    access_size: [ 64 ]
+    exec_mode: [sequential, random]
+
+  args:
+    cache_instruction: none
+    operation: stream-read
+    numa_task_nodes: [ 1 ]
+    device_path: "/dev/dax2.0"
+    run_time: 10

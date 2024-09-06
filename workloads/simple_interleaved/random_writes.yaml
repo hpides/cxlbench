@@ -3,7 +3,7 @@ random_writes:
     # number_threads: [ 8, 12, 16 ]
     number_threads: [ 16 ]
     access_size: [ 64 ]
-    flush_instruction: [ none ]
+    cache_instruction: [ none ]
 
   args:
     exec_mode: random

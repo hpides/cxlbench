@@ -6,7 +6,7 @@ from heatmaps.heatmap import Heatmap
 
 
 class LatencyHeatmap(Heatmap):
-    def __init__(self, df: pd.DataFrame, title: str, output_dir: str, filename):
+    def __init__(self, df: pd.DataFrame, title: str, output_dir: str, filename: str, compact: bool):
         filename = f"avg_latency_{filename}"
         super().__init__(
             df,
@@ -19,6 +19,7 @@ class LatencyHeatmap(Heatmap):
             "green",
             "red",
             "d",
+            compact=compact,
         )
 
     def create(self):

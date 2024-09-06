@@ -1,0 +1,11 @@
+memory_management:
+  matrix:
+    memory_region_size: [ 16G, 32G, 64G, 128G ]
+    operation: ["memory-map-shared", "memory-unmap-shared"]
+
+  args:
+    device_path: "/dev/dax0.0"
+    exec_mode: "latency"
+    numa_task_nodes: [ 1 ]
+    number_operations: 5
+    latency_sample_frequency: 1

@@ -1,0 +1,14 @@
+streaming-writes:
+  matrix:
+    memory_region_size: [16G]
+    exec_mode: ["random_latency"]
+  args:
+    cache_instruction: none
+    access_size: 64
+    operation: "stream-write"
+    numa_memory_nodes: [ 1 ]
+    number_threads: 1
+    thread_pin_mode: single-fixed
+    thread_cores : [25]
+    number_operations: 10000000
+    latency_sample_frequency: 1000

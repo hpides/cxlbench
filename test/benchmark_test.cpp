@@ -14,19 +14,19 @@
 #include "test_utils.hpp"
 #include "threads.hpp"
 
-namespace mema {
+namespace cxlbench {
 
 using ::testing::ElementsAre;
 
 constexpr size_t TEST_DATA_SIZE = 1 * MiB;              // 1 MiB
-constexpr size_t TEST_CHUNK_SIZE = TEST_DATA_SIZE / 8;  // 128 KiB
+constexpr size_t TEST_BATCH_SIZE = TEST_DATA_SIZE / 8;  // 128 KiB
 
 class BenchmarkTest : public BaseTest {
  protected:
   void SetUp() override {
     base_config_.memory_regions[0].size = TEST_DATA_SIZE;
     base_config_.memory_regions[0].node_ids = {0};
-    base_config_.min_io_chunk_size = TEST_CHUNK_SIZE;
+    base_config_.min_io_batch_size = TEST_BATCH_SIZE;
     base_config_.numa_thread_nodes = {0};
 
     const auto numa_max_node_id = numa_max_node();
@@ -77,8 +77,8 @@ TEST_F(BenchmarkTest, SetUpSingleThread) {
   EXPECT_EQ(thread_config.thread_idx, 0);
   EXPECT_EQ(thread_config.thread_count, 1);
   EXPECT_EQ(thread_config.primary_region_size, TEST_DATA_SIZE);
-  EXPECT_EQ(thread_config.ops_count_per_chunk, TEST_CHUNK_SIZE / 256);
-  EXPECT_EQ(thread_config.chunk_count, 8);
+  EXPECT_EQ(thread_config.ops_count_per_batch, TEST_BATCH_SIZE / 256);
+  EXPECT_EQ(thread_config.batch_count, 8);
   EXPECT_EQ(thread_config.primary_start_addr, bm.get_memory_regions()[0][0]);
   EXPECT_EQ(&thread_config.config, &bm.get_benchmark_configs()[0]);
 
@@ -142,8 +142,8 @@ TEST_F(BenchmarkTest, SetUpMultiThread) {
   for (const ThreadConfig& tc : thread_configs) {
     EXPECT_EQ(tc.thread_count, 4);
     EXPECT_EQ(tc.primary_region_size, region_size);
-    EXPECT_EQ(tc.ops_count_per_chunk, TEST_CHUNK_SIZE / 256);
-    EXPECT_EQ(tc.chunk_count, 8);
+    EXPECT_EQ(tc.ops_count_per_batch, TEST_BATCH_SIZE / 256);
+    EXPECT_EQ(tc.batch_count, 8);
     EXPECT_EQ(&tc.config, &bm.get_benchmark_configs()[0]);
   }
   bm.get_benchmark_results()[0]->config.validate();
@@ -172,8 +172,8 @@ TEST_F(BenchmarkTest, SetUpSingleThreadCustomOps) {
 
   EXPECT_EQ(thread_config.thread_idx, 0);
   EXPECT_EQ(thread_config.primary_region_size, TEST_DATA_SIZE);
-  EXPECT_EQ(thread_config.ops_count_per_chunk, 136 /* = 128 KiB / 960*/);
-  EXPECT_EQ(thread_config.chunk_count, 74 /* = 10000 / 136 + 1 extra chunk */);
+  EXPECT_EQ(thread_config.ops_count_per_batch, 136 /* = 128 KiB / 960*/);
+  EXPECT_EQ(thread_config.batch_count, 74 /* = 10000 / 136 + 1 extra batch */);
   EXPECT_EQ(thread_config.primary_start_addr, bm.get_memory_regions()[0][0]);
   EXPECT_EQ(&thread_config.config, &bm.get_benchmark_configs()[0]);
 
@@ -400,7 +400,7 @@ TEST_F(BenchmarkTest, RunMultiThreadRead) {
   EXPECT_EQ(op_durations.size(), thread_count);
   EXPECT_EQ(std::accumulate(op_sizes.begin(), op_sizes.end(), 0ul), TEST_DATA_SIZE);
   for (uint64_t size : op_sizes) {
-    EXPECT_EQ(size % TEST_CHUNK_SIZE, 0);
+    EXPECT_EQ(size % TEST_BATCH_SIZE, 0);
   }
 }
 
@@ -439,7 +439,7 @@ TEST_F(BenchmarkTest, RunMultiThreadWrite) {
   EXPECT_EQ(op_sizes.size(), 16);
   EXPECT_EQ(std::accumulate(op_sizes.begin(), op_sizes.end(), 0ul), TEST_DATA_SIZE);
   for (uint64_t size : op_sizes) {
-    EXPECT_EQ(size % TEST_CHUNK_SIZE, 0);
+    EXPECT_EQ(size % TEST_BATCH_SIZE, 0);
   }
 }
 
@@ -479,7 +479,7 @@ TEST_F(BenchmarkTest, RunMultiThreadReadDesc) {
   EXPECT_EQ(op_sizes.size(), 4);
   EXPECT_EQ(std::accumulate(op_sizes.begin(), op_sizes.end(), 0ul), TEST_DATA_SIZE);
   for (uint64_t size : op_sizes) {
-    EXPECT_EQ(size % TEST_CHUNK_SIZE, 0);
+    EXPECT_EQ(size % TEST_BATCH_SIZE, 0);
   }
 }
 
@@ -520,7 +520,7 @@ TEST_F(BenchmarkTest, RunMultiThreadWriteDesc) {
   EXPECT_EQ(op_sizes.size(), 16);
   EXPECT_EQ(std::accumulate(op_sizes.begin(), op_sizes.end(), 0ul), TEST_DATA_SIZE);
   for (uint64_t size : op_sizes) {
-    EXPECT_EQ(size % TEST_CHUNK_SIZE, 0);
+    EXPECT_EQ(size % TEST_BATCH_SIZE, 0);
   }
 }
 
@@ -611,7 +611,7 @@ TEST_F(BenchmarkTest, RunParallelSingleThreadRead) {
   base_config_.access_size = 256;
   base_config_.operation = Operation::Read;
   base_config_.memory_regions[0].size = 256 * num_ops;
-  base_config_.min_io_chunk_size = TEST_CHUNK_SIZE;
+  base_config_.min_io_batch_size = TEST_BATCH_SIZE;
   base_config_.run_time = 1;
 
   BenchmarkConfig config_one = base_config_;
@@ -649,10 +649,10 @@ TEST_F(BenchmarkTest, RunParallelSingleThreadRead) {
   const std::vector<uint64_t>& all_sizes_two = result_two.total_operation_sizes;
   ASSERT_EQ(all_sizes_one.size(), 1);
   EXPECT_GT(all_sizes_one[0], 0);
-  EXPECT_EQ(all_sizes_one[0] % TEST_CHUNK_SIZE, 0);  // can only increase in chunk-sized blocks
+  EXPECT_EQ(all_sizes_one[0] % TEST_BATCH_SIZE, 0);  // can only increase in batch-sized blocks
   ASSERT_EQ(all_sizes_two.size(), 1);
   EXPECT_GT(all_sizes_two[0], 0);
-  EXPECT_EQ(all_sizes_two[0] % TEST_CHUNK_SIZE, 0);
+  EXPECT_EQ(all_sizes_two[0] % TEST_BATCH_SIZE, 0);
 }
 
 TEST_F(BenchmarkTest, ResultsParallelSingleThreadMixed) {
@@ -660,7 +660,7 @@ TEST_F(BenchmarkTest, ResultsParallelSingleThreadMixed) {
   base_config_.number_threads = 1;
   base_config_.access_size = 256;
   base_config_.memory_regions[0].size = TEST_DATA_SIZE;
-  base_config_.min_io_chunk_size = TEST_CHUNK_SIZE;
+  base_config_.min_io_batch_size = TEST_BATCH_SIZE;
   base_config_.run_time = 1;
 
   BenchmarkConfig config_one = base_config_;
@@ -701,10 +701,10 @@ TEST_F(BenchmarkTest, ResultsParallelSingleThreadMixed) {
   const std::vector<uint64_t>& all_sizes_two = result_two.total_operation_sizes;
   ASSERT_EQ(all_sizes_one.size(), 1);
   EXPECT_GT(all_sizes_one[0], 0);
-  EXPECT_EQ(all_sizes_one[0] % TEST_CHUNK_SIZE, 0);  // can only increase in chunk-sized blocks
+  EXPECT_EQ(all_sizes_one[0] % TEST_BATCH_SIZE, 0);  // can only increase in batch-sized blocks
   ASSERT_EQ(all_sizes_two.size(), 1);
   EXPECT_GT(all_sizes_two[0], 0);
-  EXPECT_EQ(all_sizes_two[0] % TEST_CHUNK_SIZE, 0);
+  EXPECT_EQ(all_sizes_two[0] % TEST_BATCH_SIZE, 0);
 }
 
 TEST_F(BenchmarkTest, PrepareDataMemoryLocationInterleaved) {
@@ -925,4 +925,4 @@ TEST_F(BenchmarkTest, PrepareDataMemoryLocationInterleavedPartitioned) {
   ASSERT_FALSE(verify_interleaved_page_placement(regions[1], definitions[1].size, definitions[1].node_ids));
 }
 
-}  // namespace mema
+}  // namespace cxlbench

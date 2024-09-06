@@ -6,12 +6,7 @@
 #include <cassert>
 #include <iostream>
 
-#define MemaAssert(expr, msg)      \
-  if (!static_cast<bool>(expr)) {  \
-    std::cerr << msg << std::endl; \
-    return 1;                      \
-  }                                \
-  static_assert(true, "End call of macro with a semicolon")
+#include "types.hpp"
 
 #define OP_COUNT (atomic ? 10000000 : 500000000)
 
@@ -61,7 +56,7 @@ int main(int argc, char* argv[]) {
   pthread_barrier_init(&barrier, NULL, thread_count);
   void* addr;
   const auto success = posix_memalign(&addr, 64, (thread_count * size_factor_per_thread ?: 1) * sizeof(long));
-  MemaAssert(success == 0, "posic_memalign failed");
+  BenchAssert(success == 0, "posic_memalign failed");
 
   long* data = reinterpret_cast<long*>(addr);
   pthread_t threads[thread_count];
@@ -74,7 +69,7 @@ int main(int argc, char* argv[]) {
     CPU_ZERO(&cpu_set);
     CPU_SET(thread_idx, &cpu_set);
     const auto setaffinity_success = pthread_attr_setaffinity_np(&attribute, sizeof(cpu_set), &cpu_set);
-    MemaAssert(setaffinity_success == 0, "pthread_attr_setaffinity_np failed");
+    BenchAssert(setaffinity_success == 0, "pthread_attr_setaffinity_np failed");
 
     // zero thread data
     data[thread_idx * size_factor_per_thread] = 0;
@@ -82,14 +77,14 @@ int main(int argc, char* argv[]) {
     // create child thread with configured thread attribute and run workload with thread specific data address
     const auto create_thread_success =
         pthread_create(&threads[thread_idx], &attribute, workload, &data[thread_idx * size_factor_per_thread]);
-    MemaAssert(create_thread_success == 0, "create_thread_success failed");
+    BenchAssert(create_thread_success == 0, "create_thread_success failed");
   }
 
   // set affinity for main thread
   CPU_ZERO(&cpu_set);
   CPU_SET(0, &cpu_set);
   const auto setaffinity_success = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set), &cpu_set);
-  MemaAssert(setaffinity_success == 0, "pthread_attr_setaffinity_np failed");
+  BenchAssert(setaffinity_success == 0, "pthread_attr_setaffinity_np failed");
 
   // zero main thread data
   data[0] = 0;

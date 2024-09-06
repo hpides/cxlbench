@@ -35,6 +35,7 @@ if __name__ == "__main__":
         "--latency_heatmap", action="store_true", help="Generate a heatmap with the average thread's access latency"
     )
     parser.add_argument("--memory_nodes", nargs="+", help="names of the memory nodes")
+    parser.add_argument("--compact", action="store_true")
     args = parser.parse_args()
 
     results_path = args.results
@@ -70,5 +71,5 @@ if __name__ == "__main__":
     os.makedirs(output_dir, exist_ok=True)
 
     # create plots
-    plotter = PlotGenerator(results, output_dir, no_plots, latency_heatmap, memory_nodes)
+    plotter = PlotGenerator(results, output_dir, no_plots, latency_heatmap, memory_nodes, args.compact)
     plotter.process_matrix_jsons()

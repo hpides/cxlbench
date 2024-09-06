@@ -1,0 +1,19 @@
+latency_modes:
+  matrix:
+    exec_mode: ["random_latency"]
+    operation: ["read"]
+      #exec_mode: ["random_latency"]
+      #operation: ["read"]
+      #numa_memory_nodes: [[0]]
+    numa_memory_nodes: [[0],[1],[2]]
+
+  args:
+    number_threads: 1
+    # while we use 64 B here for distance calculation, the actual access is still with 8 B granularity with latency modes
+    access_size: 64
+    memory_region_size: 8G
+    min_io_batch_size: 8G
+      #numa_task_nodes: [ 1 ]
+    thread_pin_mode: single-fixed
+    thread_cores : [25]
+    latency_sample_frequency: 10000

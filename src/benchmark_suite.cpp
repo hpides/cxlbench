@@ -4,7 +4,9 @@
 #include <unistd.h>
 
 #include <fstream>
+#include <sstream>
 #include <iostream>
+#include <thread>
 #include <json.hpp>
 
 #include "benchmark_config.hpp"
@@ -13,7 +15,7 @@
 
 namespace {
 
-nlohmann::json single_results_to_json(const mema::SingleBenchmark& bm, const nlohmann::json& bm_results,
+nlohmann::json single_results_to_json(const cxlbench::SingleBenchmark& bm, const nlohmann::json& bm_results,
                                       const std::string& nt_stores_instruction_set, const std::string& git_hash,
                                       const std::string& compiler, const std::string& hostname) {
   return {{"bm_name", bm.benchmark_name()},
@@ -26,7 +28,7 @@ nlohmann::json single_results_to_json(const mema::SingleBenchmark& bm, const nlo
           {"hostname", hostname}};
 }
 
-nlohmann::json parallel_results_to_json(const mema::ParallelBenchmark& bm, const nlohmann::json& bm_results,
+nlohmann::json parallel_results_to_json(const cxlbench::ParallelBenchmark& bm, const nlohmann::json& bm_results,
                                         const std::string& nt_stores_instruction_set, const std::string& git_hash,
                                         const std::string& compiler, const std::string& hostname) {
   return {{"bm_name", bm.benchmark_name()},
@@ -42,7 +44,7 @@ nlohmann::json parallel_results_to_json(const mema::ParallelBenchmark& bm, const
           {"hostname", hostname}};
 }
 
-nlohmann::json benchmark_results_to_json(const mema::Benchmark& bm, const nlohmann::json& bm_results) {
+nlohmann::json benchmark_results_to_json(const cxlbench::Benchmark& bm, const nlohmann::json& bm_results) {
   auto nt_stores_instruction_set = std::string{};
 #if defined USE_AVX_512
   nt_stores_instruction_set = "avx-512";
@@ -58,14 +60,14 @@ nlohmann::json benchmark_results_to_json(const mema::Benchmark& bm, const nlohma
       std::shared_ptr<FILE>(popen("git describe --match=\"no-match^\" --always --abbrev=40 --dirty", "r"), pclose);
   if (!pipe) {
     spdlog::critical("Failed to get git hash.");
-    mema::utils::crash_exit();
+    cxlbench::utils::crash_exit();
   }
   // 60 characters is large enough for a git commit, even if the repository is dirty.
   auto git_hash_buffer = std::array<char, 60>{};
   auto git_hash = std::string{};
   if (fgets(git_hash_buffer.data(), 60, pipe.get()) == NULL) {
     spdlog::critical("Failed to get git hash.");
-    mema::utils::crash_exit();
+    cxlbench::utils::crash_exit();
   }
   git_hash = std::string{git_hash_buffer.data()};
   // Remove newline character.
@@ -91,11 +93,11 @@ nlohmann::json benchmark_results_to_json(const mema::Benchmark& bm, const nlohma
     hostname = std::string{hostname_buffer.data()};
   }
 
-  if (bm.get_benchmark_type() == mema::BenchmarkType::Single) {
-    return single_results_to_json(dynamic_cast<const mema::SingleBenchmark&>(bm), bm_results, nt_stores_instruction_set,
-                                  git_hash, compiler, hostname);
-  } else if (bm.get_benchmark_type() == mema::BenchmarkType::Parallel) {
-    return parallel_results_to_json(dynamic_cast<const mema::ParallelBenchmark&>(bm), bm_results,
+  if (bm.get_benchmark_type() == cxlbench::BenchmarkType::Single) {
+    return single_results_to_json(dynamic_cast<const cxlbench::SingleBenchmark&>(bm), bm_results,
+                                  nt_stores_instruction_set, git_hash, compiler, hostname);
+  } else if (bm.get_benchmark_type() == cxlbench::BenchmarkType::Parallel) {
+    return parallel_results_to_json(dynamic_cast<const cxlbench::ParallelBenchmark&>(bm), bm_results,
                                     nt_stores_instruction_set, git_hash, compiler, hostname);
   } else {
     return {{"bm_name", bm.benchmark_name()},
@@ -111,7 +113,7 @@ nlohmann::json benchmark_results_to_json(const mema::Benchmark& bm, const nlohma
 void print_summary(nlohmann::json result, const std::string& bm_name, const bool parallel = false) {
   if (result["benchmarks"].size() == 0) {
     spdlog::critical("No results found for benchmark '{}'.", bm_name);
-    mema::utils::crash_exit();
+    cxlbench::utils::crash_exit();
   }
 
   auto prefix = std::string{};
@@ -135,7 +137,7 @@ void print_summary(nlohmann::json result, const std::string& bm_name, const bool
     for (const auto& bm_result : result["benchmarks"]) {
       if (bm_result["config"]["exec_mode"] != "custom") {
         spdlog::critical("A single benchmark can not contain mixed execution modes.");
-        mema::utils::crash_exit();
+        cxlbench::utils::crash_exit();
       }
 
       if (!bm_result["results"].contains("latency")) {
@@ -171,7 +173,7 @@ void print_summary(nlohmann::json result, const std::string& bm_name, const bool
       if (!(result["benchmarks"][0]["config"]["exec_mode"] == "sequential" ||
             result["benchmarks"][0]["config"]["exec_mode"] == "random")) {
         spdlog::critical("A single benchmark can not contain mixed execution modes.");
-        mema::utils::crash_exit();
+        cxlbench::utils::crash_exit();
       }
 
       const auto bandwidth = bm_result["results"]["bandwidth"].get<double>();
@@ -188,9 +190,9 @@ void print_summary(nlohmann::json result, const std::string& bm_name, const bool
 
     // TODO(anyone): use 1 GB for bandwidth measurements in the code base.
     // 1 GiB / 1 GB
-    min_bandwidth *= mema::utils::ONE_GB / 1e9;
-    max_bandwidth *= mema::utils::ONE_GB / 1e9;
-    avg_bandwidth *= mema::utils::ONE_GB / 1e9;
+    min_bandwidth *= cxlbench::utils::ONE_GIB / 1e9;
+    max_bandwidth *= cxlbench::utils::ONE_GIB / 1e9;
+    avg_bandwidth *= cxlbench::utils::ONE_GIB / 1e9;
     avg_bandwidth /= result["benchmarks"].size();
 
     spdlog::info("{}{}:\tavg_bandwidth (GB/s): {}\tmin_bandwidth (GB/s): {}\tmax_bandwidth (GB/s): {}", prefix, bm_name,
@@ -217,16 +219,16 @@ void print_summarys(const nlohmann::json& all_results) {
       }
     } else {
       spdlog::critical("Unknown benchmark type: {}", result["bm_type"]);
-      mema::utils::crash_exit();
+      cxlbench::utils::crash_exit();
     }
   }
 }
 
 }  // namespace
 
-namespace mema {
+namespace cxlbench {
 
-void BenchmarkSuite::run_benchmarks(const MemaOptions& options) {
+void BenchmarkSuite::run_benchmarks(const BenchOptions& options) {
   auto yaml_configs = BenchmarkFactory::get_config_files(options.config_file);
 
   // -------------------------------------------------------------------------------------------------------------------
@@ -317,11 +319,26 @@ void BenchmarkSuite::run_benchmarks(const MemaOptions& options) {
     benchmark.generate_data();
     spdlog::info("Finished generating data. Starting set up.");
     benchmark.set_up();
-    spdlog::info("Finished setting up benchmark. Starting benchmark execution.");
+    spdlog::info("Finished setting up benchmark.");
+    // TODO(MW) refactor: capsulate as function
+    if (options.start_timestamp != TimePointMS{}) {
+      const auto now = std::chrono::system_clock::now();
+      const auto wait_for_time = options.start_timestamp + bench_idx * options.delay;
+      benchmark.set_start_timestamp(wait_for_time);
+      if (now > wait_for_time) {
+        spdlog::critical("Required start timestamp is in the past.");
+        utils::crash_exit();
+      }
+      const auto wait_for_time_t = std::chrono::system_clock::to_time_t(wait_for_time);
+      std::ostringstream oss;
+      oss << std::put_time(std::localtime(&wait_for_time_t), "%Y-%m-%d %H:%M:%S");
+      spdlog::info("Waiting for start at {} ...", oss.str());
+      std::this_thread::sleep_until(wait_for_time);
+    }
+    spdlog::info("Starting benchmark execution.");
     const bool success = benchmark.run();
     spdlog::info("Finished running benchmark. Starting page location verification.");
     benchmark.verify();
-    spdlog::info("Finished verifying page locations.");
     previous_bm = &benchmark;
 
     if (!success) {
@@ -362,4 +379,4 @@ void BenchmarkSuite::run_benchmarks(const MemaOptions& options) {
   spdlog::info("Finished all benchmarks successfully.");
 }
 
-}  // namespace mema
+}  // namespace cxlbench

@@ -13,7 +13,7 @@ from dominate import tags
 
 
 def new_html_page(benchmark_pngs):
-    doc = dominate.document(title="MemA-Bench Results")
+    doc = dominate.document(title="cxlbench Results")
 
     with doc.head:
         tags.link(rel="stylesheet", href="style.css")
@@ -82,7 +82,7 @@ def create_index_page(output_dir, benchmark_pngs):
     doc = new_html_page(benchmark_pngs)
 
     with doc.body:
-        tags.h1("MemA-Bench Results")
+        tags.h1("cxlbench Results")
         tags.p("Put description text here.")
 
     with open(os.path.join(output_dir, "index.html"), "w") as file:

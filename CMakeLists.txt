@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.16)
-project(mema-bench)
+cmake_minimum_required(VERSION 3.10)
+project(cxlbench)
 
 include(ExternalProject)
 include(FetchContent)
@@ -126,7 +126,7 @@ set(BASE_CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 ##################### CLWB ####################
 set(clwb_prog "#include <immintrin.h>\n int main() { int i = 1; _mm_clwb(&i); return 0; }")
 set(CMAKE_REQUIRED_FLAGS "${BASE_CMAKE_REQUIRED_FLAGS} -mclwb")
-check_c_source_runs("${clwb_prog}" HAS_CLWB)
+check_cxx_source_compiles("${clwb_prog}" HAS_CLWB)
 if (${HAS_CLWB})
     # Set HAS_CLWB so we can use it to enable all explicit CLWB instructions.
     add_definitions("-DHAS_CLWB")
@@ -134,6 +134,30 @@ if (${HAS_CLWB})
     message(STATUS "System supports CLWB.")
 else ()
     message(WARNING "System does not support CLWB.")
+endif ()
+
+##################### CLFLUSH ####################
+set(clflush_prog "#include <immintrin.h>\n int main() { _mm_clflush((void*)0); return 0; }")
+check_cxx_source_compiles("${clflush_prog}" HAS_CLFLUSH)
+if (${HAS_CLFLUSH})
+    # Set HAS_CLFLUSH so we can use it to enable all explicit CLFLUSH instructions.
+    add_definitions("-DHAS_CLFLUSH")
+    message(STATUS "System supports CLFLUSH.")
+else ()
+    message(STATUS "System does not support CLFLUSH.")
+endif ()
+
+##################### CLFLUSHOPT ####################
+set(clflushopt_prog "#include <immintrin.h>\n int main() { _mm_clflushopt((void*)0); return 0; }")
+set(CMAKE_REQUIRED_FLAGS "${BASE_CMAKE_REQUIRED_FLAGS} -mclflushopt")
+check_cxx_source_compiles("${clflushopt_prog}" HAS_CLFLUSHOPT)
+if (${HAS_CLFLUSHOPT})
+    # Set HAS_CLFLUSHOPT so we can use it to enable all explicit CLFLUSHOPT instructions.
+    add_definitions("-DHAS_CLFLUSHOPT")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mclflushopt")
+    message(STATUS "System supports CLFLUSHOPT.")
+else ()
+    message(STATUS "System does not support CLFLUSHOPT.")
 endif ()
 
 ################### NUMA ####################
@@ -164,8 +188,8 @@ set(YAML_CPP_BUILD_TOOLS OFF CACHE INTERNAL "")
 
 FetchContent_Declare(
         yaml_cpp
-        GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-        GIT_TAG yaml-cpp-0.6.3
+        GIT_REPOSITORY https://github.com/mweisgut/yaml-cpp
+        GIT_TAG 0.8.0-cmake3.5
 )
 FetchContent_MakeAvailable(yaml_cpp)
 
@@ -211,7 +235,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googlebenchmark)
 
-##################### MemA ####################
+##################### cxlbench ####################
 include_directories(src)
 add_subdirectory(src)
 

@@ -2,7 +2,6 @@
 sequential_reads:
   matrix:
     number_threads: [ 1 ]
-    number_partitions: [1]
     numa_memory_nodes: [[0]]
     access_size: [ 64 ]
 

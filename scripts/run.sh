@@ -3,6 +3,8 @@
 # Exit the script immediately if an error occurs.
 set -e
 BUILD_TYPE=Release
+#BUILD_TYPE=Debug
+#BUILD_TYPE=RelWithDebInfo
 
 SCRIPTNAME="$(basename "$0")"
 if [ -z "$1" ] || [ -z "$2" ] ; then
@@ -44,7 +46,7 @@ echo "Copying workload "$WORKLOAD" to the build dir's workload directory."
 
 echo "CMake setup..."
 CMAKE_CMD="cmake -S "$ROOT_DIR" -B "$BUILD_DIR" -DBUILD_TEST=ON -DCMAKE_C_COMPILER=gcc-12 -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_BUILD_TYPE="$BUILD_TYPE
-BUILD_CMD="make -j mema-bench"
+BUILD_CMD="make -j cxlbench"
 echo "Using make instead"
 eval "$CMAKE_CMD"
 eval "$BUILD_CMD"
@@ -60,7 +62,9 @@ RESULT_DIR="$ROOT_DIR"/results/"$WORKLOAD"/"$TAG"/"$START_TIME"
 mkdir -p "$RESULT_DIR"
 
 # Run benchmarks
-./mema-bench -r $RESULT_DIR $WORKLOAD_FLAGS
+start_timestamp_ms=$(date -d "+10 seconds" +%s%3N)
+#./cxlbench -r $RESULT_DIR $WORKLOAD_FLAGS -s $start_timestamp_ms -d 10
+#./cxlbench -r $RESULT_DIR $WORKLOAD_FLAGS
 echo "All results are written to $RESULT_DIR."
 echo "If you want to copy the data to your dev machine, the following command might help:"
 echo "./scripts/scp.sh $(hostname) $RESULT_DIR ./results/$WORKLOAD/$TAG"

@@ -17,7 +17,7 @@ from compare import valid_path
 from enums.benchmark_keys import BMKeys
 from enums.benchmark_groups import BMGroups
 from json_util import parse_matrix_jsons
-from memaplot import FLUSH_INSTR_NONE
+from cxlbenchplot import FLUSH_INSTR_NONE
 
 logging.basicConfig(
     level=logging.INFO,

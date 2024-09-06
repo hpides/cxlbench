@@ -14,7 +14,7 @@
 #include "test_utils.hpp"
 #include "utils.hpp"
 
-namespace mema {
+namespace cxlbench {
 
 class NumaReadWriteTest : public BaseTest {};
 
@@ -110,4 +110,4 @@ TEST_F(NumaReadWriteTest, IntrinsicsWriteRead) {
   }
 }
 
-}  // namespace mema
+}  // namespace cxlbench

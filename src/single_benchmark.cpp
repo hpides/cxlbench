@@ -1,6 +1,8 @@
 #include "single_benchmark.hpp"
 
 #include <csignal>
+// TODO(MW) remove
+#include <iostream>
 
 #include "numa.hpp"
 
@@ -11,7 +13,7 @@ void thread_error_handler(int) { thread_error = 1; }
 
 }  // namespace
 
-namespace mema {
+namespace cxlbench {
 
 void SingleBenchmark::log_config() { spdlog::info("Single workload: {0}", configs_[0].to_string()); }
 
@@ -46,22 +48,29 @@ bool SingleBenchmark::run() {
 }
 
 void SingleBenchmark::generate_data() {
-  if (!memory_regions_.empty()) {
+  if (!memory_region_sets_.empty()) {
     spdlog::critical("generate_data() called more than once for the same benchmark.");
     utils::crash_exit();
   }
-  memory_regions_.resize(1);
-  memory_regions_[0] = prepare_data(configs_[0]);
+  memory_region_sets_.resize(1);
+  memory_region_sets_[0] = prepare_data(configs_[0]);
 }
 
 void SingleBenchmark::set_up() {
   thread_pools_.resize(1);
   thread_configs_.resize(1);
-  single_set_up(configs_[0], memory_regions_[0], executions_[0].get(), results_[0].get(), &thread_pools_[0],
+  single_set_up(configs_[0], memory_region_sets_[0], executions_[0].get(), results_[0].get(), &thread_pools_[0],
                 &thread_configs_[0]);
 }
 
-void SingleBenchmark::verify() { verify_page_locations(memory_regions_[0], configs_[0].memory_regions); }
+void SingleBenchmark::verify() {
+  if (configs_[0].is_memory_management_op()) {
+    spdlog::info("Skipping verification for memory management operation.");
+    return;
+  }
+
+  verify_page_locations(memory_region_sets_[0], configs_[0].memory_regions, 0);
+}
 
 nlohmann::json SingleBenchmark::get_result_as_json() {
   nlohmann::json result;
@@ -76,4 +85,4 @@ SingleBenchmark::SingleBenchmark(const std::string& benchmark_name, const Benchm
     : Benchmark(benchmark_name, BenchmarkType::Single, std::vector<BenchmarkConfig>{config}, std::move(executions),
                 std::move(results)) {}
 
-}  // namespace mema
+}  // namespace cxlbench

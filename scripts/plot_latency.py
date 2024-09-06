@@ -5,7 +5,7 @@ import glob
 import json_util as ju
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-import memaplot as mplt
+import cxlbenchplot as mplt
 import os
 import pandas as pd
 import seaborn as sns

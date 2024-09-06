@@ -1,0 +1,16 @@
+random_reads:
+  matrix:
+#    number_threads: [ 1 ]
+    number_threads: [ 1, 24, 48, 96, 192]
+    # number_threads: [ 1, 2, 4, 8, 16, 32, 64, 96, 192]
+    access_size: [ 64 ]
+    cache_instruction: [ none, flush, flush-opt, stream ]
+
+  args:
+    numa_task_nodes: [ 0 ]
+    exec_mode: random
+    memory_region_size: 16G
+    device_path: "/dev/dax0.0"
+    operation: read
+    number_operations: 110000000
+    run_time: 10

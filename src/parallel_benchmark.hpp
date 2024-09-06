@@ -4,7 +4,7 @@
 
 #include "benchmark.hpp"
 
-namespace mema {
+namespace cxlbench {
 
 class ParallelBenchmark : public Benchmark {
  public:
@@ -44,4 +44,4 @@ class ParallelBenchmark : public Benchmark {
   const std::string benchmark_name_two_;
 };
 
-}  // namespace mema
+}  // namespace cxlbench

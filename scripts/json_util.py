@@ -7,7 +7,7 @@ import pandas as pd
 
 from enums.benchmark_keys import BMKeys
 from enums.file_names import FILE_TAG_SUBSTRING
-from memaplot import FLUSH_INSTR_NONE
+from cxlbenchplot import FLUSH_INSTR_NONE
 from enums.benchmark_groups import BMGroups
 
 PRINT_DEBUG = False

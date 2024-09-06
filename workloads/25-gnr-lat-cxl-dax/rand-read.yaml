@@ -1,0 +1,14 @@
+rand-read-lat:
+  matrix:
+    memory_region_size: [16G]
+    cache_instruction: [none]
+    access_size: [64]
+  args:
+    exec_mode: "random_latency"
+    operation: "read"
+    device_path: "/dev/dax0.0"
+    number_threads: 1
+    thread_pin_mode: single-fixed
+    thread_cores : [25]
+    number_operations: 10000000
+    latency_sample_frequency: 1000

@@ -11,64 +11,93 @@
 #include <cmath>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <random>
 #include <thread>
 
 #include "json.hpp"
 #include "numa.hpp"
 #include "read_write_ops.hpp"
+#include "types.hpp"
 
-namespace mema::utils {
+namespace cxlbench::utils {
 
-char* map(const u64 expected_length, const bool use_transparent_huge_pages, const u64 explicit_hugepages_size) {
+char* map(const MemoryRegionDefinition& region) {
   spdlog::debug("Mapping memory region of size {}, explicit huge page size {}, use transparent huge pages {}.",
-                expected_length, explicit_hugepages_size, use_transparent_huge_pages);
+                region.size, region.explicit_hugepages_size, region.transparent_huge_pages);
   // Do not mmap any data if length is 0
-  if (expected_length == 0) {
+  if (region.size == 0) {
     return nullptr;
   }
 
+  auto file_descriptor = i32{-1};
+  auto offset = u64{0};
+  auto mmap_flags = MAP_PRIVATE | MAP_ANONYMOUS;
+  const auto is_device_path = !region.device_path.empty();
+  if (is_device_path) {
+    file_descriptor = open(region.device_path.c_str(), O_RDWR | O_SYNC);
+    if (file_descriptor == -1) {
+      spdlog::critical("failed to open {} for physical memory: {}", region.device_path, std::strerror(errno));
+      crash_exit();
+    }
+    mmap_flags = MAP_SHARED;
+    BenchAssert(region.size % (1024u * 1024 * 2) == 0,
+                "region size needs to be 2 MiB aligned when CXL memory is exposed as DAX device");
+    spdlog::debug("MMAP flags: MAP_SHARED.");
+    offset = region.offset;
+    spdlog::info("Map memory from device {} with region offset {}.", region.device_path, region.offset);
+  }
+
   void* addr = nullptr;
-  if (explicit_hugepages_size > 0) {
-    const auto page_size_mask = mmap_page_size_mask(explicit_hugepages_size);
-    addr = mmap(nullptr, expected_length, PROT_READ | PROT_WRITE, MAP_FLAGS_HUGETLB | page_size_mask, -1, 0);
-    spdlog::debug("Mapped memory region with explicit page size of {}.", explicit_hugepages_size);
+  if (region.explicit_hugepages_size > 0) {
+    const auto page_size_mask = mmap_page_size_mask(region.explicit_hugepages_size);
+    addr = mmap(nullptr, region.size, PROT_READ | PROT_WRITE, mmap_flags | MAP_HUGETLB | page_size_mask,
+                file_descriptor, offset);
+    spdlog::debug("Mapped memory region with explicit page size of {}.", region.explicit_hugepages_size);
   } else {
-    addr = mmap(nullptr, expected_length, PROT_READ | PROT_WRITE, MAP_FLAGS, -1, 0);
+    addr = mmap(nullptr, region.size, PROT_READ | PROT_WRITE, mmap_flags, file_descriptor, offset);
     spdlog::debug("Mapped memory region without explicit page size.");
   }
 
   if (addr == MAP_FAILED || addr == nullptr) {
     spdlog::critical(
-        "Could not map anonymous memory region. Error: {}. (1) If using explicit hugepages, ensure that you have "
+        "Could not map memory region. Error: {}. (1) If using explicit hugepages, ensure that you have "
         "enough "
         "pages allocated. (2) If using transparent huge pages, you might need to increase /proc/sys/vm/nr_hugepages. "
-        "(3) Check if the allocation works with smaller memory regions.",
+        "(3) Check if the allocation works with smaller memory regions. (4) In case of DAX devices, make sure that"
+        "the device is configures as DAX device and not as System RAM.",
         std::strerror(errno));
+    close(file_descriptor);
     crash_exit();
   }
 
-  if (!use_transparent_huge_pages) {
+  if (is_device_path) {
+    // calling madvise with MADV_NOHUGEPAGE results in bus error.
+    return static_cast<char*>(addr);
+  }
+
+  if (!region.transparent_huge_pages) {
     // Explicitly don't use transparent huge pages.
-    if (madvise(addr, expected_length, MADV_NOHUGEPAGE) == -1) {
+    if (madvise(addr, region.size, MADV_NOHUGEPAGE) == -1) {
       spdlog::critical("madavise for no huge pages failed. Error: {}", std::strerror(errno));
       crash_exit();
     } else {
       spdlog::debug("Prohibited Transparent Huge Pages for the given memory region.");
     }
+    return static_cast<char*>(addr);
+  }
+
+  if (madvise(addr, region.size, MADV_HUGEPAGE) == -1) {
+    spdlog::critical("madavise for huge pages failed. Error: {}", std::strerror(errno));
+    crash_exit();
   } else {
-    if (madvise(addr, expected_length, MADV_HUGEPAGE) == -1) {
-      spdlog::critical("madavise for huge pages failed. Error: {}", std::strerror(errno));
-      crash_exit();
-    } else {
-      spdlog::debug("Enabled Transparent Huge Pages for the given memory region.");
-    }
+    spdlog::debug("Enabled Transparent Huge Pages for the given memory region.");
   }
   return static_cast<char*>(addr);
 }
 
 void populate_memory(char* addr, const u64 memory_size) {
-  MemaAssert(memory_size % utils::PAGE_SIZE == 0, "Memory region needs to be a multiple of the page size.");
+  BenchAssert(memory_size % utils::PAGE_SIZE == 0, "Memory region needs to be a multiple of the page size.");
   if (memory_size == 0) {
     spdlog::warn("Did not populate/pre-fault the memory region as the memory size was 0.");
     return;
@@ -91,39 +120,49 @@ int mmap_page_size_mask(const u32 page_size) {
   return required_bits << MAP_HUGE_SHIFT;
 }
 
-void generate_shuffled_access_positions(char* addr, const MemoryRegionDefinition& region,
-                                        const BenchmarkConfig& config) {
+void generate_shuffled_access_positions(char* addr, const MemoryRegionDefinition& region, const BenchmarkConfig& config,
+                                        std::optional<u32> alignment) {
+  spdlog::info("Generate shuffled access positions.");
   auto buffer = reinterpret_cast<std::byte*>(addr);
 
-  const auto chunk_size = config.min_io_chunk_size;
-  const auto chunk_entry_count = chunk_size / config.access_size;
-  const auto chunk_count = region.size / chunk_size;
+  auto access_size = config.access_size;
+  if (alignment) {
+    access_size = (access_size + *alignment - 1) & ~(*alignment - 1);
+  }
+
+  const auto access_count = region.size / access_size;
+  // printf("batch size: %lu, access count: %lu, batch count: %lu\n", batch_size, access_count, batch_count);
 
   std::random_device rd;
   std::mt19937 gen(rd());
 
-  for (auto chunk_id = u64{0}; chunk_id < chunk_count; ++chunk_id) {
-    auto indices = std::vector<u64>(chunk_entry_count);
-    for (auto i = u64{0}; i < chunk_entry_count; ++i) {
-      indices[i] = chunk_id * chunk_entry_count + i;
-    }
-    std::shuffle(indices.begin(), indices.end(), gen);
+  auto access_indices = std::vector<u64>(access_count);
+  std::iota(access_indices.begin(), access_indices.end(), 0);
 
-    for (auto i = u64{0}; i < chunk_entry_count; ++i) {
-      auto* index = reinterpret_cast<u64*>(&buffer[indices[i] * config.access_size]);
-      *index = indices[(i + 1) % chunk_entry_count];
-    }
+  // Fisher-Yates shuffle
+  for (u64 i = access_count - 1; i > 0; --i) {
+    std::uniform_int_distribution<u64> dist(0, i);
+    std::swap(access_indices[i], access_indices[dist(gen)]);
+  }
+  for (auto indices_offset = u64{0}; indices_offset < access_count; ++indices_offset) {
+    auto* access_addr = reinterpret_cast<u64*>(buffer + (access_indices[indices_offset] * access_size));
+    *access_addr = access_indices[(indices_offset + 1) % access_count];
   }
 }
 
-bool verify_shuffled_access_positions(char* addr, const MemoryRegionDefinition& region, const BenchmarkConfig& config) {
+bool verify_shuffled_access_positions(char* addr, const MemoryRegionDefinition& region, const BenchmarkConfig& config,
+                                      std::optional<u32> alignment) {
   spdlog::info("Verify shuffled access positions.");
   auto buffer = reinterpret_cast<std::byte*>(addr);
-  const auto total_entry_count = region.size / config.access_size;
+  auto access_size = config.access_size;
+  if (alignment) {
+    access_size = (access_size + *alignment - 1) & ~(*alignment - 1);
+  }
+  const auto total_entry_count = region.size / access_size;
   auto index_historgram = std::vector<u64>(total_entry_count, false);
   // Create histogram
   for (auto entry_idx = u64{0}; entry_idx < total_entry_count; ++entry_idx) {
-    auto* index = reinterpret_cast<u64*>(&buffer[entry_idx * config.access_size]);
+    auto* index = reinterpret_cast<u64*>(&buffer[entry_idx * access_size]);
     const auto is_in_range = *index >= 0 && *index < total_entry_count;
     if (!is_in_range) {
       spdlog::critical("Access index at position {} with value {} is out of range [0, {})", entry_idx, *index,
@@ -158,7 +197,7 @@ void generate_read_data(char* addr, const u64 memory_size) {
     return;
   }
 
-  spdlog::debug("Generating {} GB of random data to read.", memory_size / ONE_GB);
+  spdlog::debug("Generating {} GB of random data to read.", memory_size / ONE_GIB);
   auto thread_pool = std::vector<std::thread>{};
   thread_pool.reserve(DATA_GEN_THREAD_COUNT - 1);
   auto thread_memory_size = memory_size / DATA_GEN_THREAD_COUNT;
@@ -277,9 +316,9 @@ double rand_val() {
   return (static_cast<double>(x) / m);
 }
 
-void crash_exit() { throw MemaException{}; }
+void crash_exit() { throw BenchException{}; }
 
-void crash_exit(const std::string msg) { throw MemaException{msg}; }
+void crash_exit(const std::string msg) { throw BenchException{msg}; }
 
 std::string get_time_string() {
   auto now = std::chrono::system_clock::now();
@@ -345,8 +384,8 @@ void write_benchmark_results(const std::filesystem::path& result_path, const nlo
 void print_segfault_error() {
   spdlog::critical("A thread encountered an unexpected SIGSEGV!");
   spdlog::critical(
-      "Please create an issue on GitHub (https://github.com/mweisgut/mema-bench/issues/new) "
+      "Please create an issue on GitHub (https://github.com/mweisgut/cxlbench/issues/new) "
       "with your configuration and system information so that we can try to fix this.");
 }
 
-}  // namespace mema::utils
+}  // namespace cxlbench::utils

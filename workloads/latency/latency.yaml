@@ -1,0 +1,19 @@
+latency:
+  matrix:
+    numa_memory_nodes: [[0],[2]]
+    custom_operations:
+      - "r_4"
+      - "r_4,w_4_none"
+      - "r_64"
+      - "r_64,w_64_none"
+    memory_region_size: [7G, 1G]
+
+  args:
+    numa_task_nodes: [0]
+      #min_io_batch_size: 8G
+    number_operations: 10000000000
+    latency_sample_frequency: 10000
+    exec_mode: custom
+    explicit_hugepages_size: 0
+    transparent_huge_pages: False
+    number_threads: 1

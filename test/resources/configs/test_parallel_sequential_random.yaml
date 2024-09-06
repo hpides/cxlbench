@@ -7,7 +7,7 @@ parallel_test:
         numa_memory_nodes: [ 2, 3 ]
         numa_task_nodes: [ 0, 1 ]
         number_threads: 16
-        flush_instruction: none
+        cache_instruction: none
         exec_mode: sequential
         operation: write
 

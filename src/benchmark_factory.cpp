@@ -4,7 +4,7 @@
 
 #include <string>
 
-namespace mema {
+namespace cxlbench {
 
 std::vector<SingleBenchmark> BenchmarkFactory::create_single_benchmarks(std::vector<YAML::Node>& configs) {
   auto benchmarks = std::vector<SingleBenchmark>{};
@@ -27,25 +27,25 @@ std::vector<SingleBenchmark> BenchmarkFactory::create_single_benchmarks(std::vec
       }
 
       YAML::Node bm_matrix = raw_bm_args["matrix"];
+      auto add_config = [&](auto& config){
+        // TODO(MW) also add replications for parallel benchmarks.
+        for (size_t replica_idx = 0; replica_idx < config.benchmark_replications; ++replica_idx) {
+          std::vector<std::unique_ptr<BenchmarkExecution>> executions{};
+          executions.push_back(std::make_unique<BenchmarkExecution>());
+          std::vector<std::unique_ptr<BenchmarkResult>> results{};
+          results.push_back(std::make_unique<BenchmarkResult>(config));
+          benchmarks.emplace_back(name, config, std::move(executions), std::move(results));
+        }
+      };
+
       if (bm_matrix) {
         std::vector<BenchmarkConfig> matrix = create_benchmark_matrix(bm_args, bm_matrix);
         for (BenchmarkConfig& bm : matrix) {
-          std::vector<std::unique_ptr<BenchmarkExecution>> executions{};
-          executions.push_back(std::make_unique<BenchmarkExecution>());
-
-          std::vector<std::unique_ptr<BenchmarkResult>> results{};
-          results.push_back(std::make_unique<BenchmarkResult>(bm));
-          benchmarks.emplace_back(name, bm, std::move(executions), std::move(results));
+          add_config(bm);
         }
       } else {
         BenchmarkConfig bm_config = BenchmarkConfig::decode(bm_args);
-
-        std::vector<std::unique_ptr<BenchmarkExecution>> executions{};
-        executions.push_back(std::make_unique<BenchmarkExecution>());
-        std::vector<std::unique_ptr<BenchmarkResult>> results{};
-        results.push_back(std::make_unique<BenchmarkResult>(bm_config));
-
-        benchmarks.emplace_back(name, bm_config, std::move(executions), std::move(results));
+        add_config(bm_config);
       }
     }
   }
@@ -232,4 +232,4 @@ std::vector<YAML::Node> BenchmarkFactory::get_config_files(const std::filesystem
   return yaml_configs;
 }
 
-}  // namespace mema
+}  // namespace cxlbench

@@ -9,7 +9,7 @@
 #include "read_write_ops.hpp"
 #include "utils.hpp"
 
-namespace mema {
+namespace cxlbench {
 
 void check_json_result(const nlohmann::json& result_json, uint64_t total_bytes, double expected_bandwidth,
                        uint64_t thread_count, double expected_per_thread_bandwidth, double expected_per_thread_stddev) {
@@ -53,8 +53,8 @@ std::vector<int> retrieve_page_status(const uint64_t page_count, char* data) {
   auto page_status = std::vector<int>(page_count, std::numeric_limits<int>::max());
   const auto ret = move_pages(0, page_count, pages.data(), NULL, page_status.data(), MPOL_MF_MOVE);
   const auto move_pages_errno = errno;
-  MemaAssert(ret == 0, "move_pages failed with error code " + ret);
+  BenchAssert(ret == 0, "move_pages failed with error code " + ret);
   return page_status;
 }
 
-}  // namespace mema
+}  // namespace cxlbench

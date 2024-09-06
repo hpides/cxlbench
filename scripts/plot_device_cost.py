@@ -22,6 +22,8 @@ PERCENTAGE_SECOND_PARTITION = "percentage_pages_second_partition"
 # benchmark configuration names
 BM_SUPPORTED_CONFIGS = ["split_memory_random_writes", "split_memory_random_reads"]
 
+plt.rcParams.update({"text.usetex": True, "font.family": "serif", "text.latex.preamble": r"\usepackage{libertine}"})
+
 
 def dir_path(path):
     """
@@ -195,7 +197,7 @@ if __name__ == "__main__":
 
     # Create a grid of subplots
     fig, axes = plt.subplots(
-        len(access_sizes), len(tags), figsize=(3.1 * len(tags), 1.8 * len(access_sizes)), sharex=True, sharey=False
+        len(access_sizes), len(tags), figsize=(2.7 * len(tags), 1.5 * len(access_sizes)), sharex=True, sharey=False
     )
 
     for i, access_size in enumerate(access_sizes):
@@ -224,6 +226,7 @@ if __name__ == "__main__":
                 palette=[colors[j]],
                 dashes=dashes,
                 ax=ax,
+                markersize=4,
             )
             ax.set_title("{}, Access Size: {}".format(tag, access_size))
             ax.legend().remove()
@@ -231,10 +234,16 @@ if __name__ == "__main__":
             ax.set_xticks(page_share_on_device)
             ax.set_xticklabels(page_share_on_device)
             ax.yaxis.grid()
-            if y_tick_distance is not None:
+            if True or y_tick_distance is not None:
                 print_label_interval = 2
                 if tag == TAG_RND_READS and access_size == 4096:
-                    y_tick_distance = y_tick_distance * 2
+                    y_tick_distance = 40
+                if tag == TAG_RND_WRITES and access_size == 4096:
+                    y_tick_distance = 20
+                if tag == TAG_RND_READS and access_size == 64:
+                    y_tick_distance = 10
+                if tag == TAG_RND_WRITES and access_size == 64:
+                    y_tick_distance = 10
                 ax.yaxis.set_major_locator(ticker.MultipleLocator(y_tick_distance))
                 ticks = ax.get_yticks()
                 tick_labels = [
@@ -257,8 +266,8 @@ if __name__ == "__main__":
                         tick.tick2line.set_markeredgewidth(1)  # Set a thinner tick width
 
     # Set common labels
-    fig.text(0.55, 0.055, "Pages on device memory in %", ha="center")
-    fig.text(0.04, 0.45, "Throughput in GB/s", va="center", rotation="vertical")
+    fig.text(0.55, 0.055, "Pages on device memory in \%", ha="center")
+    fig.text(0.04, 0.45, "Throughput [GB/s]", va="center", rotation="vertical")
 
     # Remove individual subplot labels
     for ax in axes.flat:
@@ -275,7 +284,7 @@ if __name__ == "__main__":
         labels,
         title="Thread Count",
         loc="upper center",
-        bbox_to_anchor=(0.55, 1.05),
+        bbox_to_anchor=(0.55, 1.08),
         ncol=5,
         frameon=False,
         columnspacing=0.5,
