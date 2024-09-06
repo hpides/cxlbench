@@ -75,11 +75,11 @@ TEST_F(BenchmarkTest, SetUpSingleThread) {
   const ThreadConfig& thread_config = thread_configs[0];
 
   EXPECT_EQ(thread_config.thread_idx, 0);
-  EXPECT_EQ(thread_config.thread_count_per_partition, 1);
-  EXPECT_EQ(thread_config.partition_size, TEST_DATA_SIZE);
+  EXPECT_EQ(thread_config.thread_count, 1);
+  EXPECT_EQ(thread_config.primary_region_size, TEST_DATA_SIZE);
   EXPECT_EQ(thread_config.ops_count_per_chunk, TEST_CHUNK_SIZE / 256);
   EXPECT_EQ(thread_config.chunk_count, 8);
-  EXPECT_EQ(thread_config.start_addr, bm.get_memory_regions()[0][0]);
+  EXPECT_EQ(thread_config.primary_start_addr, bm.get_memory_regions()[0][0]);
   EXPECT_EQ(&thread_config.config, &bm.get_benchmark_configs()[0]);
 
   const std::vector<ExecutionDuration>& op_durations = bm.get_benchmark_results()[0]->total_operation_durations;
@@ -93,67 +93,9 @@ TEST_F(BenchmarkTest, SetUpSingleThread) {
   bm.get_benchmark_results()[0]->config.validate();
 }
 
-TEST_F(BenchmarkTest, SetUpMultiThreadCustomPartition) {
+TEST_F(BenchmarkTest, SetUpMultiThread) {
   const size_t thread_count = 4;
   base_config_.number_threads = thread_count;
-  base_config_.number_partitions = 2;
-  base_config_.access_size = 512;
-
-  base_executions_.reserve(1);
-  base_executions_.push_back(std::make_unique<BenchmarkExecution>());
-  base_results_.reserve(1);
-  base_results_.push_back(std::make_unique<BenchmarkResult>(base_config_));
-  SingleBenchmark bm{bm_name_, base_config_, std::move(base_executions_), std::move(base_results_)};
-  bm.generate_data();
-  bm.set_up();
-
-  const size_t partition_size = TEST_DATA_SIZE / 2;
-  const std::vector<ThreadConfig>& thread_configs = bm.get_thread_configs()[0];
-  ASSERT_EQ(thread_configs.size(), thread_count);
-  const ThreadConfig& thread_config0 = thread_configs[0];
-  const ThreadConfig& thread_config1 = thread_configs[1];
-  const ThreadConfig& thread_config2 = thread_configs[2];
-  const ThreadConfig& thread_config3 = thread_configs[3];
-
-  EXPECT_EQ(thread_config0.thread_idx, 0);
-  EXPECT_EQ(thread_config1.thread_idx, 1);
-  EXPECT_EQ(thread_config2.thread_idx, 2);
-  EXPECT_EQ(thread_config3.thread_idx, 3);
-
-  EXPECT_EQ(thread_config0.start_addr, bm.get_memory_regions()[0][0]);
-  EXPECT_EQ(thread_config1.start_addr, bm.get_memory_regions()[0][0]);
-  EXPECT_EQ(thread_config2.start_addr, bm.get_memory_regions()[0][0] + partition_size);
-  EXPECT_EQ(thread_config3.start_addr, bm.get_memory_regions()[0][0] + partition_size);
-
-  const std::vector<ExecutionDuration>& op_durations = bm.get_benchmark_results()[0]->total_operation_durations;
-  ASSERT_EQ(op_durations.size(), thread_count);
-  EXPECT_EQ(thread_config0.total_operation_duration, &op_durations[0]);
-  EXPECT_EQ(thread_config1.total_operation_duration, &op_durations[1]);
-  EXPECT_EQ(thread_config2.total_operation_duration, &op_durations[2]);
-  EXPECT_EQ(thread_config3.total_operation_duration, &op_durations[3]);
-
-  const std::vector<uint64_t>& op_sizes = bm.get_benchmark_results()[0]->total_operation_sizes;
-  ASSERT_EQ(op_sizes.size(), thread_count);
-  EXPECT_EQ(thread_config0.total_operation_size, &op_sizes[0]);
-  EXPECT_EQ(thread_config1.total_operation_size, &op_sizes[1]);
-  EXPECT_EQ(thread_config2.total_operation_size, &op_sizes[2]);
-  EXPECT_EQ(thread_config3.total_operation_size, &op_sizes[3]);
-
-  // These values are the same for all threads
-  for (const ThreadConfig& tc : thread_configs) {
-    EXPECT_EQ(tc.thread_count_per_partition, 2);
-    EXPECT_EQ(tc.partition_size, partition_size);
-    EXPECT_EQ(tc.ops_count_per_chunk, TEST_CHUNK_SIZE / 512);
-    EXPECT_EQ(tc.chunk_count, 8);
-    EXPECT_EQ(&tc.config, &bm.get_benchmark_configs()[0]);
-  }
-  bm.get_benchmark_results()[0]->config.validate();
-}
-
-TEST_F(BenchmarkTest, SetUpMultiThreadDefaultPartition) {
-  const size_t thread_count = 4;
-  base_config_.number_threads = thread_count;
-  base_config_.number_partitions = 0;
   base_config_.access_size = 256;
 
   base_executions_.reserve(1);
@@ -164,7 +106,7 @@ TEST_F(BenchmarkTest, SetUpMultiThreadDefaultPartition) {
   bm.generate_data();
   bm.set_up();
 
-  const size_t partition_size = TEST_DATA_SIZE / 4;
+  const size_t region_size = TEST_DATA_SIZE;
   const std::vector<ThreadConfig>& thread_configs = bm.get_thread_configs()[0];
   ASSERT_EQ(thread_configs.size(), thread_count);
   const ThreadConfig& thread_config0 = thread_configs[0];
@@ -177,10 +119,10 @@ TEST_F(BenchmarkTest, SetUpMultiThreadDefaultPartition) {
   EXPECT_EQ(thread_config2.thread_idx, 2);
   EXPECT_EQ(thread_config3.thread_idx, 3);
 
-  EXPECT_EQ(thread_config0.start_addr, bm.get_memory_regions()[0][0] + (0 * partition_size));
-  EXPECT_EQ(thread_config1.start_addr, bm.get_memory_regions()[0][0] + (1 * partition_size));
-  EXPECT_EQ(thread_config2.start_addr, bm.get_memory_regions()[0][0] + (2 * partition_size));
-  EXPECT_EQ(thread_config3.start_addr, bm.get_memory_regions()[0][0] + (3 * partition_size));
+  EXPECT_EQ(thread_config0.primary_start_addr, bm.get_memory_regions()[0][0]);
+  EXPECT_EQ(thread_config1.primary_start_addr, bm.get_memory_regions()[0][0]);
+  EXPECT_EQ(thread_config2.primary_start_addr, bm.get_memory_regions()[0][0]);
+  EXPECT_EQ(thread_config3.primary_start_addr, bm.get_memory_regions()[0][0]);
 
   const std::vector<ExecutionDuration>& op_durations = bm.get_benchmark_results()[0]->total_operation_durations;
   ASSERT_EQ(op_durations.size(), thread_count);
@@ -198,8 +140,8 @@ TEST_F(BenchmarkTest, SetUpMultiThreadDefaultPartition) {
 
   // These values are the same for all threads
   for (const ThreadConfig& tc : thread_configs) {
-    EXPECT_EQ(tc.thread_count_per_partition, 1);
-    EXPECT_EQ(tc.partition_size, partition_size);
+    EXPECT_EQ(tc.thread_count, 4);
+    EXPECT_EQ(tc.primary_region_size, region_size);
     EXPECT_EQ(tc.ops_count_per_chunk, TEST_CHUNK_SIZE / 256);
     EXPECT_EQ(tc.chunk_count, 8);
     EXPECT_EQ(&tc.config, &bm.get_benchmark_configs()[0]);
@@ -229,11 +171,10 @@ TEST_F(BenchmarkTest, SetUpSingleThreadCustomOps) {
   const ThreadConfig& thread_config = thread_configs[0];
 
   EXPECT_EQ(thread_config.thread_idx, 0);
-  EXPECT_EQ(thread_config.thread_count_per_partition, 1);
-  EXPECT_EQ(thread_config.partition_size, TEST_DATA_SIZE);
+  EXPECT_EQ(thread_config.primary_region_size, TEST_DATA_SIZE);
   EXPECT_EQ(thread_config.ops_count_per_chunk, 136 /* = 128 KiB / 960*/);
   EXPECT_EQ(thread_config.chunk_count, 74 /* = 10000 / 136 + 1 extra chunk */);
-  EXPECT_EQ(thread_config.start_addr, bm.get_memory_regions()[0][0]);
+  EXPECT_EQ(thread_config.primary_start_addr, bm.get_memory_regions()[0][0]);
   EXPECT_EQ(&thread_config.config, &bm.get_benchmark_configs()[0]);
 
   const std::vector<ExecutionDuration>& op_durations = bm.get_benchmark_results()[0]->total_operation_durations;

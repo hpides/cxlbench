@@ -141,11 +141,6 @@ struct BenchmarkConfig {
    * `FlushInstruction` for more details on available options. */
   FlushInstruction flush_instruction = FlushInstruction::None;
 
-  /** Deprecated. Number of disjoint memory regions to partition the `memory_region_size` into. Must be 0 or a divisor
-   * of `number_threads` i.e., one or more threads map to one partition. When set to 0, it is equal to the number of
-   * threads, i.e., each thread has its own partition. Default is set to 1.  */
-  u16 number_partitions = 1;
-
   /** Specifies the set of NUMA nodes on which the benchmark threads are to run. */
   NumaNodeIDs numa_thread_nodes;
 

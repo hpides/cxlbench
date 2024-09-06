@@ -46,13 +46,12 @@ struct BenchmarkExecution {
 };
 
 struct ThreadConfig {
-  // Partition start addresses
-  char* start_addr;
+  char* primary_start_addr;
   char* secondary_start_addr;
 
-  const u64 partition_size;
-  const u64 secondary_partition_size;
-  const u64 thread_count_per_partition;
+  const u64 primary_region_size;
+  const u64 secondary_region_size;
+  const u64 thread_count;
   const u64 thread_idx;
   const u64 ops_count_per_chunk;
   const u64 chunk_count;
@@ -67,16 +66,16 @@ struct ThreadConfig {
   ExecutionDuration* total_operation_duration;
   std::vector<u64>* custom_op_latencies;
 
-  ThreadConfig(char* partition_start_addr, char* secondary_partition_start_addr, const u64 partition_size,
-               const u64 secondary_partition_size, const u64 thread_count_per_partition, const u64 thread_idx,
+  ThreadConfig(char* primary_region_start_addr, char* secondary_region_start_addr, const u64 primary_region_size,
+               const u64 secondary_region_size, const u64 thread_count, const u64 thread_idx,
                const u64 ops_count_per_chunk, const u64 chunk_count, const BenchmarkConfig& config,
                CoreIDs affinity_core_ids, BenchmarkExecution* execution, ExecutionDuration* total_operation_duration,
                u64* total_operation_size, std::vector<u64>* custom_op_latencies)
-      : start_addr{partition_start_addr},
-        secondary_start_addr{secondary_partition_start_addr},
-        partition_size{partition_size},
-        secondary_partition_size{secondary_partition_size},
-        thread_count_per_partition{thread_count_per_partition},
+      : primary_start_addr{primary_region_start_addr},
+        secondary_start_addr{secondary_region_start_addr},
+        primary_region_size{primary_region_size},
+        secondary_region_size{secondary_region_size},
+        thread_count{thread_count},
         thread_idx{thread_idx},
         ops_count_per_chunk{ops_count_per_chunk},
         chunk_count{chunk_count},

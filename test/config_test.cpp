@@ -126,7 +126,6 @@ TEST_F(ConfigTest, SingleDecodeSequential) {
   EXPECT_EQ(bm_config.random_distribution, bm_config_default.random_distribution);
   EXPECT_EQ(bm_config.zipf_alpha, bm_config_default.zipf_alpha);
   EXPECT_EQ(bm_config.flush_instruction, bm_config_default.flush_instruction);
-  EXPECT_EQ(bm_config.number_partitions, bm_config_default.number_partitions);
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
   EXPECT_EQ(bm_config.numa_thread_nodes, NumaNodeIDs{0});
@@ -157,7 +156,6 @@ TEST_F(ConfigTest, DecodeRandom) {
   EXPECT_EQ(bm_config.access_size, bm_config_default.access_size);
   EXPECT_EQ(bm_config.number_operations, bm_config_default.number_operations);
   EXPECT_EQ(bm_config.flush_instruction, bm_config_default.flush_instruction);
-  EXPECT_EQ(bm_config.number_partitions, bm_config_default.number_partitions);
   EXPECT_EQ(bm_config.number_threads, bm_config_default.number_threads);
   EXPECT_EQ(bm_config.min_io_chunk_size, bm_config_default.min_io_chunk_size);
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
@@ -192,7 +190,6 @@ TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
   EXPECT_EQ(bm_config.random_distribution, bm_config_default.random_distribution);
   EXPECT_EQ(bm_config.zipf_alpha, bm_config_default.zipf_alpha);
   EXPECT_EQ(bm_config.flush_instruction, bm_config_default.flush_instruction);
-  EXPECT_EQ(bm_config.number_partitions, bm_config_default.number_partitions);
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
 
@@ -212,7 +209,6 @@ TEST_F(ConfigTest, ParallelDecodeSequentialRandom) {
   EXPECT_EQ(bm_config.number_operations, bm_config_default.number_operations);
   EXPECT_EQ(bm_config.random_distribution, bm_config_default.random_distribution);
   EXPECT_EQ(bm_config.zipf_alpha, bm_config_default.zipf_alpha);
-  EXPECT_EQ(bm_config.number_partitions, bm_config_default.number_partitions);
   EXPECT_EQ(bm_config.min_io_chunk_size, bm_config_default.min_io_chunk_size);
   EXPECT_EQ(bm_config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
   EXPECT_EQ(bm_config.run_time, bm_config_default.run_time);
@@ -255,7 +251,6 @@ TEST_F(ConfigTest, DecodeMatrix) {
     EXPECT_EQ(config.random_distribution, bm_config_default.random_distribution);
     EXPECT_EQ(config.zipf_alpha, bm_config_default.zipf_alpha);
     EXPECT_EQ(config.flush_instruction, bm_config_default.flush_instruction);
-    EXPECT_EQ(config.number_partitions, bm_config_default.number_partitions);
     EXPECT_EQ(config.min_io_chunk_size, bm_config_default.min_io_chunk_size);
     EXPECT_EQ(config.run_time, bm_config_default.run_time);
     EXPECT_EQ(config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
@@ -316,7 +311,6 @@ TEST_F(ConfigTest, DecodeCustomOperationsMatrix) {
 
     EXPECT_EQ(config.random_distribution, bm_config_default.random_distribution);
     EXPECT_EQ(config.zipf_alpha, bm_config_default.zipf_alpha);
-    EXPECT_EQ(config.number_partitions, bm_config_default.number_partitions);
     EXPECT_EQ(config.min_io_chunk_size, bm_config_default.min_io_chunk_size);
     EXPECT_EQ(config.run_time, bm_config_default.run_time);
     EXPECT_EQ(config.latency_sample_frequency, bm_config_default.latency_sample_frequency);
@@ -362,7 +356,6 @@ TEST_F(ConfigTest, ParallelDecodeMatrix) {
     EXPECT_EQ(config_one.random_distribution, bm_config_default.random_distribution);
     EXPECT_EQ(config_one.zipf_alpha, bm_config_default.zipf_alpha);
     EXPECT_EQ(config_one.flush_instruction, bm_config_default.flush_instruction);
-    EXPECT_EQ(config_one.number_partitions, bm_config_default.number_partitions);
     EXPECT_EQ(config_one.min_io_chunk_size, bm_config_default.min_io_chunk_size);
     EXPECT_EQ(config_one.run_time, bm_config_default.run_time);
     EXPECT_EQ(config_one.latency_sample_frequency, bm_config_default.latency_sample_frequency);
@@ -378,7 +371,6 @@ TEST_F(ConfigTest, ParallelDecodeMatrix) {
     EXPECT_EQ(config_two.number_operations, bm_config_default.number_operations);
     EXPECT_EQ(config_two.random_distribution, bm_config_default.random_distribution);
     EXPECT_EQ(config_two.zipf_alpha, bm_config_default.zipf_alpha);
-    EXPECT_EQ(config_two.number_partitions, bm_config_default.number_partitions);
     EXPECT_EQ(config_two.min_io_chunk_size, bm_config_default.min_io_chunk_size);
     EXPECT_EQ(config_two.run_time, bm_config_default.run_time);
     EXPECT_EQ(config_two.latency_sample_frequency, bm_config_default.latency_sample_frequency);
@@ -458,20 +450,6 @@ TEST_F(ConfigTest, InvalidNumberThreads) {
   bm_config.number_threads = 0;
   EXPECT_THROW(bm_config.validate(), MemaException);
   check_log_for_critical("threads must be");
-}
-
-TEST_F(ConfigTest, InvalidSmallThreadPartitionRatio) {
-  bm_config.number_partitions = 5;
-  bm_config.number_threads = 12;
-  EXPECT_THROW(bm_config.validate(), MemaException);
-  check_log_for_critical("threads must be a multiple of number partitions");
-}
-
-TEST_F(ConfigTest, InvalidLargeThreadPartitionRatio) {
-  bm_config.number_partitions = 2;
-  bm_config.number_threads = 1;
-  EXPECT_THROW(bm_config.validate(), MemaException);
-  check_log_for_critical("threads must be a multiple of number partitions");
 }
 
 TEST_F(ConfigTest, InvalidMemoryRegionSize) {
@@ -563,13 +541,6 @@ TEST_F(ConfigTest, InvalidNumaBasedThreadPinning) {
   EXPECT_NO_THROW(bm_config.validate());
 }
 
-TEST_F(ConfigTest, BadNumberPartitionSplit) {
-  bm_config.number_threads = 36;
-  bm_config.number_partitions = 36;
-  EXPECT_THROW(bm_config.validate(), MemaException);
-  check_log_for_critical("evenly divisible into");
-}
-
 TEST_F(ConfigTest, MissingCustomOps) {
   bm_config.exec_mode = Mode::Custom;
   EXPECT_THROW(bm_config.validate(), MemaException);
@@ -620,8 +591,6 @@ TEST_F(ConfigTest, AsJsonReadSequential) {
   EXPECT_EQ(json["exec_mode"], "sequential");
   ASSERT_JSON_TRUE(json, contains("numa_task_nodes"));
   EXPECT_EQ(json["numa_task_nodes"].get<NumaNodeIDs>(), bm_config.numa_thread_nodes);
-  ASSERT_JSON_TRUE(json, contains("number_partitions"));
-  EXPECT_EQ(json["number_partitions"].get<uint16_t>(), bm_config.number_partitions);
   ASSERT_JSON_TRUE(json, contains("number_threads"));
   EXPECT_EQ(json["number_threads"].get<uint16_t>(), bm_config.number_threads);
   ASSERT_JSON_TRUE(json, contains("min_io_chunk_size"));
@@ -673,8 +642,6 @@ TEST_F(ConfigTest, AsJsonWriteCustom) {
   EXPECT_EQ(json["exec_mode"], "custom");
   ASSERT_JSON_TRUE(json, contains("numa_task_nodes"));
   EXPECT_EQ(json["numa_task_nodes"].get<NumaNodeIDs>(), bm_config.numa_thread_nodes);
-  ASSERT_JSON_TRUE(json, contains("number_partitions"));
-  EXPECT_EQ(json["number_partitions"].get<uint16_t>(), bm_config.number_partitions);
   ASSERT_JSON_TRUE(json, contains("number_threads"));
   EXPECT_EQ(json["number_threads"].get<uint16_t>(), bm_config.number_threads);
   ASSERT_JSON_TRUE(json, contains("min_io_chunk_size"));

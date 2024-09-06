@@ -85,14 +85,9 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, MemoryRegions& memo
     }
   }
 
-  // If number_partitions is 0, each thread gets its own partition.
-  const u16 partition_count = config.number_partitions == 0 ? config.number_threads : config.number_partitions;
-
-  const u16 thread_count_per_partition = config.number_threads / partition_count;
-  const u64 partition_size = config.memory_regions[0].size / partition_count;
-  MemaAssert(config.memory_regions[1].size == 0 || partition_count == 1,
-             "With a secondary partition size, only one partition is supported.");
-  const auto secondary_partition_size = config.memory_regions[1].size;
+  const auto thread_count = config.number_threads;
+  const auto primary_region_size = config.memory_regions[0].size;
+  const auto secondary_region_size = config.memory_regions[1].size;
 
   // Set up thread synchronization and execution parameters
   const auto& access_size =
@@ -110,11 +105,10 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, MemoryRegions& memo
   execution->io_operations.resize(chunk_count);
   execution->num_custom_chunks_remaining = static_cast<i64>(chunk_count);
 
-  auto* primary_region = memory_regions[0];
-  // Assumption: only one partition exists for secondary region. Secondary region is only used for custom operations.
+  // Secondary region is only used for custom operations.
   MemaAssert(config.memory_regions[1].size == 0 || config.exec_mode == Mode::Custom,
              "Secondary memory region is only supported with custom operations.");
-  auto* secondary_partition_start = memory_regions[1];
+  auto* secondary_start_addr = memory_regions[1];
 
   // Thread pinning preparation
   const auto is_numa_thread_pinning = (config.thread_pin_mode == ThreadPinMode::AllNumaCores ||
@@ -122,34 +116,28 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, MemoryRegions& memo
   const auto threads_pinning_cores =
       is_numa_thread_pinning ? core_ids_of_nodes(config.numa_thread_nodes) : config.thread_core_ids;
 
-  // TODO(MW) remove partitioning. Always assume one partition.
-  for (u16 partition_idx = 0; partition_idx < partition_count; ++partition_idx) {
-    char* partition_start = (config.exec_mode == Mode::Sequential_Desc)
-                                ? primary_region + ((partition_count - partition_idx) * partition_size) - access_size
-                                : primary_region + (partition_idx * partition_size);
+  char* primary_start_addr = (config.exec_mode == Mode::Sequential_Desc)
+                                 ? memory_regions[0] + primary_region_size - access_size
+                                 : memory_regions[0];
 
-    for (u16 partition_thread_idx = 0; partition_thread_idx < thread_count_per_partition; ++partition_thread_idx) {
-      const auto thread_idx = (partition_idx * thread_count_per_partition) + partition_thread_idx;
-
-      // Reserve space for custom operation latency measurements to avoid resizing during benchmark execution.
-      if (is_custom_execution) {
-        result->custom_operation_latencies[thread_idx].reserve(latency_measurement_count);
-      }
-
-      ExecutionDuration* total_op_duration = &result->total_operation_durations[thread_idx];
-      u64* total_op_size = &result->total_operation_sizes[thread_idx];
-      std::vector<u64>* custom_op_latencies =
-          is_custom_execution ? &result->custom_operation_latencies[thread_idx] : nullptr;
-
-      auto thread_affinity_cores = config.thread_pin_mode == ThreadPinMode::AllNumaCores
-                                       ? threads_pinning_cores
-                                       : CoreIDs{threads_pinning_cores[partition_thread_idx]};
-
-      thread_configs->emplace_back(partition_start, secondary_partition_start, partition_size, secondary_partition_size,
-                                   thread_count_per_partition, thread_idx, ops_per_chunk, chunk_count, config,
-                                   thread_affinity_cores, execution, total_op_duration, total_op_size,
-                                   custom_op_latencies);
+  for (u16 thread_idx = 0; thread_idx < thread_count; ++thread_idx) {
+    // Reserve space for custom operation latency measurements to avoid resizing during benchmark execution.
+    if (is_custom_execution) {
+      result->custom_operation_latencies[thread_idx].reserve(latency_measurement_count);
     }
+
+    ExecutionDuration* total_op_duration = &result->total_operation_durations[thread_idx];
+    u64* total_op_size = &result->total_operation_sizes[thread_idx];
+    std::vector<u64>* custom_op_latencies =
+        is_custom_execution ? &result->custom_operation_latencies[thread_idx] : nullptr;
+
+    auto thread_affinity_cores = config.thread_pin_mode == ThreadPinMode::AllNumaCores
+                                     ? threads_pinning_cores
+                                     : CoreIDs{threads_pinning_cores[thread_idx]};
+
+    thread_configs->emplace_back(primary_start_addr, secondary_start_addr, primary_region_size, secondary_region_size,
+                                 thread_count, thread_idx, ops_per_chunk, chunk_count, config, thread_affinity_cores,
+                                 execution, total_op_duration, total_op_size, custom_op_latencies);
   }
 }
 
@@ -299,14 +287,14 @@ void Benchmark::run_custom_ops_in_thread(ThreadConfig* thread_config, const Benc
     max_access_size = std::max(op.size, max_access_size);
   }
 
-  const auto aligned_range_size = u64{thread_config->partition_size - max_access_size};
-  const auto aligned_secondary_range_size = u64{thread_config->secondary_partition_size - max_access_size};
+  const auto aligned_range_size = u64{thread_config->primary_region_size - max_access_size};
+  const auto aligned_secondary_range_size = u64{thread_config->secondary_region_size - max_access_size};
 
   for (auto op_idx = u64{0}; op_idx < num_ops; ++op_idx) {
     const CustomOp& op = operations[op_idx];
 
     if (op.memory_type == MemoryType::Primary) {
-      operation_chain.emplace_back(op, thread_config->start_addr, aligned_range_size);
+      operation_chain.emplace_back(op, thread_config->primary_start_addr, aligned_range_size);
     } else {
       operation_chain.emplace_back(op, thread_config->secondary_start_addr, aligned_secondary_range_size);
     }
@@ -364,8 +352,8 @@ template <size_t ACCESS_COUNT_64B>
 void Benchmark::run_dependent_reads_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config) {
   spdlog::debug("Thread {}: Running dependent reads.", thread_config->thread_idx);
 
-  auto buffer = reinterpret_cast<std::byte*>(thread_config->start_addr);
-  const auto access_count = thread_config->partition_size / config.access_size;
+  auto buffer = reinterpret_cast<std::byte*>(thread_config->primary_start_addr);
+  const auto access_count = thread_config->primary_region_size / config.access_size;
 
   auto next_pos = u64{0};
   auto begin_ts = std::chrono::steady_clock::now();
@@ -437,7 +425,7 @@ void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig
   const size_t seed = std::chrono::steady_clock::now().time_since_epoch().count() * (thread_config->thread_idx + 1);
   lehmer64_seed(seed);
 
-  const u32 access_count_in_range = thread_config->partition_size / config.access_size;
+  const u32 access_count_in_range = thread_config->primary_region_size / config.access_size;
 
   auto access_distribution = [&]() { return lehmer64() % access_count_in_range; };
 
@@ -452,30 +440,30 @@ void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig
     ++chunk_count_per_thread;
   }
 
-  const size_t thread_idx_in_partition = thread_config->thread_idx % thread_config->thread_count_per_partition;
-  const size_t thread_offset_in_partition = thread_idx_in_partition * config.min_io_chunk_size;
-  // The size in bytes that all partition threads read. Assuming n chunks C_n and 4 partition threads PT_m, then PT_0,
+  const size_t thread_idx = thread_config->thread_idx;
+  const size_t thread_offset = thread_idx * config.min_io_chunk_size;
+  // The size in bytes that all threads read. Assuming n chunks C_n and 4 partition threads PT_m, then PT_0,
   // PT_1, PT_2, PT_3 will initally access C_0, C_1, C_2, and C_4 respectively. If PT_0 finished accessing C_0, it will
   // continue with accessing with C_5. The offset delta between C_0's and C_5's start address is 4 * chunk size.
-  const size_t partition_threads_access_size = thread_config->thread_count_per_partition * config.min_io_chunk_size;
+  const size_t threads_access_size = thread_config->thread_count * config.min_io_chunk_size;
   const bool is_read_op = config.operation == Operation::Read;
 
   for (size_t chunk_idx = 0; chunk_idx < chunk_count_per_thread; ++chunk_idx) {
     const size_t thread_chunk_offset =
         // Overall offset after x chunks          + offset of this thread for chunk x+1
-        (chunk_idx * partition_threads_access_size) + thread_offset_in_partition;
+        (chunk_idx * threads_access_size) + thread_offset;
     char* next_op_position = config.exec_mode == Mode::Sequential_Desc
-                                 ? thread_config->start_addr - thread_chunk_offset
-                                 : thread_config->start_addr + thread_chunk_offset;
+                                 ? thread_config->primary_start_addr - thread_chunk_offset
+                                 : thread_config->primary_start_addr + thread_chunk_offset;
 
     std::vector<char*> op_addresses(thread_config->ops_count_per_chunk);
 
     for (size_t op_idx = 0; op_idx < thread_config->ops_count_per_chunk; ++op_idx) {
       switch (config.exec_mode) {
         case Mode::Random: {
-          char* partition_start;
+          char* primary_start_addr;
           std::function<u64()> random_distribution;
-          partition_start = thread_config->start_addr;
+          primary_start_addr = thread_config->primary_start_addr;
           random_distribution = access_distribution;
 
           u64 random_value;
@@ -485,7 +473,7 @@ void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig
           } else {
             random_value = utils::zipf(config.zipf_alpha, access_count_in_range);
           }
-          op_addresses[op_idx] = partition_start + (random_value * config.access_size);
+          op_addresses[op_idx] = primary_start_addr + (random_value * config.access_size);
           break;
         }
         case Mode::Sequential: {

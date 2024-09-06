@@ -168,7 +168,6 @@ BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
                                            &bm_config.memory_regions[0].percentage_pages_first_partition);
     found_count += get_optional_if_present(node, "node_count_first_partition",
                                            &bm_config.memory_regions[0].node_count_first_partition);
-    found_count += get_if_present(node, "number_partitions", &bm_config.number_partitions);
 
     found_count +=
         get_size_if_present(node, "access_size", ConfigEnums::scale_suffix_to_factor, &bm_config.access_size);
@@ -255,13 +254,6 @@ void BenchmarkConfig::validate() const {
       CHECK_ARGUMENT(has_gte_two_numa_memory_nodes,
                      "When a share of pages located on first node is specified, >=2 nodes need to be specified.");
     }
-
-    // Assumption: total memory range must be evenly divisible into number of partitions
-    const bool is_partitionable = (number_partitions == 0 && ((region.size / number_threads) % access_size) == 0) ||
-                                  (number_partitions > 0 && ((region.size / number_partitions) % access_size) == 0);
-    CHECK_ARGUMENT(is_partitionable,
-                   "Total memory range must be evenly divisible into number of partitions. "
-                   "Most likely you can fix this by using 2^x partitions.");
   }
 
   const bool has_secondary_memory_region_for_operations = !contains_secondary_memory_op() || memory_regions[1].size > 0;
@@ -279,12 +271,6 @@ void BenchmarkConfig::validate() const {
     CHECK_ARGUMENT(is_total_memory_large_enough, "Each thread needs at least " + std::to_string(min_io_chunk_size) +
                                                      " Bytes of memory in primary region.");
   }
-
-  // Assumption: number_threads is multiple of number_partitions
-  const bool is_number_threads_multiple_of_number_partitions =
-      (number_partitions == 0) || (number_threads % number_partitions) == 0;
-  CHECK_ARGUMENT(is_number_threads_multiple_of_number_partitions,
-                 "Number threads must be a multiple of number partitions.");
 
   // Assumption: number_operations should only be set for random/custom access. It is ignored in sequential IO.
   const bool is_number_operations_set_random =
@@ -372,7 +358,6 @@ std::string BenchmarkConfig::to_string(const std::string sep) const {
       delim = ", ";
     }
     stream << "]";
-    stream << sep << "partition count: " << number_partitions;
     stream << sep << "page placement: ";
     if (region.percentage_pages_first_partition) {
       stream << "partitioned with " << *region.percentage_pages_first_partition << "% on first partition. ";
@@ -443,7 +428,6 @@ nlohmann::json BenchmarkConfig::as_json() const {
   config["exec_mode"] = utils::get_enum_as_string(ConfigEnums::str_to_mode, exec_mode);
   config["min_io_chunk_size"] = min_io_chunk_size;
   config["numa_task_nodes"] = numa_thread_nodes;
-  config["number_partitions"] = number_partitions;
   config["number_threads"] = number_threads;
   config["thread_pin_mode"] = utils::get_enum_as_string(ConfigEnums::str_to_thread_pin_mode, thread_pin_mode);
   config["thread_cores"] = thread_core_ids;
