@@ -188,9 +188,9 @@ void print_summary(nlohmann::json result, const std::string& bm_name, const bool
 
     // TODO(anyone): use 1 GB for bandwidth measurements in the code base.
     // 1 GiB / 1 GB
-    min_bandwidth *= mema::utils::ONE_GB / 1e9;
-    max_bandwidth *= mema::utils::ONE_GB / 1e9;
-    avg_bandwidth *= mema::utils::ONE_GB / 1e9;
+    min_bandwidth *= mema::utils::ONE_GIB / 1e9;
+    max_bandwidth *= mema::utils::ONE_GIB / 1e9;
+    avg_bandwidth *= mema::utils::ONE_GIB / 1e9;
     avg_bandwidth /= result["benchmarks"].size();
 
     spdlog::info("{}{}:\tavg_bandwidth (GB/s): {}\tmin_bandwidth (GB/s): {}\tmax_bandwidth (GB/s): {}", prefix, bm_name,

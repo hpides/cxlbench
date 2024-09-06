@@ -17,7 +17,7 @@ enum class Mode : u8 { Sequential, Sequential_Desc, Random, Custom, DependentRea
 
 enum class RandomDistribution : u8 { Uniform, Zipf };
 
-enum class FlushInstruction : u8 { Cache, NoCache, None };
+enum class CacheInstruction : u8 { Cache, NoCache, None };
 
 enum class Operation : u8 { Read, Write };
 
@@ -49,12 +49,12 @@ constexpr auto MEM_REGION_PREFIX = 'm';
  * 'r' for read,
  * <size> is the size of the access (must be power of 2).
  *
- * For writes: w_<size>_<flush_instruction>(_<offset>)
+ * For writes: w_<size>_<cache_instruction>(_<offset>)
  *
  * with:
  * 'w' for write,
  * <size> is the size of the access (must be power of 2),
- * <flush_instruction> is the instruction to use after the write (none, cache, noache),
+ * <cache_instruction> is the instruction to use after the write (none, cache, noache),
  * (optional) <offset> is the offset to the previously accessed address (can be negative, default is 0)
  *
  * */
@@ -62,7 +62,7 @@ struct CustomOp {
   MemoryType memory_type = MemoryType::Primary;
   Operation type;
   u64 size;
-  FlushInstruction flush = FlushInstruction::None;
+  CacheInstruction cache_fn = CacheInstruction::None;
   // This can be signed, e.g., to represent the case when the previous cache line should be written to.
   i64 offset = 0;
 
@@ -138,8 +138,8 @@ struct BenchmarkConfig {
   Mode exec_mode = Mode::Sequential;
 
   /** Flush instruction to use after write operations. Only works with `Operation::Write`. See
-   * `FlushInstruction` for more details on available options. */
-  FlushInstruction flush_instruction = FlushInstruction::None;
+   * `CacheInstruction` for more details on available options. */
+  CacheInstruction cache_instruction = CacheInstruction::None;
 
   /** Specifies the set of NUMA nodes on which the benchmark threads are to run. */
   NumaNodeIDs numa_thread_nodes;
@@ -161,13 +161,13 @@ struct BenchmarkConfig {
   /** Frequency in which to sample latency of custom operations. Only works in combination with `Mode::Custom`. */
   u64 latency_sample_frequency = 0;
 
-  /** Represents the minimum size of an atomic work package. A chunk contains chunk_size / access_size number of
+  /** Represents the minimum size of an atomic work package. A batch contains batch_size / access_size number of
    * operations. The default value is 64 MiB (67108864B), a ~60 ms execution unit assuming the lowest bandwidth of
-   * 1 GiB/s operations per thread. For dependent reads, this chunk size determines the range in which addresses to
-   * be accessed are randomly generated. For example, with a memory region size of 1 GB, a chunk size of 64 MiB, and an
+   * 1 GiB/s operations per thread. For dependent reads, this batch size determines the range in which addresses to
+   * be accessed are randomly generated. For example, with a memory region size of 1 GB, a batch size of 64 MiB, and an
    * access size of 64 B, the first 1,048,576 (= 64 MiB / 64 B) access addresses point to a memory region of 64 MiB.
    * Narrowing the memory access range reduces TLB misses. */
-  u64 min_io_chunk_size = 64 * MiB;
+  u64 min_io_batch_size = 64 * MiB;
 
   std::vector<std::string> matrix_args{};
 
@@ -186,7 +186,7 @@ struct ConfigEnums {
   static const std::unordered_map<std::string, bool> str_to_mem_type;
   static const std::unordered_map<std::string, Mode> str_to_mode;
   static const std::unordered_map<std::string, Operation> str_to_operation;
-  static const std::unordered_map<std::string, FlushInstruction> str_to_flush_instruction;
+  static const std::unordered_map<std::string, CacheInstruction> str_to_cache_instruction;
   static const std::unordered_map<std::string, RandomDistribution> str_to_random_distribution;
   static const std::unordered_map<std::string, ThreadPinMode> str_to_thread_pin_mode;
 

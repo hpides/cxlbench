@@ -1,5 +1,5 @@
+#include "access_batch.hpp"
 #include "gtest/gtest.h"
-#include "io_operation.hpp"
 #include "test_utils.hpp"
 
 namespace mema {
@@ -81,63 +81,63 @@ TEST_F(CustomOperationTest, CustomReadSecondaryRegionString) {
 // Write Operations
 TEST_F(CustomOperationTest, ParseCustomWrite128None) {
   CustomOp op = CustomOp::from_string("w_128_none");
-  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 128, .flush = FlushInstruction::None}));
+  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 128, .cache_fn = CacheInstruction::None}));
   op = CustomOp::from_string("m1_w_128_none");
   EXPECT_EQ(op, (CustomOp{.memory_type = MemoryType::Secondary,
                           .type = Operation::Write,
                           .size = 128,
-                          .flush = FlushInstruction::None}));
+                          .cache_fn = CacheInstruction::None}));
 }
 
 TEST_F(CustomOperationTest, ParseCustomWrite128NoCache) {
   CustomOp op = CustomOp::from_string("w_128_nocache");
-  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 128, .flush = FlushInstruction::NoCache}));
+  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 128, .cache_fn = CacheInstruction::NoCache}));
   op = CustomOp::from_string("m1_w_128_nocache");
   EXPECT_EQ(op, (CustomOp{.memory_type = MemoryType::Secondary,
                           .type = Operation::Write,
                           .size = 128,
-                          .flush = FlushInstruction::NoCache}));
+                          .cache_fn = CacheInstruction::NoCache}));
 }
 
 TEST_F(CustomOperationTest, ParseCustomWrite128Cache) {
   CustomOp op = CustomOp::from_string("w_128_cache");
-  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 128, .flush = FlushInstruction::Cache}));
+  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 128, .cache_fn = CacheInstruction::Cache}));
   op = CustomOp::from_string("m1_w_128_cache");
   EXPECT_EQ(op, (CustomOp{.memory_type = MemoryType::Secondary,
                           .type = Operation::Write,
                           .size = 128,
-                          .flush = FlushInstruction::Cache}));
+                          .cache_fn = CacheInstruction::Cache}));
 }
 
 TEST_F(CustomOperationTest, ParseCustomWrite256Cache) {
   CustomOp op = CustomOp::from_string("w_256_cache");
-  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 256, .flush = FlushInstruction::Cache}));
+  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 256, .cache_fn = CacheInstruction::Cache}));
   op = CustomOp::from_string("w_256_cache");
   EXPECT_EQ(op, (CustomOp{.memory_type = MemoryType::Secondary,
                           .type = Operation::Write,
                           .size = 256,
-                          .flush = FlushInstruction::Cache}));
+                          .cache_fn = CacheInstruction::Cache}));
 }
 
 TEST_F(CustomOperationTest, ParseCustomWrite128Offset) {
   CustomOp op = CustomOp::from_string("w_128_nocache_64");
-  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 128, .flush = FlushInstruction::NoCache, .offset = 64}));
+  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 128, .cache_fn = CacheInstruction::NoCache, .offset = 64}));
   op = CustomOp::from_string("m1_w_128_nocache_64");
   EXPECT_EQ(op, (CustomOp{.memory_type = MemoryType::Secondary,
                           .type = Operation::Write,
                           .size = 128,
-                          .flush = FlushInstruction::NoCache,
+                          .cache_fn = CacheInstruction::NoCache,
                           .offset = 64}));
 }
 
 TEST_F(CustomOperationTest, ParseCustomWrite128NegativeOffset) {
   CustomOp op = CustomOp::from_string("w_128_cache_-64");
-  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 128, .flush = FlushInstruction::Cache, .offset = -64}));
+  EXPECT_EQ(op, (CustomOp{.type = Operation::Write, .size = 128, .cache_fn = CacheInstruction::Cache, .offset = -64}));
   op = CustomOp::from_string("m1_w_128_cache_-64");
   EXPECT_EQ(op, (CustomOp{.memory_type = MemoryType::Secondary,
                           .type = Operation::Write,
                           .size = 128,
-                          .flush = FlushInstruction::Cache,
+                          .cache_fn = CacheInstruction::Cache,
                           .offset = -64}));
 }
 
@@ -163,12 +163,12 @@ TEST_F(CustomOperationTest, ParseBadWriteMissingSize) {
   EXPECT_THROW(CustomOp::from_string("m0_w_"), MemaException);
 }
 
-TEST_F(CustomOperationTest, ParseBadWriteMissingFlushInstruction) {
+TEST_F(CustomOperationTest, ParseBadWriteMissingCacheInstruction) {
   EXPECT_THROW(CustomOp::from_string("w_64"), MemaException);
   EXPECT_THROW(CustomOp::from_string("m0_w_64"), MemaException);
 }
 
-TEST_F(CustomOperationTest, ParseBadWriteMissingFlushInstructionWithUnderscore) {
+TEST_F(CustomOperationTest, ParseBadWriteMissingCacheInstructionWithUnderscore) {
   EXPECT_THROW(CustomOp::from_string("w_64_"), MemaException);
   EXPECT_THROW(CustomOp::from_string("m0_w_64_"), MemaException);
 }
@@ -184,55 +184,57 @@ TEST_F(CustomOperationTest, ParseBadWriteWhitespace) {
 }
 
 TEST_F(CustomOperationTest, CustomWrite64NoCacheString) {
-  CustomOp op{.type = Operation::Write, .size = 64, .flush = FlushInstruction::NoCache};
+  CustomOp op{.type = Operation::Write, .size = 64, .cache_fn = CacheInstruction::NoCache};
   EXPECT_EQ(op.to_string(), "m0_w_64_nocache");
-  op = CustomOp{
-      .memory_type = MemoryType::Secondary, .type = Operation::Write, .size = 64, .flush = FlushInstruction::NoCache};
+  op = CustomOp{.memory_type = MemoryType::Secondary,
+                .type = Operation::Write,
+                .size = 64,
+                .cache_fn = CacheInstruction::NoCache};
   EXPECT_EQ(op.to_string(), "m1_w_64_nocache");
 }
 
 TEST_F(CustomOperationTest, CustomWrite128CacheString) {
-  CustomOp op{.type = Operation::Write, .size = 128, .flush = FlushInstruction::Cache};
+  CustomOp op{.type = Operation::Write, .size = 128, .cache_fn = CacheInstruction::Cache};
   EXPECT_EQ(op.to_string(), "m0_w_128_cache");
   op = CustomOp{
-      .memory_type = MemoryType::Secondary, .type = Operation::Write, .size = 128, .flush = FlushInstruction::Cache};
+      .memory_type = MemoryType::Secondary, .type = Operation::Write, .size = 128, .cache_fn = CacheInstruction::Cache};
   EXPECT_EQ(op.to_string(), "m1_w_128_cache");
 }
 
 TEST_F(CustomOperationTest, CustomWrite256CacheString) {
-  CustomOp op{.type = Operation::Write, .size = 256, .flush = FlushInstruction::Cache};
+  CustomOp op{.type = Operation::Write, .size = 256, .cache_fn = CacheInstruction::Cache};
   EXPECT_EQ(op.to_string(), "m0_w_256_cache");
   op = CustomOp{
-      .memory_type = MemoryType::Secondary, .type = Operation::Write, .size = 256, .flush = FlushInstruction::Cache};
+      .memory_type = MemoryType::Secondary, .type = Operation::Write, .size = 256, .cache_fn = CacheInstruction::Cache};
   EXPECT_EQ(op.to_string(), "m1_w_256_cache");
 }
 
 TEST_F(CustomOperationTest, CustomWrite4096NoneString) {
-  CustomOp op{.type = Operation::Write, .size = 4096, .flush = FlushInstruction::None};
+  CustomOp op{.type = Operation::Write, .size = 4096, .cache_fn = CacheInstruction::None};
   EXPECT_EQ(op.to_string(), "m0_w_4096_none");
   op = CustomOp{
-      .memory_type = MemoryType::Secondary, .type = Operation::Write, .size = 4096, .flush = FlushInstruction::None};
+      .memory_type = MemoryType::Secondary, .type = Operation::Write, .size = 4096, .cache_fn = CacheInstruction::None};
   EXPECT_EQ(op.to_string(), "m1_w_4096_none");
 }
 
 TEST_F(CustomOperationTest, CustomWrite128OffsetString) {
-  CustomOp op{.type = Operation::Write, .size = 128, .flush = FlushInstruction::Cache, .offset = 128};
+  CustomOp op{.type = Operation::Write, .size = 128, .cache_fn = CacheInstruction::Cache, .offset = 128};
   EXPECT_EQ(op.to_string(), "m0_w_128_cache_128");
   op = CustomOp{.memory_type = MemoryType::Secondary,
                 .type = Operation::Write,
                 .size = 128,
-                .flush = FlushInstruction::Cache,
+                .cache_fn = CacheInstruction::Cache,
                 .offset = 128};
   EXPECT_EQ(op.to_string(), "m1_w_128_cache_128");
 }
 
 TEST_F(CustomOperationTest, CustomWrite128NegativeOffsetString) {
-  CustomOp op{.type = Operation::Write, .size = 128, .flush = FlushInstruction::Cache, .offset = -64};
+  CustomOp op{.type = Operation::Write, .size = 128, .cache_fn = CacheInstruction::Cache, .offset = -64};
   EXPECT_EQ(op.to_string(), "m0_w_128_cache_-64");
   op = CustomOp{.memory_type = MemoryType::Secondary,
                 .type = Operation::Write,
                 .size = 128,
-                .flush = FlushInstruction::Cache,
+                .cache_fn = CacheInstruction::Cache,
                 .offset = -64};
   EXPECT_EQ(op.to_string(), "m1_w_128_cache_-64");
 }

@@ -2,7 +2,7 @@ split_memory_random_writes:
   matrix:
     number_threads: [ 16 ]
     access_size: [ 1024 ]
-    flush_instruction: [ none ]
+    cache_instruction: [ none ]
     percentage_pages_first_partition: [ 100, 95, 90, 85, 80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10, 5, 0 ]
 
   args:

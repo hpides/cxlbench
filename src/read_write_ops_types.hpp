@@ -43,13 +43,13 @@ static constexpr size_t SIMD_VECTOR_SIZE_FACTOR = BASE_ACCESS_SIZE / SIMD_VECTOR
 using CharVecBase __attribute__((vector_size(BASE_ACCESS_SIZE))) = char;
 using CharVecSIMD __attribute__((vector_size(SIMD_VECTOR_SIZE))) = char;
 
-using flush_fn = void(char*, const size_t);
-using barrier_fn = void();
-using write_fn = void(char*, flush_fn, barrier_fn);
-using simd_write_nt_fn = void(char*);
+using cache_func = void(char*, const size_t);
+using barrier_func = void();
+using write_func = void(char*, cache_func, barrier_func);
+using simd_write_nt_func = void(char*);
 
-/** no explicit cache line flush is used. */
-inline void no_flush(char* addr, const size_t len) {}
+/** no explicit cache instruction is used. */
+inline void no_cache_fn(char* addr, const size_t len) {}
 
 #if defined(HAS_CLWB) || defined(USE_AVX_2) || defined(USE_AVX_512)
 /** Use sfence to guarantee memory order on x86. Earlier store operations cannot be reordered beyond this point. */

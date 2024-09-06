@@ -39,7 +39,7 @@ static constexpr auto PAGE_SIZE = u64{64 * 1024ul};  // 64 KiB page size
 #else
 static constexpr auto PAGE_SIZE = u64{4 * 1024ul};  // 4 KiB page size
 #endif
-static constexpr auto ONE_GB = u64{1024ul * 1024 * 1024};
+static constexpr auto ONE_GIB = u64{1024ul * 1024 * 1024};
 static constexpr auto SHORT_STRING_SIZE = u64{1};
 
 static int MAP_FLAGS = MAP_PRIVATE | MAP_ANONYMOUS;

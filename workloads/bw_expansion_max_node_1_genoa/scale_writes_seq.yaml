@@ -3,7 +3,7 @@ scale_writes_seq:
     # number_threads: [ 56 ]
     number_threads: [ 1, 4, 8, 12, 16, 20, 24 ]
     access_size: [ 64 ]
-    flush_instruction: [ none ]
+    cache_instruction: [ none ]
 
   args:
     exec_mode: sequential

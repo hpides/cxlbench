@@ -5,7 +5,7 @@ sequential_writes:
     # number_threads: [ 1, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96, 100]
     number_threads: [ 1, 4, 8, 12, 16, 20, 24, 28 ]
     access_size: [ 64, 128, 256, 512, 1024, 2048, 4096, 8192 ]
-    flush_instruction: [ none ]
+    cache_instruction: [ none ]
 
   args:
     exec_mode: sequential

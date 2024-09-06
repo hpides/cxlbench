@@ -10,8 +10,8 @@
 #include <utility>
 #include <vector>
 
+#include "access_batch.hpp"
 #include "benchmark_config.hpp"
-#include "io_operation.hpp"
 #include "json.hpp"
 #include "utils.hpp"
 
@@ -35,14 +35,14 @@ struct BenchmarkExecution {
   std::mutex generation_lock{};
   std::condition_variable generation_done{};
   u16 threads_remaining;
-  std::atomic<u64> io_position = 0;
+  std::atomic<u64> batch_position = 0;
 
-  // For custom operations, we don't have chunks but only simulate them by running chunk-sized blocks.
+  // For custom operations, we don't have batches but only simulate them by running batch-sized blocks.
   // This is a *signed* integer, as our atomic -= operations my go below 0.
-  std::atomic<i64> num_custom_chunks_remaining = 0;
+  std::atomic<i64> num_custom_batches_remaining = 0;
 
   // The main list of all IO operations to steal work from
-  std::vector<IoOperation> io_operations;
+  std::vector<AccessBatch> access_batches;
 };
 
 struct ThreadConfig {
@@ -53,8 +53,8 @@ struct ThreadConfig {
   const u64 secondary_region_size;
   const u64 thread_count;
   const u64 thread_idx;
-  const u64 ops_count_per_chunk;
-  const u64 chunk_count;
+  const u64 ops_count_per_batch;
+  const u64 batch_count;
   const BenchmarkConfig& config;
   // Defines the CPU cores to run on.
   CoreIDs affinity_core_ids;
@@ -68,7 +68,7 @@ struct ThreadConfig {
 
   ThreadConfig(char* primary_region_start_addr, char* secondary_region_start_addr, const u64 primary_region_size,
                const u64 secondary_region_size, const u64 thread_count, const u64 thread_idx,
-               const u64 ops_count_per_chunk, const u64 chunk_count, const BenchmarkConfig& config,
+               const u64 ops_count_per_batch, const u64 batch_count, const BenchmarkConfig& config,
                CoreIDs affinity_core_ids, BenchmarkExecution* execution, ExecutionDuration* total_operation_duration,
                u64* total_operation_size, std::vector<u64>* custom_op_latencies)
       : primary_start_addr{primary_region_start_addr},
@@ -77,8 +77,8 @@ struct ThreadConfig {
         secondary_region_size{secondary_region_size},
         thread_count{thread_count},
         thread_idx{thread_idx},
-        ops_count_per_chunk{ops_count_per_chunk},
-        chunk_count{chunk_count},
+        ops_count_per_batch{ops_count_per_batch},
+        batch_count{batch_count},
         config{config},
         affinity_core_ids{affinity_core_ids},
         execution{execution},
@@ -197,8 +197,8 @@ class Benchmark {
   static void run_dependent_reads_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config);
   static void run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config);
 
-  static u64 run_fixed_sized_benchmark(std::vector<IoOperation>* vector, std::atomic<u64>* io_position);
-  static u64 run_duration_based_benchmark(std::vector<IoOperation>* io_operations, std::atomic<u64>* io_position,
+  static u64 run_fixed_sized_benchmark(std::vector<AccessBatch>* vector, std::atomic<u64>* batch_position);
+  static u64 run_duration_based_benchmark(std::vector<AccessBatch>* access_batches, std::atomic<u64>* batch_position,
                                           std::chrono::steady_clock::time_point execution_end);
 
   const std::string benchmark_name_;

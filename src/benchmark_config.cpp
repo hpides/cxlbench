@@ -171,8 +171,8 @@ BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
 
     found_count +=
         get_size_if_present(node, "access_size", ConfigEnums::scale_suffix_to_factor, &bm_config.access_size);
-    found_count += get_size_if_present(node, "min_io_chunk_size", ConfigEnums::scale_suffix_to_factor,
-                                       &bm_config.min_io_chunk_size);
+    found_count += get_size_if_present(node, "min_io_batch_size", ConfigEnums::scale_suffix_to_factor,
+                                       &bm_config.min_io_batch_size);
     found_count += get_if_present(node, "number_operations", &bm_config.number_operations);
     found_count += get_if_present(node, "run_time", &bm_config.run_time);
     found_count += get_if_present(node, "number_threads", &bm_config.number_threads);
@@ -182,8 +182,8 @@ BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
     found_count += get_enum_if_present(node, "operation", ConfigEnums::str_to_operation, &bm_config.operation);
     found_count += get_enum_if_present(node, "random_distribution", ConfigEnums::str_to_random_distribution,
                                        &bm_config.random_distribution);
-    found_count += get_enum_if_present(node, "flush_instruction", ConfigEnums::str_to_flush_instruction,
-                                       &bm_config.flush_instruction);
+    found_count += get_enum_if_present(node, "cache_instruction", ConfigEnums::str_to_cache_instruction,
+                                       &bm_config.cache_instruction);
     found_count += get_sequence_if_present(node, "numa_task_nodes", bm_config.numa_thread_nodes);
     found_count +=
         get_enum_if_present(node, "thread_pin_mode", ConfigEnums::str_to_thread_pin_mode, &bm_config.thread_pin_mode);
@@ -260,15 +260,15 @@ void BenchmarkConfig::validate() const {
   CHECK_ARGUMENT(has_secondary_memory_region_for_operations,
                  "Must set secondary_memory_region_size > 0 if the benchmark contains secondary memory operations.");
 
-  // Assumption: total memory needs to fit into N chunks exactly
-  const bool is_total_memory_chunkable = (memory_regions[0].size % min_io_chunk_size) == 0;
-  CHECK_ARGUMENT(is_total_memory_chunkable,
-                 "The primary memory range needs to be multiple of chunk size " + std::to_string(min_io_chunk_size));
+  // Assumption: total memory needs to fit into N batches exactly
+  const bool is_total_memory_batchable = (memory_regions[0].size % min_io_batch_size) == 0;
+  CHECK_ARGUMENT(is_total_memory_batchable,
+                 "The primary memory range needs to be multiple of batch size " + std::to_string(min_io_batch_size));
 
   if (exec_mode != Mode::DependentReads) {
-    // Assumption: we chunk operations, so we need enough data to fill at least one chunk
-    const bool is_total_memory_large_enough = (memory_regions[0].size / number_threads) >= min_io_chunk_size;
-    CHECK_ARGUMENT(is_total_memory_large_enough, "Each thread needs at least " + std::to_string(min_io_chunk_size) +
+    // Assumption: we batch operations, so we need enough data to fill at least one batch
+    const bool is_total_memory_large_enough = (memory_regions[0].size / number_threads) >= min_io_batch_size;
+    CHECK_ARGUMENT(is_total_memory_large_enough, "Each thread needs at least " + std::to_string(min_io_batch_size) +
                                                      " Bytes of memory in primary region.");
   }
 
@@ -277,15 +277,15 @@ void BenchmarkConfig::validate() const {
       number_operations == BenchmarkConfig{}.number_operations || is_custom_or_random;
   CHECK_ARGUMENT(is_number_operations_set_random, "Number of operations should only be set for random/custom access.");
 
-  // Assumption: min_io_chunk size must be a power of two
-  const bool is_valid_min_io_chunk_size = min_io_chunk_size >= 64 && (min_io_chunk_size & (min_io_chunk_size - 1)) == 0;
-  CHECK_ARGUMENT(is_valid_min_io_chunk_size, "Minimum IO chunk must be >= 64 Byte and a power of two.");
+  // Assumption: min_io_batch size must be a power of two
+  const bool is_valid_min_io_batch_size = min_io_batch_size >= 64 && (min_io_batch_size & (min_io_batch_size - 1)) == 0;
+  CHECK_ARGUMENT(is_valid_min_io_batch_size, "Minimum IO batch must be >= 64 Byte and a power of two.");
 
-  // Assumption: We need enough operations to give each thread at least one chunk
-  const u64 min_required_number_ops = (min_io_chunk_size / access_size) * number_threads;
+  // Assumption: We need enough operations to give each thread at least one batch
+  const u64 min_required_number_ops = (min_io_batch_size / access_size) * number_threads;
   const bool has_enough_number_operations = !is_custom_or_random || number_operations >= min_required_number_ops;
   CHECK_ARGUMENT(has_enough_number_operations,
-                 "Need enough number_operations to have at least one chunk per thread. Consider at least 100 "
+                 "Need enough number_operations to have at least one batch per thread. Consider at least 100 "
                  "operations in total to actually perform a significant amount of work. Need minimum of " +
                      std::to_string(min_required_number_ops) + " ops for this workload.");
 
@@ -321,14 +321,14 @@ void BenchmarkConfig::validate() const {
 #ifdef HAS_CLWB
   const bool clwb_supported_or_not_used = true;
 #else
-  const bool clwb_supported_or_not_used = flush_instruction != FlushInstruction::Cache;
+  const bool clwb_supported_or_not_used = cache_instruction != CacheInstruction::Cache;
 #endif
   CHECK_ARGUMENT(clwb_supported_or_not_used, "MemA must be compiled with support for clwb to use clwb flushes.");
 
 #if defined(USE_AVX_2) || defined(USE_AVX_512)
   const bool nt_stores_supported_or_not_used = true;
 #else
-  const bool nt_stores_supported_or_not_used = flush_instruction != FlushInstruction::NoCache;
+  const bool nt_stores_supported_or_not_used = cache_instruction != CacheInstruction::NoCache;
 #endif
   CHECK_ARGUMENT(nt_stores_supported_or_not_used, "MemA must be compiled with support for NT stores to use NT stores.");
 }
@@ -373,15 +373,15 @@ std::string BenchmarkConfig::to_string(const std::string sep) const {
   stream << sep
          << "thread pinning: " << utils::get_enum_as_string(ConfigEnums::str_to_thread_pin_mode, thread_pin_mode);
   stream << sep << "thread core IDs: [" << utils::numbers_to_string(thread_core_ids) << "]";
-  stream << sep << "min io chunk size: " << min_io_chunk_size;
+  stream << sep << "min io batch size: " << min_io_batch_size;
 
   if (exec_mode != Mode::Custom) {
     stream << sep << "access size: " << access_size;
     stream << sep << "operation: " << utils::get_enum_as_string(ConfigEnums::str_to_operation, operation);
 
     if (operation == Operation::Write) {
-      stream << sep << "flush instruction: "
-             << utils::get_enum_as_string(ConfigEnums::str_to_flush_instruction, flush_instruction);
+      stream << sep << "cache instruction: "
+             << utils::get_enum_as_string(ConfigEnums::str_to_cache_instruction, cache_instruction);
     }
   }
 
@@ -426,7 +426,7 @@ nlohmann::json BenchmarkConfig::as_json() const {
     ++region_idx;
   }
   config["exec_mode"] = utils::get_enum_as_string(ConfigEnums::str_to_mode, exec_mode);
-  config["min_io_chunk_size"] = min_io_chunk_size;
+  config["min_io_batch_size"] = min_io_batch_size;
   config["numa_task_nodes"] = numa_thread_nodes;
   config["number_threads"] = number_threads;
   config["thread_pin_mode"] = utils::get_enum_as_string(ConfigEnums::str_to_thread_pin_mode, thread_pin_mode);
@@ -437,7 +437,7 @@ nlohmann::json BenchmarkConfig::as_json() const {
     config["operation"] = utils::get_enum_as_string(ConfigEnums::str_to_operation, operation);
 
     if (operation == Operation::Write) {
-      config["flush_instruction"] = utils::get_enum_as_string(ConfigEnums::str_to_flush_instruction, flush_instruction);
+      config["cache_instruction"] = utils::get_enum_as_string(ConfigEnums::str_to_cache_instruction, cache_instruction);
     }
   }
 
@@ -540,18 +540,18 @@ CustomOp CustomOp::from_string(const std::string& str) {
   }
 
   if (op_str_part_count < 3 + has_memory_region_idx) {
-    spdlog::critical("Custom write op must have '_<flush_instruction>' after size, e.g., w64_cache. Got: '{}'", str);
+    spdlog::critical("Custom write op must have '_<cache_instruction>' after size, e.g., w64_cache. Got: '{}'", str);
     utils::crash_exit();
   }
 
-  const std::string& flush_str = op_str_parts[2 + has_memory_region_idx];
-  auto flush_it = ConfigEnums::str_to_flush_instruction.find(flush_str);
-  if (flush_it == ConfigEnums::str_to_flush_instruction.end()) {
-    spdlog::critical("Could not parse the flush instruction in write op: '{}'", flush_str);
+  const std::string& cache_fn_str = op_str_parts[2 + has_memory_region_idx];
+  auto cache_fn_it = ConfigEnums::str_to_cache_instruction.find(cache_fn_str);
+  if (cache_fn_it == ConfigEnums::str_to_cache_instruction.end()) {
+    spdlog::critical("Could not parse the cache instruction in write op: '{}'", cache_fn_str);
     utils::crash_exit();
   }
 
-  custom_op.flush = flush_it->second;
+  custom_op.cache_fn = cache_fn_it->second;
 
   const bool has_offset_information = op_str_part_count == 4 + has_memory_region_idx;
   if (has_offset_information) {
@@ -597,7 +597,7 @@ std::string CustomOp::to_string() const {
   out << utils::get_enum_as_string(ConfigEnums::str_to_operation, type, true);
   out << '_' << size;
   if (type == Operation::Write) {
-    out << '_' << utils::get_enum_as_string(ConfigEnums::str_to_flush_instruction, flush);
+    out << '_' << utils::get_enum_as_string(ConfigEnums::str_to_cache_instruction, cache_fn);
     if (offset != 0) {
       out << '_' << offset;
     }
@@ -639,7 +639,7 @@ void CustomOp::validate(const std::vector<CustomOp>& operations) {
 }
 
 bool CustomOp::operator==(const CustomOp& rhs) const {
-  return type == rhs.type && size == rhs.size && flush == rhs.flush && offset == rhs.offset;
+  return type == rhs.type && size == rhs.size && cache_fn == rhs.cache_fn && offset == rhs.offset;
 }
 bool CustomOp::operator!=(const CustomOp& rhs) const { return !(rhs == *this); }
 std::ostream& operator<<(std::ostream& os, const CustomOp& op) { return os << op.to_string(); }
@@ -653,8 +653,8 @@ const std::unordered_map<std::string, Mode> ConfigEnums::str_to_mode{{"sequentia
 const std::unordered_map<std::string, Operation> ConfigEnums::str_to_operation{
     {"read", Operation::Read}, {"write", Operation::Write}, {"r", Operation::Read}, {"w", Operation::Write}};
 
-const std::unordered_map<std::string, FlushInstruction> ConfigEnums::str_to_flush_instruction{
-    {"nocache", FlushInstruction::NoCache}, {"cache", FlushInstruction::Cache}, {"none", FlushInstruction::None}};
+const std::unordered_map<std::string, CacheInstruction> ConfigEnums::str_to_cache_instruction{
+    {"nocache", CacheInstruction::NoCache}, {"cache", CacheInstruction::Cache}, {"none", CacheInstruction::None}};
 
 const std::unordered_map<std::string, RandomDistribution> ConfigEnums::str_to_random_distribution{
     {"uniform", RandomDistribution::Uniform}, {"zipf", RandomDistribution::Zipf}};

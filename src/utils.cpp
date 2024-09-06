@@ -95,23 +95,23 @@ void generate_shuffled_access_positions(char* addr, const MemoryRegionDefinition
                                         const BenchmarkConfig& config) {
   auto buffer = reinterpret_cast<std::byte*>(addr);
 
-  const auto chunk_size = config.min_io_chunk_size;
-  const auto chunk_entry_count = chunk_size / config.access_size;
-  const auto chunk_count = region.size / chunk_size;
+  const auto batch_size = config.min_io_batch_size;
+  const auto batch_entry_count = batch_size / config.access_size;
+  const auto batch_count = region.size / batch_size;
 
   std::random_device rd;
   std::mt19937 gen(rd());
 
-  for (auto chunk_id = u64{0}; chunk_id < chunk_count; ++chunk_id) {
-    auto indices = std::vector<u64>(chunk_entry_count);
-    for (auto i = u64{0}; i < chunk_entry_count; ++i) {
-      indices[i] = chunk_id * chunk_entry_count + i;
+  for (auto batch_id = u64{0}; batch_id < batch_count; ++batch_id) {
+    auto indices = std::vector<u64>(batch_entry_count);
+    for (auto i = u64{0}; i < batch_entry_count; ++i) {
+      indices[i] = batch_id * batch_entry_count + i;
     }
     std::shuffle(indices.begin(), indices.end(), gen);
 
-    for (auto i = u64{0}; i < chunk_entry_count; ++i) {
+    for (auto i = u64{0}; i < batch_entry_count; ++i) {
       auto* index = reinterpret_cast<u64*>(&buffer[indices[i] * config.access_size]);
-      *index = indices[(i + 1) % chunk_entry_count];
+      *index = indices[(i + 1) % batch_entry_count];
     }
   }
 }
@@ -158,7 +158,7 @@ void generate_read_data(char* addr, const u64 memory_size) {
     return;
   }
 
-  spdlog::debug("Generating {} GB of random data to read.", memory_size / ONE_GB);
+  spdlog::debug("Generating {} GB of random data to read.", memory_size / ONE_GIB);
   auto thread_pool = std::vector<std::thread>{};
   thread_pool.reserve(DATA_GEN_THREAD_COUNT - 1);
   auto thread_memory_size = memory_size / DATA_GEN_THREAD_COUNT;

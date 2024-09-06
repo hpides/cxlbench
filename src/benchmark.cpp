@@ -92,18 +92,18 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, MemoryRegions& memo
   // Set up thread synchronization and execution parameters
   const auto& access_size =
       is_custom_execution ? CustomOp::cumulative_size(config.custom_operations) : config.access_size;
-  const u64 ops_per_chunk = access_size < config.min_io_chunk_size ? config.min_io_chunk_size / access_size : 1;
+  const u64 ops_per_batch = access_size < config.min_io_batch_size ? config.min_io_batch_size / access_size : 1;
 
-  // Add one chunk for random execution and non-divisible numbers so that we perform at least number_operations ops and
-  // not fewer. Adding a chunk in sequential access exceeds the memory range and segfaults.
+  // Add one batch for random execution and non-divisible numbers so that we perform at least number_operations ops and
+  // not fewer. Adding a batch in sequential access exceeds the memory range and segfaults.
   const bool is_sequential = config.exec_mode == Mode::Sequential || config.exec_mode == Mode::Sequential_Desc;
-  const size_t extra_chunk = is_sequential ? 0 : (num_operations % ops_per_chunk != 0);
-  const size_t chunk_count = (num_operations / ops_per_chunk) + extra_chunk;
+  const size_t extra_batch = is_sequential ? 0 : (num_operations % ops_per_batch != 0);
+  const size_t batch_count = (num_operations / ops_per_batch) + extra_batch;
 
   execution->threads_remaining = config.number_threads;
-  execution->io_position = 0;
-  execution->io_operations.resize(chunk_count);
-  execution->num_custom_chunks_remaining = static_cast<i64>(chunk_count);
+  execution->batch_position = 0;
+  execution->access_batches.resize(batch_count);
+  execution->num_custom_batches_remaining = static_cast<i64>(batch_count);
 
   // Secondary region is only used for custom operations.
   MemaAssert(config.memory_regions[1].size == 0 || config.exec_mode == Mode::Custom,
@@ -136,7 +136,7 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, MemoryRegions& memo
                                      : CoreIDs{threads_pinning_cores[thread_idx]};
 
     thread_configs->emplace_back(primary_start_addr, secondary_start_addr, primary_region_size, secondary_region_size,
-                                 thread_count, thread_idx, ops_per_chunk, chunk_count, config, thread_affinity_cores,
+                                 thread_count, thread_idx, ops_per_batch, batch_count, config, thread_affinity_cores,
                                  execution, total_op_duration, total_op_size, custom_op_latencies);
   }
 }
@@ -311,24 +311,24 @@ void Benchmark::run_custom_ops_in_thread(ThreadConfig* thread_config, const Benc
   ChainedOperation& start_op = operation_chain[0];
   auto start_ts = std::chrono::steady_clock::now();
 
-  const auto ops_count_per_chunk = thread_config->ops_count_per_chunk;
+  const auto ops_count_per_batch = thread_config->ops_count_per_batch;
   auto total_num_ops = u64{0};
 
   while (true) {
-    if (thread_config->execution->num_custom_chunks_remaining.fetch_sub(1) <= 0) {
+    if (thread_config->execution->num_custom_batches_remaining.fetch_sub(1) <= 0) {
       break;
     }
 
     if (config.latency_sample_frequency == 0) {
       // We don't want the sampling code overhead if we don't want to sample the latency.
-      for (size_t iteration = 0; iteration < ops_count_per_chunk; ++iteration) {
+      for (size_t iteration = 0; iteration < ops_count_per_batch; ++iteration) {
         start_op.run(start_addr, start_addr);
       }
     } else {
       // Latency sampling requested, measure the latency every x iterations.
       const u64 freq = config.latency_sample_frequency;
       // Start at 1 to avoid measuring latency of first request.
-      for (size_t iteration = 1; iteration <= ops_count_per_chunk; ++iteration) {
+      for (size_t iteration = 1; iteration <= ops_count_per_batch; ++iteration) {
         if (iteration % freq == 0) {
           auto op_start = std::chrono::steady_clock::now();
           start_op.run(start_addr, start_addr);
@@ -340,7 +340,7 @@ void Benchmark::run_custom_ops_in_thread(ThreadConfig* thread_config, const Benc
       }
     }
 
-    total_num_ops += ops_count_per_chunk;
+    total_num_ops += ops_count_per_batch;
   }
 
   auto end_ts = std::chrono::steady_clock::now();
@@ -369,7 +369,7 @@ void Benchmark::run_dependent_reads_in_thread(ThreadConfig* thread_config, const
   auto average_latency = duration.count() / access_count;
   spdlog::info("Thread {}: Average access latency: {} ns", thread_config->thread_idx, average_latency);
 
-  const auto chunk_size = config.min_io_chunk_size;
+  const auto batch_size = config.min_io_batch_size;
   *(thread_config->total_operation_size) = access_count * config.access_size;
   *(thread_config->total_operation_duration) = ExecutionDuration{begin_ts, end_ts};
 }
@@ -432,33 +432,33 @@ void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig
   spdlog::debug("Thread {}: Starting address generation", thread_config->thread_idx);
   const auto generation_begin_ts = std::chrono::steady_clock::now();
 
-  // Create all chunks before executing.
-  size_t chunk_count_per_thread = thread_config->chunk_count / config.number_threads;
-  const size_t remaining_chunk_count = thread_config->chunk_count % config.number_threads;
-  if (remaining_chunk_count > 0 && thread_config->thread_idx < remaining_chunk_count) {
-    // This thread needs to create an extra chunk for an uneven number.
-    ++chunk_count_per_thread;
+  // Create all batches before executing.
+  size_t batch_count_per_thread = thread_config->batch_count / config.number_threads;
+  const size_t remaining_batch_count = thread_config->batch_count % config.number_threads;
+  if (remaining_batch_count > 0 && thread_config->thread_idx < remaining_batch_count) {
+    // This thread needs to create an extra batch for an uneven number.
+    ++batch_count_per_thread;
   }
 
   const size_t thread_idx = thread_config->thread_idx;
-  const size_t thread_offset = thread_idx * config.min_io_chunk_size;
-  // The size in bytes that all threads read. Assuming n chunks C_n and 4 partition threads PT_m, then PT_0,
+  const size_t thread_offset = thread_idx * config.min_io_batch_size;
+  // The size in bytes that all threads read. Assuming n batches C_n and 4 partition threads PT_m, then PT_0,
   // PT_1, PT_2, PT_3 will initally access C_0, C_1, C_2, and C_4 respectively. If PT_0 finished accessing C_0, it will
-  // continue with accessing with C_5. The offset delta between C_0's and C_5's start address is 4 * chunk size.
-  const size_t threads_access_size = thread_config->thread_count * config.min_io_chunk_size;
+  // continue with accessing with C_5. The offset delta between C_0's and C_5's start address is 4 * batch size.
+  const size_t threads_access_size = thread_config->thread_count * config.min_io_batch_size;
   const bool is_read_op = config.operation == Operation::Read;
 
-  for (size_t chunk_idx = 0; chunk_idx < chunk_count_per_thread; ++chunk_idx) {
-    const size_t thread_chunk_offset =
-        // Overall offset after x chunks          + offset of this thread for chunk x+1
-        (chunk_idx * threads_access_size) + thread_offset;
+  for (size_t batch_idx = 0; batch_idx < batch_count_per_thread; ++batch_idx) {
+    const size_t thread_batch_offset =
+        // Overall offset after x batches          + offset of this thread for batch x+1
+        (batch_idx * threads_access_size) + thread_offset;
     char* next_op_position = config.exec_mode == Mode::Sequential_Desc
-                                 ? thread_config->primary_start_addr - thread_chunk_offset
-                                 : thread_config->primary_start_addr + thread_chunk_offset;
+                                 ? thread_config->primary_start_addr - thread_batch_offset
+                                 : thread_config->primary_start_addr + thread_batch_offset;
 
-    std::vector<char*> op_addresses(thread_config->ops_count_per_chunk);
+    std::vector<char*> op_addresses(thread_config->ops_count_per_batch);
 
-    for (size_t op_idx = 0; op_idx < thread_config->ops_count_per_chunk; ++op_idx) {
+    for (size_t op_idx = 0; op_idx < thread_config->ops_count_per_batch; ++op_idx) {
       switch (config.exec_mode) {
         case Mode::Random: {
           char* primary_start_addr;
@@ -493,15 +493,15 @@ void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig
       }
     }
 
-    // We can always pass the flush_instruction as is. It is ignored for read access.
+    // We can always pass the cache_instruction as is. It is ignored for read access.
     Operation op = is_read_op ? Operation::Read : Operation::Write;
-    const size_t insert_pos = (chunk_idx * config.number_threads) + thread_config->thread_idx;
+    const size_t insert_pos = (batch_idx * config.number_threads) + thread_config->thread_idx;
 
-    IoOperation& current_op = thread_config->execution->io_operations[insert_pos];
-    current_op.op_addresses_ = std::move(op_addresses);
-    current_op.access_size_ = config.access_size;
-    current_op.op_type_ = op;
-    current_op.flush_instruction_ = config.flush_instruction;
+    AccessBatch& current_batch = thread_config->execution->access_batches[insert_pos];
+    current_batch.addresses_ = std::move(op_addresses);
+    current_batch.access_size_ = config.access_size;
+    current_batch.op_type_ = op;
+    current_batch.cache_instruction_ = config.cache_instruction;
   }
 
   const auto generation_end_ts = std::chrono::steady_clock::now();
@@ -526,15 +526,15 @@ void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig
 
   // Generation is done in all threads, start execution
   const auto execution_begin_ts = std::chrono::steady_clock::now();
-  std::atomic<u64>* io_position = &thread_config->execution->io_position;
+  std::atomic<u64>* batch_position = &thread_config->execution->batch_position;
 
   auto executed_op_count = u64{0};
   if (config.run_time == 0) {
-    executed_op_count = run_fixed_sized_benchmark(&thread_config->execution->io_operations, io_position);
+    executed_op_count = run_fixed_sized_benchmark(&thread_config->execution->access_batches, batch_position);
   } else {
     const auto execution_end = execution_begin_ts + std::chrono::seconds{config.run_time};
     executed_op_count =
-        run_duration_based_benchmark(&thread_config->execution->io_operations, io_position, execution_end);
+        run_duration_based_benchmark(&thread_config->execution->access_batches, batch_position, execution_end);
   }
 
   const auto execution_end_ts = std::chrono::steady_clock::now();
@@ -542,37 +542,37 @@ void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig
       std::chrono::duration_cast<std::chrono::milliseconds>(execution_end_ts - execution_begin_ts);
   spdlog::debug("Thread {}: Finished execution in {} ms", thread_config->thread_idx, execution_duration.count());
 
-  const u64 chunk_size = config.access_size * thread_config->ops_count_per_chunk;
-  *(thread_config->total_operation_size) = executed_op_count * chunk_size;
+  const u64 batch_size = config.access_size * thread_config->ops_count_per_batch;
+  *(thread_config->total_operation_size) = executed_op_count * batch_size;
   *(thread_config->total_operation_duration) = ExecutionDuration{execution_begin_ts, execution_end_ts};
 }
 
-u64 Benchmark::run_fixed_sized_benchmark(std::vector<IoOperation>* io_operations, std::atomic<u64>* io_position) {
-  const u64 total_op_count = io_operations->size();
+u64 Benchmark::run_fixed_sized_benchmark(std::vector<AccessBatch>* access_batches, std::atomic<u64>* batch_position) {
+  const u64 total_op_count = access_batches->size();
   u64 executed_op_count = 0;
 
   while (true) {
-    const u64 op_pos = io_position->fetch_add(1);
-    if (op_pos >= total_op_count) {
+    const u64 batch_pos = batch_position->fetch_add(1);
+    if (batch_pos >= total_op_count) {
       break;
     }
 
-    (*io_operations)[op_pos].run();
+    (*access_batches)[batch_pos].run();
     ++executed_op_count;
   }
 
   return executed_op_count;
 }
 
-u64 Benchmark::run_duration_based_benchmark(std::vector<IoOperation>* io_operations, std::atomic<u64>* io_position,
+u64 Benchmark::run_duration_based_benchmark(std::vector<AccessBatch>* access_batches, std::atomic<u64>* batch_position,
                                             std::chrono::steady_clock::time_point execution_end) {
-  const u64 total_op_count = io_operations->size();
+  const u64 total_op_count = access_batches->size();
   u64 executed_op_count = 0;
 
   while (true) {
-    const u64 work_package = io_position->fetch_add(1) % total_op_count;
+    const u64 work_package = batch_position->fetch_add(1) % total_op_count;
 
-    (*io_operations)[work_package].run();
+    (*access_batches)[work_package].run();
     ++executed_op_count;
 
     const auto current_time = std::chrono::steady_clock::now();

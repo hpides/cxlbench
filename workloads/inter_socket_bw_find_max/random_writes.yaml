@@ -2,7 +2,7 @@ random_writes:
   matrix:
     number_threads: [ 40 ]
     access_size: [ 16384 ]
-    flush_instruction: [ none ]
+    cache_instruction: [ none ]
 
   args:
     exec_mode: random
