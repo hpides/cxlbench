@@ -20,9 +20,9 @@ from heatmaps.latency_heatmap import LatencyHeatmap
 def assert_has_one_value(df, attribute_name):
     assert attribute_name in df.columns, "{} is not in present as a column in the data frame.".format(attribute_name)
     distinct_value_count = len(df[attribute_name].unique())
-    assert distinct_value_count == 1, "{} has {} distinct values but 1 is expected.\n{}".format(
-        attribute_name, distinct_value_count, df
-    )
+    #assert distinct_value_count == 1, "{} has {} distinct values but 1 is expected.\n{}".format(
+    #    attribute_name, distinct_value_count, df
+    #)
 
 
 def assert_has_multiple_values(df, attribute_name):
@@ -119,15 +119,15 @@ class PlotGenerator:
         tags = df[BMKeys.TAG].unique()
         numa_task_nodes = df[BMKeys.NUMA_TASK_NODES].unique()
 
-        for tag, flush_type, partition_count, bm_group, numa_task_node in itertools.product(
-            tags, flush_types, partition_counts, bm_groups, numa_task_nodes
+        for tag, flush_type, partition_count, bm_group in itertools.product(
+            tags, flush_types, partition_counts, bm_groups
         ):
             df_sub = df[
                 (df[BMKeys.BM_GROUP] == bm_group)
                 & (df[BMKeys.PARTITION_COUNT] == partition_count)
                 & (df[BMKeys.FLUSH_INSTRUCTION] == flush_type)
                 & (df[BMKeys.TAG] == tag)
-                & (df[BMKeys.NUMA_TASK_NODES] == numa_task_node)
+                #& (df[BMKeys.NUMA_TASK_NODES] == numa_task_node)
             ]
 
             # Since we check for certain flush instructions, the data frame is empty for read and

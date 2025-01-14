@@ -48,11 +48,12 @@ class Heatmap:
         self.heatmap = None
 
     def create(self):
+        if len(self.df[BMKeys.BM_GROUP].unique()) != 1:
+            return
         self.add_heatmap()
-        self.mark_max_value_zones()
-        if not self.compact:
-            self.mark_minimum()
-            self.mark_maximum()
+        #self.mark_max_value_zones()
+
+        self.mark_maximum()
         fig = self.heatmap.get_figure()
         fig.savefig(self.output_path)
         plt.close(fig)
@@ -87,6 +88,7 @@ class Heatmap:
             )
         )
 
+        #self.df_heatmap = self.df_heatmap.drop(index=64, errors='ignore')
         rounded_df_heatmap = self.df_heatmap.round().astype(int)
         self.heatmap = sns.heatmap(
             self.df_heatmap,
