@@ -1,0 +1,23 @@
+Targets
+    Occurrences of 'access latency' in File 'workloads-2024-07-13-14-00-13.log'
+Found occurrences in File 'workloads-2024-07-13-14-00-13.log'  (16 usages found)
+    Unclassified  (16 usages found)
+        /  (16 usages found)
+            workloads-2024-07-13-14-00-13.log  (16 usages found)
+                18 [2024-07-13 14:00:18.947] [info] Thread 0: Average access latency: 227 ns
+                63 [2024-07-13 14:00:37.216] [info] Thread 0: Average access latency: 228 ns
+                86 [2024-07-13 14:00:48.895] [info] Thread 0: Average access latency: 229 ns
+                109 [2024-07-13 14:01:00.577] [info] Thread 0: Average access latency: 231 ns
+                132 [2024-07-13 14:01:12.270] [info] Thread 0: Average access latency: 234 ns
+                155 [2024-07-13 14:01:23.986] [info] Thread 0: Average access latency: 239 ns
+                178 [2024-07-13 14:01:35.786] [info] Thread 0: Average access latency: 255 ns
+                201 [2024-07-13 14:01:47.766] [info] Thread 0: Average access latency: 293 ns
+                224 [2024-07-13 14:01:59.884] [info] Thread 0: Average access latency: 345 ns
+                247 [2024-07-13 14:02:11.879] [info] Thread 0: Average access latency: 384 ns
+                270 [2024-07-13 14:02:23.819] [info] Thread 0: Average access latency: 416 ns
+                293 [2024-07-13 14:02:35.751] [info] Thread 0: Average access latency: 447 ns
+                316 [2024-07-13 14:02:47.653] [info] Thread 0: Average access latency: 473 ns
+                339 [2024-07-13 14:02:59.539] [info] Thread 0: Average access latency: 498 ns
+                362 [2024-07-13 14:03:11.398] [info] Thread 0: Average access latency: 520 ns
+                39 [2024-07-13 14:00:28.179] [info] Thread 0: Average access latency: 545 ns
+

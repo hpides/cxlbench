@@ -1,0 +1,48 @@
+nvbandwidth Version: v0.4
+Built from Git version: v0.4
+
+NOTE: This tool reports current measured bandwidth on your system.
+Additional system-specific tuning may be required to achieve maximal peak bandwidth.
+
+CUDA Runtime Version: 11050
+CUDA Driver Version: 12030
+Driver Version: 545.23.08
+
+Device 0: GH200 480GB
+
+Running host_to_device_memcpy_ce.
+memcpy CE CPU(row) -> GPU(column) bandwidth (GB/s)
+          0
+0    343.82
+
+Running device_to_host_memcpy_ce.
+memcpy CE CPU(row) <- GPU(column) bandwidth (GB/s)
+          0
+0    294.42
+
+Running host_to_device_bidirectional_memcpy_ce.
+memcpy CE CPU(row) <-> GPU(column) bandwidth (GB/s)
+          0
+0    167.77
+
+Running device_to_host_bidirectional_memcpy_ce.
+memcpy CE CPU(row) <-> GPU(column) bandwidth (GB/s)
+          0
+0    175.62
+
+Running host_to_device_memcpy_sm.
+memcpy SM CPU(row) -> GPU(column) bandwidth (GB/s)
+          0
+0    345.58
+
+Running device_to_host_memcpy_sm.
+memcpy SM CPU(row) <- GPU(column) bandwidth (GB/s)
+          0
+0    350.32
+
+__________________________
+From the Tuning Guide:
+
+Systems with 480GB LPDDR5 memory might have a lower bandwidth for host-to-device
+copies (compared to the first test output shown above). On a healthy system, this
+bandwidth should be approximately 350-360 GB/s.

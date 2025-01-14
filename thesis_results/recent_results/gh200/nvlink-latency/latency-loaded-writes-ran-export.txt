@@ -1,0 +1,25 @@
+Targets
+    Occurrences of 'access latency' in File 'mema-bench.1113887.log'
+Found occurrences in File 'mema-bench.1113887.log'  (19 usages found)
+    Unclassified  (19 usages found)
+        /  (19 usages found)
+            mema-bench.1113887.log  (19 usages found)
+                88 [2024-07-28 18:53:03.997] [info] Thread 0: Average access latency: 801 ns
+                111 [2024-07-28 18:53:23.183] [info] Thread 0: Average access latency: 802 ns
+                134 [2024-07-28 18:53:42.451] [info] Thread 0: Average access latency: 803 ns
+                157 [2024-07-28 18:54:01.795] [info] Thread 0: Average access latency: 807 ns
+                180 [2024-07-28 18:54:21.263] [info] Thread 0: Average access latency: 813 ns
+                203 [2024-07-28 18:54:40.866] [info] Thread 0: Average access latency: 821 ns
+                226 [2024-07-28 18:55:00.735] [info] Thread 0: Average access latency: 837 ns
+                249 [2024-07-28 18:55:21.134] [info] Thread 0: Average access latency: 868 ns
+                272 [2024-07-28 18:55:42.050] [info] Thread 0: Average access latency: 899 ns
+                295 [2024-07-28 18:56:03.222] [info] Thread 0: Average access latency: 914 ns
+                318 [2024-07-28 18:56:24.666] [info] Thread 0: Average access latency: 931 ns
+                341 [2024-07-28 18:56:46.107] [info] Thread 0: Average access latency: 931 ns
+                364 [2024-07-28 18:57:07.698] [info] Thread 0: Average access latency: 939 ns
+                387 [2024-07-28 18:57:29.160] [info] Thread 0: Average access latency: 932 ns
+                410 [2024-07-28 18:57:50.762] [info] Thread 0: Average access latency: 940 ns
+                433 [2024-07-28 18:58:12.173] [info] Thread 0: Average access latency: 929 ns
+                456 [2024-07-28 18:58:33.596] [info] Thread 0: Average access latency: 929 ns
+                479 [2024-07-28 18:58:55.048] [info] Thread 0: Average access latency: 931 ns
+                502 [2024-07-28 18:59:16.626] [info] Thread 0: Average access latency: 939 ns

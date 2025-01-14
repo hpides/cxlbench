@@ -1,0 +1,25 @@
+g++ -O3 -fopenmp -march=native -I../include -std=c++14  hs_bandwidth.o ../kernels/r_rand_ind.o ../kernels/r_rand_pchase.o ../kernels/r_seq_ind.o ../kernels/r_seq_reduce.o ../kernels/r_stride.o ../kernels/r_tile.o ../kernels/rw_gather.o ../kernels/rw_roofline.o ../kernels/rw_scatter.o ../kernels/rw_scatter_gather.o ../kernels/rw_seq_copy.o ../kernels/rw_seq_inc.o ../kernels/rw_tile.o ../kernels/w_rand_ind.o ../kernels/w_seq_fill.o ../kernels/w_seq_memset.o ../kernels/w_stride.o ../kernels/w_tile.o ../common/common.o -o bandwidth
+=======================================================================
+Kernel                        Iterations     Time (s)       BW (MB/s)      
+=======================================================================
+r_seq_ind                     231            2.00           125333         
+r_seq_reduce                  230            2.00           125695         
+r_rand_ind                    20             2.00           10829          
+r_stride_2                    232            2.01           62911          
+r_stride_4                    231            2.01           31447          
+r_stride_8                    231            2.01           15963          
+r_stride_16                   451            2.00           15841          
+r_stride_32                   919            2.00           15919          
+w_seq_fill                    297            2.01           169173         
+w_seq_memset                  19             2.03           10096          
+w_rand_ind                    30             2.05           15812          
+w_stride_2                    217            2.00           59824          
+w_stride_4                    221            2.01           30077          
+w_stride_8                    220            2.00           14982          
+w_stride_16                   442            2.00           15336          
+w_stride_32                   843            2.00           15491          
+rw_seq_copy                   134            2.01           147206         
+rw_seq_inc                    224            2.01           243090         
+rw_scatter                    24             2.06           37596          
+rw_gather                     22             2.07           34472          
+rw_scatter_gather             13             2.04           27723          

@@ -1,0 +1,245 @@
+NOTE: This tool reports current measured bandwidth on your system.
+Additional system-specific tuning may be required to achieve maximal peak bandwidth.
+
+CUDA Runtime Version: 11040
+CUDA Driver Version: 11080
+Driver Version: 520.61.05
+
+Device 0: Tesla V100-SXM2-32GB
+Device 1: Tesla V100-SXM2-32GB
+Device 2: Tesla V100-SXM2-32GB
+Device 3: Tesla V100-SXM2-32GB
+
+Running host_to_device_memcpy_ce.
+memcpy CE CPU(row) -> GPU(column) bandwidth (GB/s)
+          0         1         2         3
+0     66.21     66.26     66.17     66.19
+
+SUM host_to_device_memcpy_ce 264.84
+
+Running device_to_host_memcpy_ce.
+memcpy CE CPU(row) <- GPU(column) bandwidth (GB/s)
+          0         1         2         3
+0     52.89     57.25     62.84     61.31
+
+SUM device_to_host_memcpy_ce 234.28
+
+Running host_to_device_bidirectional_memcpy_ce.
+memcpy CE CPU(row) <-> GPU(column) bandwidth (GB/s)
+          0         1         2         3
+0     59.87     53.51     61.97     55.48
+
+SUM host_to_device_bidirectional_memcpy_ce 230.84
+
+Running device_to_host_bidirectional_memcpy_ce.
+memcpy CE CPU(row) <-> GPU(column) bandwidth (GB/s)
+          0         1         2         3
+0     66.75     58.29     66.77     58.32
+
+SUM device_to_host_bidirectional_memcpy_ce 250.12
+
+Running device_to_device_memcpy_read_ce.
+memcpy CE GPU(row) -> GPU(column) bandwidth (GB/s)
+          0         1         2         3
+0       N/A     72.06     32.29     32.33
+1     72.06       N/A     32.93     32.64
+2     32.43     32.26       N/A     72.05
+3     32.89     32.57     72.05       N/A
+
+SUM device_to_device_memcpy_read_ce 548.58
+
+Running device_to_device_memcpy_write_ce.
+memcpy CE GPU(row) <- GPU(column) bandwidth (GB/s)
+          0         1         2         3
+0       N/A     72.65     32.48     33.09
+1     72.66       N/A     32.43     32.97
+2     32.47     33.08       N/A     72.65
+3     32.53     32.90     72.64       N/A
+
+SUM device_to_device_memcpy_write_ce 552.55
+
+Running device_to_device_bidirectional_memcpy_read_ce.
+memcpy CE GPU(row) <-> GPU(column) bandwidth (GB/s)
+          0         1         2         3
+0       N/A     72.03     19.91     19.24
+1     72.05       N/A     20.04     19.36
+2     19.93     19.26       N/A     72.02
+3     19.99     19.31     72.00       N/A
+
+SUM device_to_device_bidirectional_memcpy_read_ce 445.14
+
+Running device_to_device_bidirectional_memcpy_write_ce.
+memcpy CE GPU(row) <-> GPU(column) bandwidth (GB/s)
+          0         1         2         3
+0       N/A     72.62     19.96     20.00
+1     72.62       N/A     19.30     19.32
+2     19.96     20.04       N/A     72.62
+3     19.27     19.37     72.62       N/A
+
+SUM device_to_device_bidirectional_memcpy_write_ce 447.71
+
+Running all_to_host_memcpy_ce.
+memcpy CE CPU(row) <- GPU(column) bandwidth (GB/s)
+          0         1         2         3
+0     72.51     61.61     72.53     60.35
+
+SUM all_to_host_memcpy_ce 267.00
+
+Running all_to_host_bidirectional_memcpy_ce.
+memcpy CE CPU(row) <- GPU(column) bandwidth (GB/s)
+          0         1         2         3
+0     33.14     26.67     37.67     35.15
+
+SUM all_to_host_bidirectional_memcpy_ce 132.62
+
+Running host_to_all_memcpy_ce.
+memcpy CE CPU(row) -> GPU(column) bandwidth (GB/s)
+          0         1         2         3
+0     42.91     41.67     72.07     72.01
+
+SUM host_to_all_memcpy_ce 228.65
+
+Running host_to_all_bidirectional_memcpy_ce.
+memcpy CE CPU(row) <- GPU(column) bandwidth (GB/s)
+          0         1         2         3
+0     29.32     21.46     37.97     35.73
+
+SUM host_to_all_bidirectional_memcpy_ce 124.49
+
+Running all_to_one_write_ce.
+memcpy CE All Gpus -> GPU(column) total bandwidth (GB/s)
+          0         1         2         3
+0     35.86     36.00     42.85     43.13
+
+SUM all_to_one_write_ce 157.84
+
+Running all_to_one_read_ce.
+memcpy CE All Gpus <- GPU(column) total bandwidth (GB/s)
+          0         1         2         3
+0     33.15     32.97     34.78     34.59
+
+SUM all_to_one_read_ce 135.49
+
+Running one_to_all_write_ce.
+memcpy CE GPU(column) -> All GPUs total bandwidth (GB/s)
+          0         1         2         3
+0     42.22     42.25     50.33     50.40
+
+SUM one_to_all_write_ce 185.20
+
+Running one_to_all_read_ce.
+memcpy CE GPU(column) <- All GPUs total bandwidth (GB/s)
+          0         1         2         3
+0     35.47     35.64     42.73     43.04
+
+SUM one_to_all_read_ce 156.88
+
+Running host_to_device_memcpy_sm.
+memcpy SM CPU(row) -> GPU(column) bandwidth (GB/s)
+          0         1         2         3
+0     68.71     68.71     68.71     68.71
+
+SUM host_to_device_memcpy_sm 274.83
+
+Running device_to_host_memcpy_sm.
+memcpy SM CPU(row) <- GPU(column) bandwidth (GB/s)
+          0         1         2         3
+0     67.76     67.96     68.26     68.31
+
+SUM device_to_host_memcpy_sm 272.29
+
+Running device_to_device_memcpy_read_sm.
+memcpy CE GPU(row) -> GPU(column) bandwidth (GB/s)
+          0         1         2         3
+0       N/A     68.71     42.18     40.92
+1     68.70       N/A     42.23     40.89
+2     42.16     40.95       N/A     68.71
+3     42.07     40.98     68.71       N/A
+
+SUM device_to_device_memcpy_read_sm 607.22
+
+Running device_to_device_memcpy_write_sm.
+memcpy SM GPU(row) <- GPU(column) bandwidth (GB/s)
+          0         1         2         3
+0       N/A     68.68     33.46     33.92
+1     68.69       N/A     32.57     33.10
+2     33.31     33.21       N/A     68.68
+3     33.08     33.55     68.68       N/A
+
+SUM device_to_device_memcpy_write_sm 540.93
+
+Running device_to_device_bidirectional_memcpy_read_sm.
+memcpy SM GPU(row) -> GPU(column) bandwidth (GB/s)
+          0         1         2         3
+0       N/A    123.68     53.79     53.64
+1    123.69       N/A     54.22     53.90
+2     53.78     53.98       N/A    123.69
+3     53.76     54.11    123.69       N/A
+
+SUM device_to_device_bidirectional_memcpy_read_sm 925.91
+
+Running device_to_device_bidirectional_memcpy_write_sm.
+memcpy SM GPU(row) <- GPU(column) bandwidth (GB/s)
+          0         1         2         3
+0       N/A    137.34     36.04     36.20
+1    137.34       N/A     36.95     36.32
+2     36.88     36.25       N/A    137.35
+3     36.60     36.35    137.35       N/A
+
+SUM device_to_device_bidirectional_memcpy_write_sm 840.97
+
+Running all_to_host_memcpy_sm.
+memcpy SM CPU(row) <- GPU(column) bandwidth (GB/s)
+          0         1         2         3
+0     68.36     64.80     68.36     64.54
+
+SUM all_to_host_memcpy_sm 266.07
+
+Running all_to_host_bidirectional_memcpy_sm.
+memcpy SM CPU(row) <- GPU(column) bandwidth (GB/s)
+          0         1         2         3
+0     39.47     34.68     62.78     51.44
+
+SUM all_to_host_bidirectional_memcpy_sm 188.37
+
+Running host_to_all_memcpy_sm.
+memcpy SM CPU(row) -> GPU(column) bandwidth (GB/s)
+          0         1         2         3
+0     42.51     40.43     68.05     67.87
+
+SUM host_to_all_memcpy_sm 218.86
+
+Running host_to_all_bidirectional_memcpy_sm.
+memcpy SM CPU(row) -> GPU(column) bandwidth (GB/s)
+          0         1         2         3
+0     38.88     25.50     43.47     41.78
+
+SUM host_to_all_bidirectional_memcpy_sm 149.63
+
+Running all_to_one_write_sm.
+memcpy SM All Gpus -> GPU(column) total bandwidth (GB/s)
+          0         1         2         3
+0     35.15     35.07     41.81     40.78
+
+SUM all_to_one_write_sm 152.80
+
+Running all_to_one_read_sm.
+memcpy SM All GPUs <- GPU(column) total bandwidth (GB/s)
+          0         1         2         3
+0     47.71     47.74     56.02     56.39
+
+SUM all_to_one_read_sm 207.85
+
+Running one_to_all_write_sm.
+memcpy SM GPU(column) -> All GPUs total bandwidth (GB/s)
+          0         1         2         3
+0     38.61     41.06     44.21     43.49
+
+SUM one_to_all_write_sm 167.37
+
+Running one_to_all_read_sm.
+memcpy SM GPU(column) <- All GPUs total bandwidth (GB/s)
+          0         1         2         3
+0     44.71     48.18     47.63     49.03
+
+SUM one_to_all_read_sm 189.56

@@ -1,0 +1,22 @@
+512
+
+        6786466162      stalled-cycles-backend    #    0.00% backend cycles idle      (66.41%)
+          40996376      cache-misses                                                  (49.52%)
+          42039916      L1-dcache-load-misses                                         (16.80%)
+        3557087643      L1-dcache-store-misses                                        (33.65%)
+          57696817      L1-dcache-prefetches                                          (33.69%)
+          16299081       mem-stores                                                   (49.92%)
+
+
+
+__________
+1024
+
+        7688603584      stalled-cycles-backend    #    0.00% backend cycles idle      (66.53%)
+          41624720      cache-misses                                                  (50.20%)
+          42515944      L1-dcache-load-misses                                         (16.64%)
+        2426501845      L1-dcache-store-misses                                        (33.52%)
+          57455845      L1-dcache-prefetches                                          (33.16%)
+          21082413       mem-stores                                                   (49.65%)
+
+

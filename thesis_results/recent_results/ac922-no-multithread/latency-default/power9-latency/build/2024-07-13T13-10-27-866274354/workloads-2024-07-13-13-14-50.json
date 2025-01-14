@@ -1,0 +1,2291 @@
+[
+  {
+    "benchmarks": [
+      {
+        "config": {
+          "access_size": 128,
+          "exec_mode": "dependent_reads",
+          "m0_explicit_hugepages_size": 0,
+          "m0_node_count_first_partition": 18446744073709551615,
+          "m0_numa_nodes": [
+            0
+          ],
+          "m0_percentage_pages_first_partition": 18446744073709551615,
+          "m0_region_size": 1073741824,
+          "m0_transparent_huge_pages": false,
+          "m1_explicit_hugepages_size": 0,
+          "m1_node_count_first_partition": 18446744073709551615,
+          "m1_numa_nodes": [],
+          "m1_percentage_pages_first_partition": 18446744073709551615,
+          "m1_region_size": 0,
+          "m1_transparent_huge_pages": false,
+          "min_io_chunk_size": 1073741824,
+          "numa_task_nodes": [
+            0
+          ],
+          "number_partitions": 1,
+          "number_threads": 1,
+          "operation": "read",
+          "thread_cores": [],
+          "thread_pin_mode": "all-numa"
+        },
+        "results": {
+          "accessed_bytes": 1073741824,
+          "bandwidth": 1.2394851807226162,
+          "execution_time": 0.806786572,
+          "thread_bandwidth_avg": 1.2394851807226162,
+          "thread_bandwidth_std_dev": 0.0,
+          "thread_op_latency_avg": 96.0,
+          "thread_op_latency_std_dev": 0.0,
+          "threads": [
+            {
+              "accessed_bytes": 1073741824,
+              "bandwidth": 1.2394851807226162,
+              "execution_time": 0.806786572
+            }
+          ]
+        }
+      }
+    ],
+    "bm_name": "idle_latency",
+    "bm_type": "single",
+    "compiler": "gcc 12.3",
+    "git_hash": "af31544015912fb3c6bf350088c63bd4c9f39ac3-dirty",
+    "hostname": "gp01.delab",
+    "matrix_args": [
+      "access_size",
+      "number_threads"
+    ],
+    "nt_stores_instruction_set": "none"
+  },
+  {
+    "benchmarks": [
+      {
+        "config": {
+          "latency_thread": {
+            "access_size": 128,
+            "exec_mode": "dependent_reads",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 1073741824,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 1073741824,
+            "numa_task_nodes": [
+              0
+            ],
+            "number_partitions": 1,
+            "number_threads": 1,
+            "operation": "read",
+            "thread_cores": [
+              0
+            ],
+            "thread_pin_mode": "single-fixed"
+          },
+          "loaded_threads": {
+            "access_size": 65536,
+            "exec_mode": "sequential",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 7516192768,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 67108864,
+            "numa_task_nodes": [],
+            "number_partitions": 1,
+            "number_threads": 15,
+            "operation": "read",
+            "run_time": 10,
+            "thread_cores": [
+              4,
+              8,
+              12,
+              16,
+              20,
+              24,
+              28,
+              32,
+              36,
+              40,
+              44,
+              48,
+              52,
+              56,
+              60
+            ],
+            "thread_pin_mode": "single-fixed"
+          }
+        },
+        "results": {
+          "latency_thread": {
+            "results": {
+              "accessed_bytes": 1073741824,
+              "bandwidth": 0.6146473033916915,
+              "execution_time": 1.6269493,
+              "thread_bandwidth_avg": 0.6146473033916915,
+              "thread_bandwidth_std_dev": 0.0,
+              "thread_op_latency_avg": 193.0,
+              "thread_op_latency_std_dev": 0.0,
+              "threads": [
+                {
+                  "accessed_bytes": 1073741824,
+                  "bandwidth": 0.6146473033916915,
+                  "execution_time": 1.6269493
+                }
+              ]
+            }
+          },
+          "loaded_threads": {
+            "results": {
+              "accessed_bytes": 1426600230912,
+              "bandwidth": 132.7888362694858,
+              "execution_time": 10.005547434,
+              "thread_bandwidth_avg": 8.852589084632388,
+              "thread_bandwidth_std_dev": 0.016465187581962158,
+              "thread_op_latency_avg": 6892.133333333333,
+              "thread_op_latency_std_dev": 12.59175845354337,
+              "threads": [
+                {
+                  "accessed_bytes": 94891933696,
+                  "bandwidth": 8.836858409615715,
+                  "execution_time": 10.000726039
+                },
+                {
+                  "accessed_bytes": 95294586880,
+                  "bandwidth": 8.87419903964244,
+                  "execution_time": 10.000902572
+                },
+                {
+                  "accessed_bytes": 95227478016,
+                  "bandwidth": 8.866204542820851,
+                  "execution_time": 10.002870966
+                },
+                {
+                  "accessed_bytes": 95026151424,
+                  "bandwidth": 8.84719000859261,
+                  "execution_time": 10.00317614
+                },
+                {
+                  "accessed_bytes": 95026151424,
+                  "bandwidth": 8.846483955220865,
+                  "execution_time": 10.003974511
+                },
+                {
+                  "accessed_bytes": 95227478016,
+                  "bandwidth": 8.868703774542187,
+                  "execution_time": 10.000052122
+                },
+                {
+                  "accessed_bytes": 95227478016,
+                  "bandwidth": 8.868061978505848,
+                  "execution_time": 10.000775842
+                },
+                {
+                  "accessed_bytes": 95026151424,
+                  "bandwidth": 8.848112153518757,
+                  "execution_time": 10.002133615
+                },
+                {
+                  "accessed_bytes": 95093260288,
+                  "bandwidth": 8.852317043895994,
+                  "execution_time": 10.004442855
+                },
+                {
+                  "accessed_bytes": 95227478016,
+                  "bandwidth": 8.867323885147467,
+                  "execution_time": 10.001608281
+                },
+                {
+                  "accessed_bytes": 95227478016,
+                  "bandwidth": 8.865503822191823,
+                  "execution_time": 10.003661583
+                },
+                {
+                  "accessed_bytes": 94959042560,
+                  "bandwidth": 8.840211462256416,
+                  "execution_time": 10.004002775
+                },
+                {
+                  "accessed_bytes": 94690607104,
+                  "bandwidth": 8.815281698819382,
+                  "execution_time": 10.003934419
+                },
+                {
+                  "accessed_bytes": 95294586880,
+                  "bandwidth": 8.870377326154719,
+                  "execution_time": 10.005211361
+                },
+                {
+                  "accessed_bytes": 95160369152,
+                  "bandwidth": 8.860626653528591,
+                  "execution_time": 10.002114237
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "config": {
+          "latency_thread": {
+            "access_size": 128,
+            "exec_mode": "dependent_reads",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 1073741824,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 1073741824,
+            "numa_task_nodes": [
+              0
+            ],
+            "number_partitions": 1,
+            "number_threads": 1,
+            "operation": "read",
+            "thread_cores": [
+              0
+            ],
+            "thread_pin_mode": "single-fixed"
+          },
+          "loaded_threads": {
+            "access_size": 65536,
+            "exec_mode": "sequential",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 7516192768,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 67108864,
+            "numa_task_nodes": [],
+            "number_partitions": 1,
+            "number_threads": 1,
+            "operation": "read",
+            "run_time": 10,
+            "thread_cores": [
+              8,
+              12,
+              16,
+              20,
+              24,
+              28,
+              32,
+              36,
+              40,
+              44,
+              48,
+              52,
+              56,
+              60
+            ],
+            "thread_pin_mode": "single-fixed"
+          }
+        },
+        "results": {
+          "latency_thread": {
+            "results": {
+              "accessed_bytes": 1073741824,
+              "bandwidth": 1.1995239022458648,
+              "execution_time": 0.833664088,
+              "thread_bandwidth_avg": 1.1995239022458648,
+              "thread_bandwidth_std_dev": 0.0,
+              "thread_op_latency_avg": 99.0,
+              "thread_op_latency_std_dev": 0.0,
+              "threads": [
+                {
+                  "accessed_bytes": 1073741824,
+                  "bandwidth": 1.1995239022458648,
+                  "execution_time": 0.833664088
+                }
+              ]
+            }
+          },
+          "loaded_threads": {
+            "results": {
+              "accessed_bytes": 152471339008,
+              "bandwidth": 14.196784485101263,
+              "execution_time": 10.00226496,
+              "thread_bandwidth_avg": 14.196784485101263,
+              "thread_bandwidth_std_dev": 0.0,
+              "thread_op_latency_avg": 4299.0,
+              "thread_op_latency_std_dev": 0.0,
+              "threads": [
+                {
+                  "accessed_bytes": 152471339008,
+                  "bandwidth": 14.196784485101263,
+                  "execution_time": 10.00226496
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "config": {
+          "latency_thread": {
+            "access_size": 128,
+            "exec_mode": "dependent_reads",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 1073741824,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 1073741824,
+            "numa_task_nodes": [
+              0
+            ],
+            "number_partitions": 1,
+            "number_threads": 1,
+            "operation": "read",
+            "thread_cores": [
+              0
+            ],
+            "thread_pin_mode": "single-fixed"
+          },
+          "loaded_threads": {
+            "access_size": 65536,
+            "exec_mode": "sequential",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 7516192768,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 67108864,
+            "numa_task_nodes": [],
+            "number_partitions": 1,
+            "number_threads": 2,
+            "operation": "read",
+            "run_time": 10,
+            "thread_cores": [
+              8,
+              12,
+              16,
+              20,
+              24,
+              28,
+              32,
+              36,
+              40,
+              44,
+              48,
+              52,
+              56,
+              60
+            ],
+            "thread_pin_mode": "single-fixed"
+          }
+        },
+        "results": {
+          "latency_thread": {
+            "results": {
+              "accessed_bytes": 1073741824,
+              "bandwidth": 1.1719863643418142,
+              "execution_time": 0.853252248,
+              "thread_bandwidth_avg": 1.1719863643418142,
+              "thread_bandwidth_std_dev": 0.0,
+              "thread_op_latency_avg": 101.0,
+              "thread_op_latency_std_dev": 0.0,
+              "threads": [
+                {
+                  "accessed_bytes": 1073741824,
+                  "bandwidth": 1.1719863643418142,
+                  "execution_time": 0.853252248
+                }
+              ]
+            }
+          },
+          "loaded_threads": {
+            "results": {
+              "accessed_bytes": 295077675008,
+              "bandwidth": 27.470421192930253,
+              "execution_time": 10.003941988,
+              "thread_bandwidth_avg": 13.735210596465127,
+              "thread_bandwidth_std_dev": 0.0034726319439643593,
+              "thread_op_latency_avg": 4442.5,
+              "thread_op_latency_std_dev": 0.7071067811865476,
+              "threads": [
+                {
+                  "accessed_bytes": 147572391936,
+                  "bandwidth": 13.738334365079288,
+                  "execution_time": 10.003941988
+                },
+                {
+                  "accessed_bytes": 147505283072,
+                  "bandwidth": 13.736727581060771,
+                  "execution_time": 10.000562302
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "config": {
+          "latency_thread": {
+            "access_size": 128,
+            "exec_mode": "dependent_reads",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 1073741824,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 1073741824,
+            "numa_task_nodes": [
+              0
+            ],
+            "number_partitions": 1,
+            "number_threads": 1,
+            "operation": "read",
+            "thread_cores": [
+              0
+            ],
+            "thread_pin_mode": "single-fixed"
+          },
+          "loaded_threads": {
+            "access_size": 65536,
+            "exec_mode": "sequential",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 7516192768,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 67108864,
+            "numa_task_nodes": [],
+            "number_partitions": 1,
+            "number_threads": 3,
+            "operation": "read",
+            "run_time": 10,
+            "thread_cores": [
+              8,
+              12,
+              16,
+              20,
+              24,
+              28,
+              32,
+              36,
+              40,
+              44,
+              48,
+              52,
+              56,
+              60
+            ],
+            "thread_pin_mode": "single-fixed"
+          }
+        },
+        "results": {
+          "latency_thread": {
+            "results": {
+              "accessed_bytes": 1073741824,
+              "bandwidth": 1.1440973692486656,
+              "execution_time": 0.874051481,
+              "thread_bandwidth_avg": 1.1440973692486656,
+              "thread_bandwidth_std_dev": 0.0,
+              "thread_op_latency_avg": 104.0,
+              "thread_op_latency_std_dev": 0.0,
+              "threads": [
+                {
+                  "accessed_bytes": 1073741824,
+                  "bandwidth": 1.1440973692486656,
+                  "execution_time": 0.874051481
+                }
+              ]
+            }
+          },
+          "loaded_threads": {
+            "results": {
+              "accessed_bytes": 441307889664,
+              "bandwidth": 41.085210334975585,
+              "execution_time": 10.003599754,
+              "thread_bandwidth_avg": 13.695070111658529,
+              "thread_bandwidth_std_dev": 0.006215614355509447,
+              "thread_op_latency_avg": 4456.0,
+              "thread_op_latency_std_dev": 2.0,
+              "threads": [
+                {
+                  "accessed_bytes": 147102629888,
+                  "bandwidth": 13.695070111658529,
+                  "execution_time": 10.003599754
+                },
+                {
+                  "accessed_bytes": 147035521024,
+                  "bandwidth": 13.690042101380993,
+                  "execution_time": 10.002708464
+                },
+                {
+                  "accessed_bytes": 147169738752,
+                  "bandwidth": 13.702280301412053,
+                  "execution_time": 10.002897108
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "config": {
+          "latency_thread": {
+            "access_size": 128,
+            "exec_mode": "dependent_reads",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 1073741824,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 1073741824,
+            "numa_task_nodes": [
+              0
+            ],
+            "number_partitions": 1,
+            "number_threads": 1,
+            "operation": "read",
+            "thread_cores": [
+              0
+            ],
+            "thread_pin_mode": "single-fixed"
+          },
+          "loaded_threads": {
+            "access_size": 65536,
+            "exec_mode": "sequential",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 7516192768,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 67108864,
+            "numa_task_nodes": [],
+            "number_partitions": 1,
+            "number_threads": 4,
+            "operation": "read",
+            "run_time": 10,
+            "thread_cores": [
+              8,
+              12,
+              16,
+              20,
+              24,
+              28,
+              32,
+              36,
+              40,
+              44,
+              48,
+              52,
+              56,
+              60
+            ],
+            "thread_pin_mode": "single-fixed"
+          }
+        },
+        "results": {
+          "latency_thread": {
+            "results": {
+              "accessed_bytes": 1073741824,
+              "bandwidth": 1.116519141532147,
+              "execution_time": 0.895640713,
+              "thread_bandwidth_avg": 1.116519141532147,
+              "thread_bandwidth_std_dev": 0.0,
+              "thread_op_latency_avg": 106.0,
+              "thread_op_latency_std_dev": 0.0,
+              "threads": [
+                {
+                  "accessed_bytes": 1073741824,
+                  "bandwidth": 1.116519141532147,
+                  "execution_time": 0.895640713
+                }
+              ]
+            }
+          },
+          "loaded_threads": {
+            "results": {
+              "accessed_bytes": 584115552256,
+              "bandwidth": 54.384834854062746,
+              "execution_time": 10.002788488,
+              "thread_bandwidth_avg": 13.596208713515686,
+              "thread_bandwidth_std_dev": 0.0316127752868903,
+              "thread_op_latency_avg": 4488.25,
+              "thread_op_latency_std_dev": 10.719919153924002,
+              "threads": [
+                {
+                  "accessed_bytes": 146364432384,
+                  "bandwidth": 13.627824093124534,
+                  "execution_time": 10.002513906
+                },
+                {
+                  "accessed_bytes": 146297323520,
+                  "bandwidth": 13.621848220348689,
+                  "execution_time": 10.002313768
+                },
+                {
+                  "accessed_bytes": 145760452608,
+                  "bandwidth": 13.572173974790621,
+                  "execution_time": 10.00208222
+                },
+                {
+                  "accessed_bytes": 145693343744,
+                  "bandwidth": 13.56857689345285,
+                  "execution_time": 10.000127579
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "config": {
+          "latency_thread": {
+            "access_size": 128,
+            "exec_mode": "dependent_reads",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 1073741824,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 1073741824,
+            "numa_task_nodes": [
+              0
+            ],
+            "number_partitions": 1,
+            "number_threads": 1,
+            "operation": "read",
+            "thread_cores": [
+              0
+            ],
+            "thread_pin_mode": "single-fixed"
+          },
+          "loaded_threads": {
+            "access_size": 65536,
+            "exec_mode": "sequential",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 7516192768,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 67108864,
+            "numa_task_nodes": [],
+            "number_partitions": 1,
+            "number_threads": 5,
+            "operation": "read",
+            "run_time": 10,
+            "thread_cores": [
+              8,
+              12,
+              16,
+              20,
+              24,
+              28,
+              32,
+              36,
+              40,
+              44,
+              48,
+              52,
+              56,
+              60
+            ],
+            "thread_pin_mode": "single-fixed"
+          }
+        },
+        "results": {
+          "latency_thread": {
+            "results": {
+              "accessed_bytes": 1073741824,
+              "bandwidth": 1.0763150950068607,
+              "execution_time": 0.929095954,
+              "thread_bandwidth_avg": 1.0763150950068607,
+              "thread_bandwidth_std_dev": 0.0,
+              "thread_op_latency_avg": 110.0,
+              "thread_op_latency_std_dev": 0.0,
+              "threads": [
+                {
+                  "accessed_bytes": 1073741824,
+                  "bandwidth": 1.0763150950068607,
+                  "execution_time": 0.929095954
+                }
+              ]
+            }
+          },
+          "loaded_threads": {
+            "results": {
+              "accessed_bytes": 724238860288,
+              "bandwidth": 67.42250847890998,
+              "execution_time": 10.004077499,
+              "thread_bandwidth_avg": 13.484501695781995,
+              "thread_bandwidth_std_dev": 0.04593173112751125,
+              "thread_op_latency_avg": 4525.0,
+              "thread_op_latency_std_dev": 15.378556499229699,
+              "threads": [
+                {
+                  "accessed_bytes": 145089363968,
+                  "bandwidth": 13.50699252514857,
+                  "execution_time": 10.004077499
+                },
+                {
+                  "accessed_bytes": 144955146240,
+                  "bandwidth": 13.49931645401176,
+                  "execution_time": 10.000506356
+                },
+                {
+                  "accessed_bytes": 144351166464,
+                  "bandwidth": 13.442067565283601,
+                  "execution_time": 10.001251619
+                },
+                {
+                  "accessed_bytes": 144351166464,
+                  "bandwidth": 13.440683198992437,
+                  "execution_time": 10.00228173
+                },
+                {
+                  "accessed_bytes": 145492017152,
+                  "bandwidth": 13.547690817776417,
+                  "execution_time": 10.001704484
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "config": {
+          "latency_thread": {
+            "access_size": 128,
+            "exec_mode": "dependent_reads",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 1073741824,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 1073741824,
+            "numa_task_nodes": [
+              0
+            ],
+            "number_partitions": 1,
+            "number_threads": 1,
+            "operation": "read",
+            "thread_cores": [
+              0
+            ],
+            "thread_pin_mode": "single-fixed"
+          },
+          "loaded_threads": {
+            "access_size": 65536,
+            "exec_mode": "sequential",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 7516192768,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 67108864,
+            "numa_task_nodes": [],
+            "number_partitions": 1,
+            "number_threads": 6,
+            "operation": "read",
+            "run_time": 10,
+            "thread_cores": [
+              8,
+              12,
+              16,
+              20,
+              24,
+              28,
+              32,
+              36,
+              40,
+              44,
+              48,
+              52,
+              56,
+              60
+            ],
+            "thread_pin_mode": "single-fixed"
+          }
+        },
+        "results": {
+          "latency_thread": {
+            "results": {
+              "accessed_bytes": 1073741824,
+              "bandwidth": 1.0502189959709378,
+              "execution_time": 0.952182358,
+              "thread_bandwidth_avg": 1.0502189959709378,
+              "thread_bandwidth_std_dev": 0.0,
+              "thread_op_latency_avg": 113.0,
+              "thread_op_latency_std_dev": 0.0,
+              "threads": [
+                {
+                  "accessed_bytes": 1073741824,
+                  "bandwidth": 1.0502189959709378,
+                  "execution_time": 0.952182358
+                }
+              ]
+            }
+          },
+          "loaded_threads": {
+            "results": {
+              "accessed_bytes": 859060568064,
+              "bandwidth": 79.97212320796382,
+              "execution_time": 10.004267336,
+              "thread_bandwidth_avg": 13.328687201327304,
+              "thread_bandwidth_std_dev": 0.02828796154155709,
+              "thread_op_latency_avg": 4577.833333333333,
+              "thread_op_latency_std_dev": 9.68331899023608,
+              "threads": [
+                {
+                  "accessed_bytes": 143478751232,
+                  "bandwidth": 13.360738008584683,
+                  "execution_time": 10.001318783
+                },
+                {
+                  "accessed_bytes": 143411642368,
+                  "bandwidth": 13.3509589695671,
+                  "execution_time": 10.003963034
+                },
+                {
+                  "accessed_bytes": 142807662592,
+                  "bandwidth": 13.29709058727154,
+                  "execution_time": 10.002188007
+                },
+                {
+                  "accessed_bytes": 142807662592,
+                  "bandwidth": 13.295277597169152,
+                  "execution_time": 10.00355194
+                },
+                {
+                  "accessed_bytes": 143277424640,
+                  "bandwidth": 13.342398713880016,
+                  "execution_time": 10.001012776
+                },
+                {
+                  "accessed_bytes": 143277424640,
+                  "bandwidth": 13.341923692109598,
+                  "execution_time": 10.001368849
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "config": {
+          "latency_thread": {
+            "access_size": 128,
+            "exec_mode": "dependent_reads",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 1073741824,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 1073741824,
+            "numa_task_nodes": [
+              0
+            ],
+            "number_partitions": 1,
+            "number_threads": 1,
+            "operation": "read",
+            "thread_cores": [
+              0
+            ],
+            "thread_pin_mode": "single-fixed"
+          },
+          "loaded_threads": {
+            "access_size": 65536,
+            "exec_mode": "sequential",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 7516192768,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 67108864,
+            "numa_task_nodes": [],
+            "number_partitions": 1,
+            "number_threads": 7,
+            "operation": "read",
+            "run_time": 10,
+            "thread_cores": [
+              8,
+              12,
+              16,
+              20,
+              24,
+              28,
+              32,
+              36,
+              40,
+              44,
+              48,
+              52,
+              56,
+              60
+            ],
+            "thread_pin_mode": "single-fixed"
+          }
+        },
+        "results": {
+          "latency_thread": {
+            "results": {
+              "accessed_bytes": 1073741824,
+              "bandwidth": 0.9935915797278754,
+              "execution_time": 1.006449753,
+              "thread_bandwidth_avg": 0.9935915797278754,
+              "thread_bandwidth_std_dev": 0.0,
+              "thread_op_latency_avg": 119.0,
+              "thread_op_latency_std_dev": 0.0,
+              "threads": [
+                {
+                  "accessed_bytes": 1073741824,
+                  "bandwidth": 0.9935915797278754,
+                  "execution_time": 1.006449753
+                }
+              ]
+            }
+          },
+          "loaded_threads": {
+            "results": {
+              "accessed_bytes": 983346184192,
+              "bandwidth": 91.5409533061908,
+              "execution_time": 10.00440204,
+              "thread_bandwidth_avg": 13.077279043741543,
+              "thread_bandwidth_std_dev": 0.0343118409105386,
+              "thread_op_latency_avg": 4665.857142857143,
+              "thread_op_latency_std_dev": 12.171395036841798,
+              "threads": [
+                {
+                  "accessed_bytes": 140727287808,
+                  "bandwidth": 13.103267988408716,
+                  "execution_time": 10.002275777
+                },
+                {
+                  "accessed_bytes": 140593070080,
+                  "bandwidth": 13.090355308265723,
+                  "execution_time": 10.002593277
+                },
+                {
+                  "accessed_bytes": 139989090304,
+                  "bandwidth": 13.034935306089876,
+                  "execution_time": 10.001967554
+                },
+                {
+                  "accessed_bytes": 139989090304,
+                  "bandwidth": 13.033643754069585,
+                  "execution_time": 10.002958686
+                },
+                {
+                  "accessed_bytes": 140525961216,
+                  "bandwidth": 13.08518006038416,
+                  "execution_time": 10.001772952
+                },
+                {
+                  "accessed_bytes": 140525961216,
+                  "bandwidth": 13.083931633717862,
+                  "execution_time": 10.002727289
+                },
+                {
+                  "accessed_bytes": 140995723264,
+                  "bandwidth": 13.126408332162526,
+                  "execution_time": 10.003688494
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "config": {
+          "latency_thread": {
+            "access_size": 128,
+            "exec_mode": "dependent_reads",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 1073741824,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 1073741824,
+            "numa_task_nodes": [
+              0
+            ],
+            "number_partitions": 1,
+            "number_threads": 1,
+            "operation": "read",
+            "thread_cores": [
+              0
+            ],
+            "thread_pin_mode": "single-fixed"
+          },
+          "loaded_threads": {
+            "access_size": 65536,
+            "exec_mode": "sequential",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 7516192768,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 67108864,
+            "numa_task_nodes": [],
+            "number_partitions": 1,
+            "number_threads": 8,
+            "operation": "read",
+            "run_time": 10,
+            "thread_cores": [
+              8,
+              12,
+              16,
+              20,
+              24,
+              28,
+              32,
+              36,
+              40,
+              44,
+              48,
+              52,
+              56,
+              60
+            ],
+            "thread_pin_mode": "single-fixed"
+          }
+        },
+        "results": {
+          "latency_thread": {
+            "results": {
+              "accessed_bytes": 1073741824,
+              "bandwidth": 0.9019185803247407,
+              "execution_time": 1.108747532,
+              "thread_bandwidth_avg": 0.9019185803247407,
+              "thread_bandwidth_std_dev": 0.0,
+              "thread_op_latency_avg": 132.0,
+              "thread_op_latency_std_dev": 0.0,
+              "threads": [
+                {
+                  "accessed_bytes": 1073741824,
+                  "bandwidth": 0.9019185803247407,
+                  "execution_time": 1.108747532
+                }
+              ]
+            }
+          },
+          "loaded_threads": {
+            "results": {
+              "accessed_bytes": 1066292740096,
+              "bandwidth": 99.2673059567903,
+              "execution_time": 10.003923149,
+              "thread_bandwidth_avg": 12.408413244598787,
+              "thread_bandwidth_std_dev": 0.025651822623403292,
+              "thread_op_latency_avg": 4917.375,
+              "thread_op_latency_std_dev": 10.112757148416902,
+              "threads": [
+                {
+                  "accessed_bytes": 133613748224,
+                  "bandwidth": 12.43986830081502,
+                  "execution_time": 10.00312037
+                },
+                {
+                  "accessed_bytes": 133546639360,
+                  "bandwidth": 12.43262837776099,
+                  "execution_time": 10.003918417
+                },
+                {
+                  "accessed_bytes": 132875550720,
+                  "bandwidth": 12.373655792852407,
+                  "execution_time": 10.001086346
+                },
+                {
+                  "accessed_bytes": 132875550720,
+                  "bandwidth": 12.37157548975803,
+                  "execution_time": 10.002768047
+                },
+                {
+                  "accessed_bytes": 133412421632,
+                  "bandwidth": 12.42339234221758,
+                  "execution_time": 10.001294057
+                },
+                {
+                  "accessed_bytes": 133412421632,
+                  "bandwidth": 12.423404326767207,
+                  "execution_time": 10.001284409
+                },
+                {
+                  "accessed_bytes": 133278203904,
+                  "bandwidth": 12.412248188997316,
+                  "execution_time": 10.000202873
+                },
+                {
+                  "accessed_bytes": 133278203904,
+                  "bandwidth": 12.40959876114659,
+                  "execution_time": 10.002337899
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "config": {
+          "latency_thread": {
+            "access_size": 128,
+            "exec_mode": "dependent_reads",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 1073741824,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 1073741824,
+            "numa_task_nodes": [
+              0
+            ],
+            "number_partitions": 1,
+            "number_threads": 1,
+            "operation": "read",
+            "thread_cores": [
+              0
+            ],
+            "thread_pin_mode": "single-fixed"
+          },
+          "loaded_threads": {
+            "access_size": 65536,
+            "exec_mode": "sequential",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 7516192768,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 67108864,
+            "numa_task_nodes": [],
+            "number_partitions": 1,
+            "number_threads": 9,
+            "operation": "read",
+            "run_time": 10,
+            "thread_cores": [
+              8,
+              12,
+              16,
+              20,
+              24,
+              28,
+              32,
+              36,
+              40,
+              44,
+              48,
+              52,
+              56,
+              60
+            ],
+            "thread_pin_mode": "single-fixed"
+          }
+        },
+        "results": {
+          "latency_thread": {
+            "results": {
+              "accessed_bytes": 1073741824,
+              "bandwidth": 0.8559657943674186,
+              "execution_time": 1.168270983,
+              "thread_bandwidth_avg": 0.8559657943674186,
+              "thread_bandwidth_std_dev": 0.0,
+              "thread_op_latency_avg": 139.0,
+              "thread_op_latency_std_dev": 0.0,
+              "threads": [
+                {
+                  "accessed_bytes": 1073741824,
+                  "bandwidth": 0.8559657943674186,
+                  "execution_time": 1.168270983
+                }
+              ]
+            }
+          },
+          "loaded_threads": {
+            "results": {
+              "accessed_bytes": 1142729736192,
+              "bandwidth": 106.36896272433137,
+              "execution_time": 10.005268198,
+              "thread_bandwidth_avg": 11.818773636036818,
+              "thread_bandwidth_std_dev": 0.02971386067237164,
+              "thread_op_latency_avg": 5162.444444444444,
+              "thread_op_latency_std_dev": 12.836579675979806,
+              "threads": [
+                {
+                  "accessed_bytes": 127238406144,
+                  "bandwidth": 11.845658866905014,
+                  "execution_time": 10.003664746
+                },
+                {
+                  "accessed_bytes": 127104188416,
+                  "bandwidth": 11.836288835174136,
+                  "execution_time": 10.001023264
+                },
+                {
+                  "accessed_bytes": 126567317504,
+                  "bandwidth": 11.784038940561269,
+                  "execution_time": 10.002937074
+                },
+                {
+                  "accessed_bytes": 126567317504,
+                  "bandwidth": 11.782137528588429,
+                  "execution_time": 10.004551357
+                },
+                {
+                  "accessed_bytes": 127037079552,
+                  "bandwidth": 11.831043375559863,
+                  "execution_time": 10.000174646
+                },
+                {
+                  "accessed_bytes": 127104188416,
+                  "bandwidth": 11.832672874116943,
+                  "execution_time": 10.004079489
+                },
+                {
+                  "accessed_bytes": 126835752960,
+                  "bandwidth": 11.807401561644202,
+                  "execution_time": 10.004318002
+                },
+                {
+                  "accessed_bytes": 126768644096,
+                  "bandwidth": 11.805812431729192,
+                  "execution_time": 10.000370638
+                },
+                {
+                  "accessed_bytes": 127506841600,
+                  "bandwidth": 11.872102377160017,
+                  "execution_time": 10.002440699
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "config": {
+          "latency_thread": {
+            "access_size": 128,
+            "exec_mode": "dependent_reads",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 1073741824,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 1073741824,
+            "numa_task_nodes": [
+              0
+            ],
+            "number_partitions": 1,
+            "number_threads": 1,
+            "operation": "read",
+            "thread_cores": [
+              0
+            ],
+            "thread_pin_mode": "single-fixed"
+          },
+          "loaded_threads": {
+            "access_size": 65536,
+            "exec_mode": "sequential",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 7516192768,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 67108864,
+            "numa_task_nodes": [],
+            "number_partitions": 1,
+            "number_threads": 10,
+            "operation": "read",
+            "run_time": 10,
+            "thread_cores": [
+              8,
+              12,
+              16,
+              20,
+              24,
+              28,
+              32,
+              36,
+              40,
+              44,
+              48,
+              52,
+              56,
+              60
+            ],
+            "thread_pin_mode": "single-fixed"
+          }
+        },
+        "results": {
+          "latency_thread": {
+            "results": {
+              "accessed_bytes": 1073741824,
+              "bandwidth": 0.810577320727451,
+              "execution_time": 1.2336886,
+              "thread_bandwidth_avg": 0.810577320727451,
+              "thread_bandwidth_std_dev": 0.0,
+              "thread_op_latency_avg": 147.0,
+              "thread_op_latency_std_dev": 0.0,
+              "threads": [
+                {
+                  "accessed_bytes": 1073741824,
+                  "bandwidth": 0.810577320727451,
+                  "execution_time": 1.2336886
+                }
+              ]
+            }
+          },
+          "loaded_threads": {
+            "results": {
+              "accessed_bytes": 1215341527040,
+              "bandwidth": 113.1258748380582,
+              "execution_time": 10.005447486,
+              "thread_bandwidth_avg": 11.31258748380582,
+              "thread_bandwidth_std_dev": 0.024322507133017427,
+              "thread_op_latency_avg": 5393.4,
+              "thread_op_latency_std_dev": 11.51038178727747,
+              "threads": [
+                {
+                  "accessed_bytes": 121869697024,
+                  "bandwidth": 11.3480482582585,
+                  "execution_time": 10.001719892
+                },
+                {
+                  "accessed_bytes": 121802588160,
+                  "bandwidth": 11.342073903478974,
+                  "execution_time": 10.001477769
+                },
+                {
+                  "accessed_bytes": 121399934976,
+                  "bandwidth": 11.302710672570804,
+                  "execution_time": 10.003131397
+                },
+                {
+                  "accessed_bytes": 121399934976,
+                  "bandwidth": 11.301003964340016,
+                  "execution_time": 10.004642097
+                },
+                {
+                  "accessed_bytes": 121735479296,
+                  "bandwidth": 11.336999811568315,
+                  "execution_time": 10.0004412
+                },
+                {
+                  "accessed_bytes": 121802588160,
+                  "bandwidth": 11.33919449675364,
+                  "execution_time": 10.004017484
+                },
+                {
+                  "accessed_bytes": 121198608384,
+                  "bandwidth": 11.284288332432125,
+                  "execution_time": 10.002846141
+                },
+                {
+                  "accessed_bytes": 121198608384,
+                  "bandwidth": 11.283599176266131,
+                  "execution_time": 10.003457074
+                },
+                {
+                  "accessed_bytes": 121467043840,
+                  "bandwidth": 11.310799804685479,
+                  "execution_time": 10.001503161
+                },
+                {
+                  "accessed_bytes": 121467043840,
+                  "bandwidth": 11.30842097904812,
+                  "execution_time": 10.003607065
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "config": {
+          "latency_thread": {
+            "access_size": 128,
+            "exec_mode": "dependent_reads",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 1073741824,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 1073741824,
+            "numa_task_nodes": [
+              0
+            ],
+            "number_partitions": 1,
+            "number_threads": 1,
+            "operation": "read",
+            "thread_cores": [
+              0
+            ],
+            "thread_pin_mode": "single-fixed"
+          },
+          "loaded_threads": {
+            "access_size": 65536,
+            "exec_mode": "sequential",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 7516192768,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 67108864,
+            "numa_task_nodes": [],
+            "number_partitions": 1,
+            "number_threads": 11,
+            "operation": "read",
+            "run_time": 10,
+            "thread_cores": [
+              8,
+              12,
+              16,
+              20,
+              24,
+              28,
+              32,
+              36,
+              40,
+              44,
+              48,
+              52,
+              56,
+              60
+            ],
+            "thread_pin_mode": "single-fixed"
+          }
+        },
+        "results": {
+          "latency_thread": {
+            "results": {
+              "accessed_bytes": 1073741824,
+              "bandwidth": 0.7760753924213969,
+              "execution_time": 1.288534606,
+              "thread_bandwidth_avg": 0.7760753924213969,
+              "thread_bandwidth_std_dev": 0.0,
+              "thread_op_latency_avg": 153.0,
+              "thread_op_latency_std_dev": 0.0,
+              "threads": [
+                {
+                  "accessed_bytes": 1073741824,
+                  "bandwidth": 0.7760753924213969,
+                  "execution_time": 1.288534606
+                }
+              ]
+            }
+          },
+          "loaded_threads": {
+            "results": {
+              "accessed_bytes": 1265404739584,
+              "bandwidth": 117.7952371944802,
+              "execution_time": 10.004648983,
+              "thread_bandwidth_avg": 10.708657926770927,
+              "thread_bandwidth_std_dev": 0.020764784727025216,
+              "thread_op_latency_avg": 5697.636363636364,
+              "thread_op_latency_std_dev": 11.00247905949134,
+              "threads": [
+                {
+                  "accessed_bytes": 115293028352,
+                  "bandwidth": 10.735169386138134,
+                  "execution_time": 10.002171008
+                },
+                {
+                  "accessed_bytes": 115225919488,
+                  "bandwidth": 10.729412381052086,
+                  "execution_time": 10.001712693
+                },
+                {
+                  "accessed_bytes": 114823266304,
+                  "bandwidth": 10.693023009167467,
+                  "execution_time": 10.000679874
+                },
+                {
+                  "accessed_bytes": 114823266304,
+                  "bandwidth": 10.692352588640073,
+                  "execution_time": 10.001306926
+                },
+                {
+                  "accessed_bytes": 115225919488,
+                  "bandwidth": 10.727640256330147,
+                  "execution_time": 10.0033649
+                },
+                {
+                  "accessed_bytes": 115225919488,
+                  "bandwidth": 10.727500986210593,
+                  "execution_time": 10.003494769
+                },
+                {
+                  "accessed_bytes": 114756157440,
+                  "bandwidth": 10.686666707163509,
+                  "execution_time": 10.00077975
+                },
+                {
+                  "accessed_bytes": 114756157440,
+                  "bandwidth": 10.682533708239347,
+                  "execution_time": 10.004648983
+                },
+                {
+                  "accessed_bytes": 115024592896,
+                  "bandwidth": 10.709047040197545,
+                  "execution_time": 10.003224339
+                },
+                {
+                  "accessed_bytes": 114957484032,
+                  "bandwidth": 10.705413614938882,
+                  "execution_time": 10.000781273
+                },
+                {
+                  "accessed_bytes": 115293028352,
+                  "bandwidth": 10.736509103954475,
+                  "execution_time": 10.000922922
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "config": {
+          "latency_thread": {
+            "access_size": 128,
+            "exec_mode": "dependent_reads",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 1073741824,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 1073741824,
+            "numa_task_nodes": [
+              0
+            ],
+            "number_partitions": 1,
+            "number_threads": 1,
+            "operation": "read",
+            "thread_cores": [
+              0
+            ],
+            "thread_pin_mode": "single-fixed"
+          },
+          "loaded_threads": {
+            "access_size": 65536,
+            "exec_mode": "sequential",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 7516192768,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 67108864,
+            "numa_task_nodes": [],
+            "number_partitions": 1,
+            "number_threads": 12,
+            "operation": "read",
+            "run_time": 10,
+            "thread_cores": [
+              8,
+              12,
+              16,
+              20,
+              24,
+              28,
+              32,
+              36,
+              40,
+              44,
+              48,
+              52,
+              56,
+              60
+            ],
+            "thread_pin_mode": "single-fixed"
+          }
+        },
+        "results": {
+          "latency_thread": {
+            "results": {
+              "accessed_bytes": 1073741824,
+              "bandwidth": 0.7481487640519199,
+              "execution_time": 1.336632563,
+              "thread_bandwidth_avg": 0.7481487640519199,
+              "thread_bandwidth_std_dev": 0.0,
+              "thread_op_latency_avg": 159.0,
+              "thread_op_latency_std_dev": 0.0,
+              "threads": [
+                {
+                  "accessed_bytes": 1073741824,
+                  "bandwidth": 0.7481487640519199,
+                  "execution_time": 1.336632563
+                }
+              ]
+            }
+          },
+          "loaded_threads": {
+            "results": {
+              "accessed_bytes": 1311978291200,
+              "bandwidth": 122.11803414543245,
+              "execution_time": 10.005688419,
+              "thread_bandwidth_avg": 10.176502845452704,
+              "thread_bandwidth_std_dev": 0.01819687379551776,
+              "thread_op_latency_avg": 5995.0,
+              "thread_op_latency_std_dev": 10.348473756593727,
+              "threads": [
+                {
+                  "accessed_bytes": 109655883776,
+                  "bandwidth": 10.208111469588934,
+                  "execution_time": 10.004299062
+                },
+                {
+                  "accessed_bytes": 109521666048,
+                  "bandwidth": 10.199563672865638,
+                  "execution_time": 10.00042779
+                },
+                {
+                  "accessed_bytes": 109186121728,
+                  "bandwidth": 10.166878683292866,
+                  "execution_time": 10.001840601
+                },
+                {
+                  "accessed_bytes": 109186121728,
+                  "bandwidth": 10.166333458470389,
+                  "execution_time": 10.002377004
+                },
+                {
+                  "accessed_bytes": 109521666048,
+                  "bandwidth": 10.197573521032663,
+                  "execution_time": 10.002379467
+                },
+                {
+                  "accessed_bytes": 109521666048,
+                  "bandwidth": 10.199079091491868,
+                  "execution_time": 10.000902933
+                },
+                {
+                  "accessed_bytes": 109119012864,
+                  "bandwidth": 10.162333743203726,
+                  "execution_time": 10.000163601
+                },
+                {
+                  "accessed_bytes": 109119012864,
+                  "bandwidth": 10.162324496655943,
+                  "execution_time": 10.0001727
+                },
+                {
+                  "accessed_bytes": 109387448320,
+                  "bandwidth": 10.186806231636316,
+                  "execution_time": 10.000681046
+                },
+                {
+                  "accessed_bytes": 109387448320,
+                  "bandwidth": 10.18568039745962,
+                  "execution_time": 10.001786432
+                },
+                {
+                  "accessed_bytes": 109253230592,
+                  "bandwidth": 10.172793946215853,
+                  "execution_time": 10.002168582
+                },
+                {
+                  "accessed_bytes": 109119012864,
+                  "bandwidth": 10.15763890851998,
+                  "execution_time": 10.004785651
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "config": {
+          "latency_thread": {
+            "access_size": 128,
+            "exec_mode": "dependent_reads",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 1073741824,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 1073741824,
+            "numa_task_nodes": [
+              0
+            ],
+            "number_partitions": 1,
+            "number_threads": 1,
+            "operation": "read",
+            "thread_cores": [
+              0
+            ],
+            "thread_pin_mode": "single-fixed"
+          },
+          "loaded_threads": {
+            "access_size": 65536,
+            "exec_mode": "sequential",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 7516192768,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 67108864,
+            "numa_task_nodes": [],
+            "number_partitions": 1,
+            "number_threads": 13,
+            "operation": "read",
+            "run_time": 10,
+            "thread_cores": [
+              8,
+              12,
+              16,
+              20,
+              24,
+              28,
+              32,
+              36,
+              40,
+              44,
+              48,
+              52,
+              56,
+              60
+            ],
+            "thread_pin_mode": "single-fixed"
+          }
+        },
+        "results": {
+          "latency_thread": {
+            "results": {
+              "accessed_bytes": 1073741824,
+              "bandwidth": 0.7058034570682455,
+              "execution_time": 1.416825024,
+              "thread_bandwidth_avg": 0.7058034570682455,
+              "thread_bandwidth_std_dev": 0.0,
+              "thread_op_latency_avg": 168.0,
+              "thread_op_latency_std_dev": 0.0,
+              "threads": [
+                {
+                  "accessed_bytes": 1073741824,
+                  "bandwidth": 0.7058034570682455,
+                  "execution_time": 1.416825024
+                }
+              ]
+            }
+          },
+          "loaded_threads": {
+            "results": {
+              "accessed_bytes": 1347009118208,
+              "bandwidth": 125.38202844641954,
+              "execution_time": 10.005421156,
+              "thread_bandwidth_avg": 9.644771418955349,
+              "thread_bandwidth_std_dev": 0.019717238547710843,
+              "thread_op_latency_avg": 6325.846153846154,
+              "thread_op_latency_std_dev": 12.779189814213273,
+              "threads": [
+                {
+                  "accessed_bytes": 103817412608,
+                  "bandwidth": 9.668529363193079,
+                  "execution_time": 10.000228201
+                },
+                {
+                  "accessed_bytes": 103750303744,
+                  "bandwidth": 9.658301645413546,
+                  "execution_time": 10.004346887
+                },
+                {
+                  "accessed_bytes": 103481868288,
+                  "bandwidth": 9.632953637944103,
+                  "execution_time": 10.004719593
+                },
+                {
+                  "accessed_bytes": 103414759424,
+                  "bandwidth": 9.630931298036952,
+                  "execution_time": 10.000330915
+                },
+                {
+                  "accessed_bytes": 103750303744,
+                  "bandwidth": 9.660906858493593,
+                  "execution_time": 10.00164906
+                },
+                {
+                  "accessed_bytes": 103750303744,
+                  "bandwidth": 9.660467026201792,
+                  "execution_time": 10.002104426
+                },
+                {
+                  "accessed_bytes": 103481868288,
+                  "bandwidth": 9.6336802631163,
+                  "execution_time": 10.003964982
+                },
+                {
+                  "accessed_bytes": 103414759424,
+                  "bandwidth": 9.630953539988132,
+                  "execution_time": 10.00030782
+                },
+                {
+                  "accessed_bytes": 103683194880,
+                  "bandwidth": 9.653373445305924,
+                  "execution_time": 10.002979844
+                },
+                {
+                  "accessed_bytes": 103683194880,
+                  "bandwidth": 9.653484174457086,
+                  "execution_time": 10.002865106
+                },
+                {
+                  "accessed_bytes": 103481868288,
+                  "bandwidth": 9.637115479092385,
+                  "execution_time": 10.000399
+                },
+                {
+                  "accessed_bytes": 103280541696,
+                  "bandwidth": 9.615139129689723,
+                  "execution_time": 10.003755401
+                },
+                {
+                  "accessed_bytes": 104018739200,
+                  "bandwidth": 9.685750354433074,
+                  "execution_time": 10.001806412
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "config": {
+          "latency_thread": {
+            "access_size": 128,
+            "exec_mode": "dependent_reads",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 1073741824,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 1073741824,
+            "numa_task_nodes": [
+              0
+            ],
+            "number_partitions": 1,
+            "number_threads": 1,
+            "operation": "read",
+            "thread_cores": [
+              0
+            ],
+            "thread_pin_mode": "single-fixed"
+          },
+          "loaded_threads": {
+            "access_size": 65536,
+            "exec_mode": "sequential",
+            "m0_explicit_hugepages_size": 0,
+            "m0_node_count_first_partition": 18446744073709551615,
+            "m0_numa_nodes": [
+              0
+            ],
+            "m0_percentage_pages_first_partition": 18446744073709551615,
+            "m0_region_size": 7516192768,
+            "m0_transparent_huge_pages": false,
+            "m1_explicit_hugepages_size": 0,
+            "m1_node_count_first_partition": 18446744073709551615,
+            "m1_numa_nodes": [],
+            "m1_percentage_pages_first_partition": 18446744073709551615,
+            "m1_region_size": 0,
+            "m1_transparent_huge_pages": false,
+            "min_io_chunk_size": 67108864,
+            "numa_task_nodes": [],
+            "number_partitions": 1,
+            "number_threads": 14,
+            "operation": "read",
+            "run_time": 10,
+            "thread_cores": [
+              8,
+              12,
+              16,
+              20,
+              24,
+              28,
+              32,
+              36,
+              40,
+              44,
+              48,
+              52,
+              56,
+              60
+            ],
+            "thread_pin_mode": "single-fixed"
+          }
+        },
+        "results": {
+          "latency_thread": {
+            "results": {
+              "accessed_bytes": 1073741824,
+              "bandwidth": 0.6755261392924483,
+              "execution_time": 1.480327617,
+              "thread_bandwidth_avg": 0.6755261392924483,
+              "thread_bandwidth_std_dev": 0.0,
+              "thread_op_latency_avg": 176.0,
+              "thread_op_latency_std_dev": 0.0,
+              "threads": [
+                {
+                  "accessed_bytes": 1073741824,
+                  "bandwidth": 0.6755261392924483,
+                  "execution_time": 1.480327617
+                }
+              ]
+            }
+          },
+          "loaded_threads": {
+            "results": {
+              "accessed_bytes": 1389421920256,
+              "bandwidth": 129.3301661204536,
+              "execution_time": 10.005399659,
+              "thread_bandwidth_avg": 9.237869008603829,
+              "thread_bandwidth_std_dev": 0.018607524118037656,
+              "thread_op_latency_avg": 6604.642857142857,
+              "thread_op_latency_std_dev": 13.252617406832059,
+              "threads": [
+                {
+                  "accessed_bytes": 99522445312,
+                  "bandwidth": 9.2647043028221,
+                  "execution_time": 10.004366785
+                },
+                {
+                  "accessed_bytes": 99388227584,
+                  "bandwidth": 9.255086034104922,
+                  "execution_time": 10.00125765
+                },
+                {
+                  "accessed_bytes": 99119792128,
+                  "bandwidth": 9.229095889334317,
+                  "execution_time": 10.002334043
+                },
+                {
+                  "accessed_bytes": 99119792128,
+                  "bandwidth": 9.22784274456523,
+                  "execution_time": 10.003692364
+                },
+                {
+                  "accessed_bytes": 99388227584,
+                  "bandwidth": 9.254721610490192,
+                  "execution_time": 10.00165147
+                },
+                {
+                  "accessed_bytes": 99388227584,
+                  "bandwidth": 9.255993415532128,
+                  "execution_time": 10.000277209
+                },
+                {
+                  "accessed_bytes": 99119792128,
+                  "bandwidth": 9.230106672224576,
+                  "execution_time": 10.001238694
+                },
+                {
+                  "accessed_bytes": 99119792128,
+                  "bandwidth": 9.23060654549444,
+                  "execution_time": 10.000697088
+                },
+                {
+                  "accessed_bytes": 99388227584,
+                  "bandwidth": 9.254251390791584,
+                  "execution_time": 10.002159666
+                },
+                {
+                  "accessed_bytes": 99321118720,
+                  "bandwidth": 9.249223633117149,
+                  "execution_time": 10.000839386
+                },
+                {
+                  "accessed_bytes": 99052683264,
+                  "bandwidth": 9.221749544463641,
+                  "execution_time": 10.003524771
+                },
+                {
+                  "accessed_bytes": 98784247808,
+                  "bandwidth": 9.19749592930752,
+                  "execution_time": 10.002722557
+                },
+                {
+                  "accessed_bytes": 99388227584,
+                  "bandwidth": 9.253079171485059,
+                  "execution_time": 10.003426782
+                },
+                {
+                  "accessed_bytes": 99321118720,
+                  "bandwidth": 9.245811528106799,
+                  "execution_time": 10.004530129
+                }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "bm_name": "loaded_latency",
+    "bm_type": "parallel",
+    "compiler": "gcc 12.3",
+    "git_hash": "af31544015912fb3c6bf350088c63bd4c9f39ac3-dirty",
+    "hostname": "gp01.delab",
+    "matrix_args": {
+      "latency_thread": [
+        "access_size",
+        "number_threads"
+      ],
+      "loaded_threads": [
+        "access_size",
+        "number_threads"
+      ]
+    },
+    "nt_stores_instruction_set": "none",
+    "sub_bm_names": [
+      "loaded_threads",
+      "latency_thread"
+    ]
+  }
+]

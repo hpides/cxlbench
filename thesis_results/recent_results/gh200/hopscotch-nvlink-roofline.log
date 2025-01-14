@@ -1,0 +1,49 @@
+Requirement already satisfied: matplotlib in /usr/local/lib/python3.10/dist-packages (3.8.3)
+Requirement already satisfied: numpy<2,>=1.21 in /usr/local/lib/python3.10/dist-packages (from matplotlib) (1.26.4)
+Requirement already satisfied: cycler>=0.10 in /usr/local/lib/python3.10/dist-packages (from matplotlib) (0.12.1)
+Requirement already satisfied: kiwisolver>=1.3.1 in /usr/local/lib/python3.10/dist-packages (from matplotlib) (1.4.5)
+Requirement already satisfied: packaging>=20.0 in /usr/local/lib/python3.10/dist-packages (from matplotlib) (24.0)
+Requirement already satisfied: python-dateutil>=2.7 in /usr/local/lib/python3.10/dist-packages (from matplotlib) (2.9.0.post0)
+Requirement already satisfied: pyparsing>=2.3.1 in /usr/local/lib/python3.10/dist-packages (from matplotlib) (3.1.2)
+Requirement already satisfied: pillow>=8 in /usr/local/lib/python3.10/dist-packages (from matplotlib) (10.3.0)
+Requirement already satisfied: contourpy>=1.0.1 in /usr/local/lib/python3.10/dist-packages (from matplotlib) (1.2.1)
+Requirement already satisfied: fonttools>=4.22.0 in /usr/local/lib/python3.10/dist-packages (from matplotlib) (4.50.0)
+Requirement already satisfied: six>=1.5 in /usr/local/lib/python3.10/dist-packages (from python-dateutil>=2.7->matplotlib) (1.16.0)
+
+Working set size: 2147483648 bytes
+================================================================================
+Type         FLOP/elem           AI            BW (GB/s)          Perf (GFLOP/s)
+================================================================================
+float             1             0.12             243.23              30.40
+float             2             0.25             241.82              60.45
+float             4             0.50             242.20             121.10
+float             8             1.00             241.71             241.71
+float            16             2.00             241.81             483.63
+float            32             4.00             241.34             965.36
+float            64             8.00             237.84            1902.70
+float           128            16.00             230.12            3681.95
+float           256            32.00             116.60            3731.15
+float           512            64.00              58.58            3748.81
+float          1024           128.00              29.34            3755.58
+float          2048           256.00              14.66            3752.80
+float          4096           512.00               7.33            3750.81
+float          8192          1024.00               3.65            3738.72
+double            1             0.06             240.12              15.01
+double            2             0.12             240.39              30.05
+double            4             0.25             241.17              60.29
+double            8             0.50             241.19             120.59
+double           16             1.00             240.39             240.39
+double           32             2.00             240.60             481.20
+double           64             4.00             237.25             949.01
+double          128             8.00             228.78            1830.22
+double          256            16.00             116.84            1869.49
+double          512            32.00              58.49            1871.64
+double         1024            64.00              29.27            1873.53
+double         2048           128.00              14.63            1872.90
+double         4096           256.00               7.32            1872.78
+double         8192           512.00               3.65            1867.61
+================================================================================
+Machine Balance (Single Precision): 15.4
+Machine Balance (Double Precision): 7.8
+Roofline plot saved as roofline.pdf
+

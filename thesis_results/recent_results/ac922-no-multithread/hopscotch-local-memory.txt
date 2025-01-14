@@ -1,0 +1,54 @@
+
+highest write throughput
+root@gp02:/mnt/hopscotch/cpu/2_bandwidth# numactl --physcpubind=0,8,16,24,32,40,48,56 ./bandwidth
+=======================================================================
+Kernel                        Iterations     Time (s)       BW (MB/s)      
+=======================================================================
+r_seq_ind                     178            2.01           98298          
+r_seq_reduce                  141            2.01           75853          
+r_rand_ind                    9              2.05           4717           
+r_stride_2                    198            2.00           53673          
+r_stride_4                    202            2.00           27406          
+r_stride_8                    212            2.00           14470          
+r_stride_16                   234            2.01           7981           
+r_stride_32                   273            2.00           4613           
+w_seq_fill                    197            2.00           107492         
+w_seq_memset                  35             2.04           18395          
+w_rand_ind                    8              2.28           3783           
+w_stride_2                    119            2.01           32310          
+w_stride_4                    120            2.01           16140          
+w_stride_8                    120            2.01           8041           
+w_stride_16                   136            2.00           4595           
+w_stride_32                   137            2.01           2291           
+rw_seq_copy                   109            2.01           116933         
+rw_seq_inc                    111            2.02           118622         
+rw_scatter                    8              2.18           11813          
+rw_gather                     9              2.24           12987          
+rw_scatter_gather             4              2.11           8179
+
+highest read throughput
+root@gp02:/mnt/hopscotch/cpu/2_bandwidth# numactl --physcpubind=0,8,16,24,32,40,48,56,4,12,20,28,36,44,52,60 ./bandwidth 
+=======================================================================
+Kernel                        Iterations     Time (s)       BW (MB/s)      
+=======================================================================
+r_seq_ind                     234            2.01           140016         
+r_seq_reduce                  253            2.01           137415         
+r_rand_ind                    12             2.02           6435           
+r_stride_2                    270            2.00           73407          
+r_stride_4                    271            2.00           36698          
+r_stride_8                    275            2.00           18648          
+r_stride_16                   277            2.00           9393           
+r_stride_32                   273            2.00           4666           
+w_seq_fill                    162            2.01           87921          
+w_seq_memset                  35             2.05           18355          
+w_rand_ind                    9              2.21           4410           
+w_stride_2                    119            2.01           32301          
+w_stride_4                    120            2.01           16105          
+w_stride_8                    119            2.01           8003           
+w_stride_16                   136            2.01           4575           
+w_stride_32                   136            2.00           2287           
+rw_seq_copy                   108            2.02           116010         
+rw_seq_inc                    127            2.01           136440         
+rw_scatter                    8              2.09           12373          
+rw_gather                     11             2.07           17231          
+rw_scatter_gather             5              2.26           9525   

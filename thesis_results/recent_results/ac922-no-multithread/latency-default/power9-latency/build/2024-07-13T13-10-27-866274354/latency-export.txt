@@ -1,0 +1,23 @@
+Targets
+    Occurrences of 'access latency' in File 'mema-bench.1074297.log'
+Found occurrences in File 'mema-bench.1074297.log'  (16 usages found)
+    Unclassified  (16 usages found)
+        /  (16 usages found)
+            mema-bench.1074297.log  (16 usages found)
+                163 [2024-07-13 13:14:54.614] [info] Thread 0: Average access latency: 96 ns
+                208 [2024-07-13 13:15:11.418] [info] Thread 0: Average access latency: 99 ns
+                232 [2024-07-13 13:15:22.924] [info] Thread 0: Average access latency: 101 ns
+                256 [2024-07-13 13:15:34.436] [info] Thread 0: Average access latency: 104 ns
+                280 [2024-07-13 13:15:45.944] [info] Thread 0: Average access latency: 106 ns
+                304 [2024-07-13 13:15:57.461] [info] Thread 0: Average access latency: 110 ns
+                328 [2024-07-13 13:16:08.980] [info] Thread 0: Average access latency: 113 ns
+                352 [2024-07-13 13:16:20.522] [info] Thread 0: Average access latency: 119 ns
+                375 [2024-07-13 13:16:32.117] [info] Thread 0: Average access latency: 132 ns
+                398 [2024-07-13 13:16:43.667] [info] Thread 0: Average access latency: 139 ns
+                421 [2024-07-13 13:16:55.217] [info] Thread 0: Average access latency: 147 ns
+                444 [2024-07-13 13:17:06.827] [info] Thread 0: Average access latency: 153 ns
+                467 [2024-07-13 13:17:18.363] [info] Thread 0: Average access latency: 159 ns
+                490 [2024-07-13 13:17:29.931] [info] Thread 0: Average access latency: 168 ns
+                513 [2024-07-13 13:17:41.487] [info] Thread 0: Average access latency: 176 ns
+                185 [2024-07-13 13:15:00.715] [info] Thread 0: Average access latency: 193 ns
+

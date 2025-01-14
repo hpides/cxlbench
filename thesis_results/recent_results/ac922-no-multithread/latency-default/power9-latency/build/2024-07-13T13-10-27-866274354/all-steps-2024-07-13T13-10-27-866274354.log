@@ -1,0 +1,533 @@
+Given start time: 2024-07-13T13-10-27-866274354
+/home/felix.werner/mema-bench
+Workload: power9-latency
+Build directory: "/home/felix.werner/mema-bench/scripts/../exp-build-rel-gcc-12"
+Copying workload power9-latency to the build dir's workload directory.
+CMake setup...
+Using make instead
+-- CPU architecture: ppc64le
+-- Set -mtune=native
+-- Release mode, all optimizations enabled
+CMake Warning at CMakeLists.txt:120 (message):
+  System does not support any non-temporal store instructions.
+
+
+CMake Warning at CMakeLists.txt:136 (message):
+  System does not support CLWB.
+
+
+-- NUMA provided. Including /usr/include and linking /usr/lib/powerpc64le-linux-gnu/libnuma.so.
+CMake Warning at exp-build-rel-gcc-12/_deps/yaml_cpp-src/CMakeLists.txt:313 (export):
+  Cannot create package registry file:
+
+    /hpi/fs00/home/felix.werner/.cmake/packages/yaml-cpp/507b61954246a95996533b03b00dffdf
+
+  No such file or directory
+
+
+
+-- Build spdlog: 1.9.2
+-- Build type: Release
+-- git version: v1.7.1 normalized to 1.7.1
+-- Version: 1.7.1
+-- Performing Test HAVE_STD_REGEX -- success
+-- Performing Test HAVE_GNU_POSIX_REGEX -- failed to compile
+-- Performing Test HAVE_POSIX_REGEX -- success
+-- Performing Test HAVE_STEADY_CLOCK -- success
+-- CMAKE_CXX_FLAGS=" -mtune=native -pthread -O3 -DNDEBUG "
+-- Tests are included in this build.
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/felix.werner/mema-bench/exp-build-rel-gcc-12
+Consolidate compiler generated dependencies of target hdr_histogram_static
+Consolidate compiler generated dependencies of target spdlog
+Consolidate compiler generated dependencies of target yaml-cpp
+Consolidate compiler generated dependencies of target benchmark
+[  9%] Built target hdr_histogram_static
+[ 39%] Built target spdlog
+[ 69%] Built target benchmark
+[ 83%] Built target yaml-cpp
+Consolidate compiler generated dependencies of target mema
+[ 87%] Building CXX object src/CMakeFiles/mema.dir/benchmark_suite.cpp.o
+[ 92%] Building CXX object src/CMakeFiles/mema.dir/threads.cpp.o
+[ 93%] Building CXX object src/CMakeFiles/mema.dir/benchmark_config.cpp.o
+[ 93%] Building CXX object src/CMakeFiles/mema.dir/numa.cpp.o
+[ 93%] Building CXX object src/CMakeFiles/mema.dir/parallel_benchmark.cpp.o
+[ 93%] Building CXX object src/CMakeFiles/mema.dir/benchmark.cpp.o
+[ 93%] Building CXX object src/CMakeFiles/mema.dir/single_benchmark.cpp.o
+[ 93%] Building CXX object src/CMakeFiles/mema.dir/benchmark_factory.cpp.o
+[ 93%] Building CXX object src/CMakeFiles/mema.dir/utils.cpp.o
+In file included from /home/felix.werner/mema-bench/src/io_operation.hpp:8,
+                 from /home/felix.werner/mema-bench/src/benchmark.hpp:14,
+                 from /home/felix.werner/mema-bench/src/benchmark_suite.hpp:3,
+                 from /home/felix.werner/mema-bench/src/benchmark_suite.cpp:1:
+/home/felix.werner/mema-bench/src/read_write_ops.hpp: In function ‘mema::rw_ops::CharVecBase mema::rw_ops::read_64(char*)’:
+/home/felix.werner/mema-bench/src/read_write_ops.hpp:55:38: warning: GCC vector returned by reference: non-standard ABI extension with no compatibility guarantee [-Wpsabi]
+   55 | inline CharVecBase read_64(char* addr) { return read_64B_accesses<1>(addr); }
+      |                                      ^
+In file included from /home/felix.werner/mema-bench/src/io_operation.hpp:8,
+                 from /home/felix.werner/mema-bench/src/benchmark.hpp:14,
+                 from /home/felix.werner/mema-bench/src/threads.hpp:3,
+                 from /home/felix.werner/mema-bench/src/threads.cpp:1:
+/home/felix.werner/mema-bench/src/read_write_ops.hpp: In function ‘mema::rw_ops::CharVecBase mema::rw_ops::read_64(char*)’:
+/home/felix.werner/mema-bench/src/read_write_ops.hpp:55:38: warning: GCC vector returned by reference: non-standard ABI extension with no compatibility guarantee [-Wpsabi]
+   55 | inline CharVecBase read_64(char* addr) { return read_64B_accesses<1>(addr); }
+      |                                      ^
+In file included from /home/felix.werner/mema-bench/src/io_operation.hpp:8,
+                 from /home/felix.werner/mema-bench/src/benchmark.hpp:14,
+                 from /home/felix.werner/mema-bench/src/benchmark.cpp:1:
+/home/felix.werner/mema-bench/src/read_write_ops.hpp: In function ‘mema::rw_ops::CharVecBase mema::rw_ops::read_64(char*)’:
+/home/felix.werner/mema-bench/src/read_write_ops.hpp:55:38: warning: GCC vector returned by reference: non-standard ABI extension with no compatibility guarantee [-Wpsabi]
+   55 | inline CharVecBase read_64(char* addr) { return read_64B_accesses<1>(addr); }
+      |                                      ^
+In file included from /home/felix.werner/mema-bench/src/io_operation.hpp:8,
+                 from /home/felix.werner/mema-bench/src/benchmark.hpp:14,
+                 from /home/felix.werner/mema-bench/src/benchmark_factory.hpp:3,
+                 from /home/felix.werner/mema-bench/src/benchmark_factory.cpp:1:
+/home/felix.werner/mema-bench/src/read_write_ops.hpp: In function ‘mema::rw_ops::CharVecBase mema::rw_ops::read_64(char*)’:
+/home/felix.werner/mema-bench/src/read_write_ops.hpp:55:38: warning: GCC vector returned by reference: non-standard ABI extension with no compatibility guarantee [-Wpsabi]
+   55 | inline CharVecBase read_64(char* addr) { return read_64B_accesses<1>(addr); }
+      |                                      ^
+In file included from /home/felix.werner/mema-bench/src/io_operation.hpp:8,
+                 from /home/felix.werner/mema-bench/src/benchmark.hpp:14,
+                 from /home/felix.werner/mema-bench/src/numa.hpp:8,
+                 from /home/felix.werner/mema-bench/src/numa.cpp:1:
+/home/felix.werner/mema-bench/src/read_write_ops.hpp: In function ‘mema::rw_ops::CharVecBase mema::rw_ops::read_64(char*)’:
+/home/felix.werner/mema-bench/src/read_write_ops.hpp:55:38: warning: GCC vector returned by reference: non-standard ABI extension with no compatibility guarantee [-Wpsabi]
+   55 | inline CharVecBase read_64(char* addr) { return read_64B_accesses<1>(addr); }
+      |                                      ^
+In file included from /home/felix.werner/mema-bench/src/io_operation.hpp:8,
+                 from /home/felix.werner/mema-bench/src/benchmark.hpp:14,
+                 from /home/felix.werner/mema-bench/src/single_benchmark.hpp:5,
+                 from /home/felix.werner/mema-bench/src/single_benchmark.cpp:1:
+/home/felix.werner/mema-bench/src/read_write_ops.hpp: In function ‘mema::rw_ops::CharVecBase mema::rw_ops::read_64(char*)’:
+/home/felix.werner/mema-bench/src/read_write_ops.hpp:55:38: warning: GCC vector returned by reference: non-standard ABI extension with no compatibility guarantee [-Wpsabi]
+   55 | inline CharVecBase read_64(char* addr) { return read_64B_accesses<1>(addr); }
+      |                                      ^
+In file included from /home/felix.werner/mema-bench/src/io_operation.hpp:8,
+                 from /home/felix.werner/mema-bench/src/benchmark.hpp:14,
+                 from /home/felix.werner/mema-bench/src/parallel_benchmark.hpp:5,
+                 from /home/felix.werner/mema-bench/src/parallel_benchmark.cpp:1:
+/home/felix.werner/mema-bench/src/read_write_ops.hpp: In function ‘mema::rw_ops::CharVecBase mema::rw_ops::read_64(char*)’:
+/home/felix.werner/mema-bench/src/read_write_ops.hpp:55:38: warning: GCC vector returned by reference: non-standard ABI extension with no compatibility guarantee [-Wpsabi]
+   55 | inline CharVecBase read_64(char* addr) { return read_64B_accesses<1>(addr); }
+      |                                      ^
+In file included from /home/felix.werner/mema-bench/src/io_operation.hpp:8,
+                 from /home/felix.werner/mema-bench/src/benchmark.hpp:14,
+                 from /home/felix.werner/mema-bench/src/numa.hpp:8,
+                 from /home/felix.werner/mema-bench/src/benchmark_config.cpp:11:
+/home/felix.werner/mema-bench/src/read_write_ops.hpp: In function ‘mema::rw_ops::CharVecBase mema::rw_ops::read_64(char*)’:
+/home/felix.werner/mema-bench/src/read_write_ops.hpp:55:38: warning: GCC vector returned by reference: non-standard ABI extension with no compatibility guarantee [-Wpsabi]
+   55 | inline CharVecBase read_64(char* addr) { return read_64B_accesses<1>(addr); }
+      |                                      ^
+In file included from /home/felix.werner/mema-bench/src/io_operation.hpp:8,
+                 from /home/felix.werner/mema-bench/src/benchmark.hpp:14,
+                 from /home/felix.werner/mema-bench/src/numa.hpp:8,
+                 from /home/felix.werner/mema-bench/src/utils.cpp:18:
+/home/felix.werner/mema-bench/src/read_write_ops.hpp: In function ‘mema::rw_ops::CharVecBase mema::rw_ops::read_64(char*)’:
+/home/felix.werner/mema-bench/src/read_write_ops.hpp:55:38: warning: GCC vector returned by reference: non-standard ABI extension with no compatibility guarantee [-Wpsabi]
+   55 | inline CharVecBase read_64(char* addr) { return read_64B_accesses<1>(addr); }
+      |                                      ^
+[ 95%] Linking CXX static library libmema.a
+[ 96%] Built target mema
+Consolidate compiler generated dependencies of target mema-bench
+[ 98%] Building CXX object src/CMakeFiles/mema-bench.dir/mema.cpp.o
+In file included from /home/felix.werner/mema-bench/src/io_operation.hpp:8,
+                 from /home/felix.werner/mema-bench/src/benchmark.hpp:14,
+                 from /home/felix.werner/mema-bench/src/benchmark_suite.hpp:3,
+                 from /home/felix.werner/mema-bench/src/mema.cpp:9:
+/home/felix.werner/mema-bench/src/read_write_ops.hpp: In function ‘mema::rw_ops::CharVecBase mema::rw_ops::read_64(char*)’:
+/home/felix.werner/mema-bench/src/read_write_ops.hpp:55:38: warning: GCC vector returned by reference: non-standard ABI extension with no compatibility guarantee [-Wpsabi]
+   55 | inline CharVecBase read_64(char* addr) { return read_64B_accesses<1>(addr); }
+      |                                      ^
+[100%] Linking CXX executable ../mema-bench
+[100%] Built target mema-bench
+Not executing the system setup. If you want to run the system, add -s as the second option.
+[2024-07-13 13:14:50.336] [info] Running benchmarks with config(s) from '/home/felix.werner/mema-bench/exp-build-rel-gcc-12/workloads'.
+[2024-07-13 13:14:50.336] [info] Writing results to '/home/felix.werner/mema-bench/scripts/../results/power9-latency/build/2024-07-13T13-10-27-866274354'.
+[2024-07-13 13:14:50.336] [info] Thread Main: task binding: allowed nodes [0], forbidden nodes: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255].
+[2024-07-13 13:14:50.336] [info] Thread Main: memory allocation: allowed nodes [0, 8, 252, 253, 254, 255], forbidden nodes: [1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251].
+[2024-07-13 13:14:50.336] [info] Number of NUMA nodes in system: 6
+[2024-07-13 13:14:50.337] [info] Found 1 single benchmark.
+[2024-07-13 13:14:50.339] [info] Found 15 parallel benchmarks.
+[2024-07-13 13:14:50.341] [info] Starting benchmark 1 (idle_latency):
+[2024-07-13 13:14:50.341] [info] Single workload: memory region 0 size: 1073741824, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: dependent_reads, thread numa nodes: [0], thread count: 1, thread pinning: all-numa, thread core IDs: [], min io chunk size: 1073741824, access size: 128, operation: read
+[2024-07-13 13:14:50.341] [info] Running single benchmark idle_latency with matrix args ["access_size","number_threads"]
+[2024-07-13 13:14:50.341] [info] Starting data generation.
+[2024-07-13 13:14:50.341] [info] Preparing memory region 0.
+[2024-07-13 13:14:50.341] [info] Preparing interleaved data.
+[2024-07-13 13:14:50.639] [info] Verify shuffled access positions.
+[2024-07-13 13:14:50.774] [info] Finished preparing interleaved data.
+[2024-07-13 13:14:50.774] [info] Finished generating data. Starting set up.
+[2024-07-13 13:14:50.775] [info] Finished setting up benchmark. Starting benchmark execution.
+[2024-07-13 13:14:54.614] [info] Thread 0: Average access latency: 96 ns
+[2024-07-13 13:14:54.614] [info] Finished running benchmark. Starting page location verification.
+[2024-07-13 13:14:54.614] [info] Verify page locations of region 0.
+[2024-07-13 13:14:54.616] [info] Verify page locations of region 1.
+[2024-07-13 13:14:54.616] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:14:54.616] [info] Finished verifying page locations.
+[2024-07-13 13:14:54.616] [warning] Benchmark ran less then 1 second (806 ms). The results may be inaccurate due to the short execution time.
+[2024-07-13 13:14:54.621] [info] Completed 1/16 benchmarks.
+[2024-07-13 13:14:54.621] [info] Starting benchmark 2 (loaded_latency):
+[2024-07-13 13:14:54.621] [info] Parallel workload 0: memory region 0 size: 7516192768, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [], thread count: 15, thread pinning: single-fixed, thread core IDs: [4,8,12,16,20,24,28,32,36,40,44,48,52,56,60], min io chunk size: 67108864, access size: 65536, operation: read, run time: 10
+[2024-07-13 13:14:54.621] [info] Parallel workload 1: memory region 0 size: 1073741824, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: dependent_reads, thread numa nodes: [0], thread count: 1, thread pinning: single-fixed, thread core IDs: [0], min io chunk size: 1073741824, access size: 128, operation: read
+[2024-07-13 13:14:54.657] [info] Running parallel benchmark loaded_latency with sub benchmarks loaded_threads and latency_thread.
+[2024-07-13 13:14:54.657] [info] Starting data generation.
+[2024-07-13 13:14:54.657] [info] Preparing memory region 0.
+[2024-07-13 13:14:54.657] [info] Preparing interleaved data.
+[2024-07-13 13:14:55.628] [info] Finished preparing interleaved data.
+[2024-07-13 13:14:55.628] [info] Preparing memory region 0.
+[2024-07-13 13:14:55.628] [info] Preparing interleaved data.
+[2024-07-13 13:14:55.924] [info] Verify shuffled access positions.
+[2024-07-13 13:14:56.058] [info] Finished preparing interleaved data.
+[2024-07-13 13:14:56.058] [info] Finished generating data. Starting set up.
+[2024-07-13 13:14:56.058] [info] Finished setting up benchmark. Starting benchmark execution.
+[2024-07-13 13:15:00.715] [info] Thread 0: Average access latency: 193 ns
+[2024-07-13 13:15:06.095] [info] Finished running benchmark. Starting page location verification.
+[2024-07-13 13:15:06.095] [info] Verify page locations of region 0.
+[2024-07-13 13:15:06.114] [info] Verify page locations of region 1.
+[2024-07-13 13:15:06.114] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:15:06.114] [info] Verify page locations of region 0.
+[2024-07-13 13:15:06.116] [info] Verify page locations of region 1.
+[2024-07-13 13:15:06.116] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:15:06.116] [info] Finished verifying page locations.
+[2024-07-13 13:15:06.152] [info] Completed 2/16 benchmarks.
+[2024-07-13 13:15:06.152] [info] Starting benchmark 3 (loaded_latency):
+[2024-07-13 13:15:06.152] [info] Parallel workload 0: memory region 0 size: 7516192768, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [], thread count: 1, thread pinning: single-fixed, thread core IDs: [8,12,16,20,24,28,32,36,40,44,48,52,56,60], min io chunk size: 67108864, access size: 65536, operation: read, run time: 10
+[2024-07-13 13:15:06.152] [info] Parallel workload 1: memory region 0 size: 1073741824, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: dependent_reads, thread numa nodes: [0], thread count: 1, thread pinning: single-fixed, thread core IDs: [0], min io chunk size: 1073741824, access size: 128, operation: read
+[2024-07-13 13:15:06.152] [info] Starting data generation.
+[2024-07-13 13:15:06.152] [info] Preparing memory region 0.
+[2024-07-13 13:15:06.152] [info] Preparing interleaved data.
+[2024-07-13 13:15:07.123] [info] Finished preparing interleaved data.
+[2024-07-13 13:15:07.123] [info] Preparing memory region 0.
+[2024-07-13 13:15:07.123] [info] Preparing interleaved data.
+[2024-07-13 13:15:07.419] [info] Verify shuffled access positions.
+[2024-07-13 13:15:07.554] [info] Finished preparing interleaved data.
+[2024-07-13 13:15:07.554] [info] Finished generating data. Starting set up.
+[2024-07-13 13:15:07.554] [info] Finished setting up benchmark. Starting benchmark execution.
+[2024-07-13 13:15:11.418] [info] Thread 0: Average access latency: 99 ns
+[2024-07-13 13:15:17.588] [info] Finished running benchmark. Starting page location verification.
+[2024-07-13 13:15:17.588] [info] Verify page locations of region 0.
+[2024-07-13 13:15:17.600] [info] Verify page locations of region 1.
+[2024-07-13 13:15:17.600] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:15:17.600] [info] Verify page locations of region 0.
+[2024-07-13 13:15:17.602] [info] Verify page locations of region 1.
+[2024-07-13 13:15:17.602] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:15:17.602] [info] Finished verifying page locations.
+[2024-07-13 13:15:17.602] [warning] Benchmark ran less then 1 second (833 ms). The results may be inaccurate due to the short execution time.
+[2024-07-13 13:15:17.636] [info] Completed 3/16 benchmarks.
+[2024-07-13 13:15:17.636] [info] Starting benchmark 4 (loaded_latency):
+[2024-07-13 13:15:17.636] [info] Parallel workload 0: memory region 0 size: 7516192768, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [], thread count: 2, thread pinning: single-fixed, thread core IDs: [8,12,16,20,24,28,32,36,40,44,48,52,56,60], min io chunk size: 67108864, access size: 65536, operation: read, run time: 10
+[2024-07-13 13:15:17.636] [info] Parallel workload 1: memory region 0 size: 1073741824, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: dependent_reads, thread numa nodes: [0], thread count: 1, thread pinning: single-fixed, thread core IDs: [0], min io chunk size: 1073741824, access size: 128, operation: read
+[2024-07-13 13:15:17.636] [info] Starting data generation.
+[2024-07-13 13:15:17.636] [info] Preparing memory region 0.
+[2024-07-13 13:15:17.636] [info] Preparing interleaved data.
+[2024-07-13 13:15:18.608] [info] Finished preparing interleaved data.
+[2024-07-13 13:15:18.608] [info] Preparing memory region 0.
+[2024-07-13 13:15:18.608] [info] Preparing interleaved data.
+[2024-07-13 13:15:18.906] [info] Verify shuffled access positions.
+[2024-07-13 13:15:19.041] [info] Finished preparing interleaved data.
+[2024-07-13 13:15:19.041] [info] Finished generating data. Starting set up.
+[2024-07-13 13:15:19.041] [info] Finished setting up benchmark. Starting benchmark execution.
+[2024-07-13 13:15:22.924] [info] Thread 0: Average access latency: 101 ns
+[2024-07-13 13:15:29.076] [info] Finished running benchmark. Starting page location verification.
+[2024-07-13 13:15:29.077] [info] Verify page locations of region 0.
+[2024-07-13 13:15:29.093] [info] Verify page locations of region 1.
+[2024-07-13 13:15:29.093] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:15:29.093] [info] Verify page locations of region 0.
+[2024-07-13 13:15:29.095] [info] Verify page locations of region 1.
+[2024-07-13 13:15:29.095] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:15:29.095] [info] Finished verifying page locations.
+[2024-07-13 13:15:29.095] [warning] Benchmark ran less then 1 second (853 ms). The results may be inaccurate due to the short execution time.
+[2024-07-13 13:15:29.130] [info] Completed 4/16 benchmarks.
+[2024-07-13 13:15:29.130] [info] Starting benchmark 5 (loaded_latency):
+[2024-07-13 13:15:29.130] [info] Parallel workload 0: memory region 0 size: 7516192768, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [], thread count: 3, thread pinning: single-fixed, thread core IDs: [8,12,16,20,24,28,32,36,40,44,48,52,56,60], min io chunk size: 67108864, access size: 65536, operation: read, run time: 10
+[2024-07-13 13:15:29.130] [info] Parallel workload 1: memory region 0 size: 1073741824, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: dependent_reads, thread numa nodes: [0], thread count: 1, thread pinning: single-fixed, thread core IDs: [0], min io chunk size: 1073741824, access size: 128, operation: read
+[2024-07-13 13:15:29.130] [info] Starting data generation.
+[2024-07-13 13:15:29.130] [info] Preparing memory region 0.
+[2024-07-13 13:15:29.130] [info] Preparing interleaved data.
+[2024-07-13 13:15:30.102] [info] Finished preparing interleaved data.
+[2024-07-13 13:15:30.102] [info] Preparing memory region 0.
+[2024-07-13 13:15:30.102] [info] Preparing interleaved data.
+[2024-07-13 13:15:30.398] [info] Verify shuffled access positions.
+[2024-07-13 13:15:30.532] [info] Finished preparing interleaved data.
+[2024-07-13 13:15:30.533] [info] Finished generating data. Starting set up.
+[2024-07-13 13:15:30.533] [info] Finished setting up benchmark. Starting benchmark execution.
+[2024-07-13 13:15:34.436] [info] Thread 0: Average access latency: 104 ns
+[2024-07-13 13:15:40.568] [info] Finished running benchmark. Starting page location verification.
+[2024-07-13 13:15:40.568] [info] Verify page locations of region 0.
+[2024-07-13 13:15:40.580] [info] Verify page locations of region 1.
+[2024-07-13 13:15:40.580] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:15:40.580] [info] Verify page locations of region 0.
+[2024-07-13 13:15:40.582] [info] Verify page locations of region 1.
+[2024-07-13 13:15:40.582] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:15:40.582] [info] Finished verifying page locations.
+[2024-07-13 13:15:40.582] [warning] Benchmark ran less then 1 second (874 ms). The results may be inaccurate due to the short execution time.
+[2024-07-13 13:15:40.616] [info] Completed 5/16 benchmarks.
+[2024-07-13 13:15:40.616] [info] Starting benchmark 6 (loaded_latency):
+[2024-07-13 13:15:40.616] [info] Parallel workload 0: memory region 0 size: 7516192768, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [], thread count: 4, thread pinning: single-fixed, thread core IDs: [8,12,16,20,24,28,32,36,40,44,48,52,56,60], min io chunk size: 67108864, access size: 65536, operation: read, run time: 10
+[2024-07-13 13:15:40.616] [info] Parallel workload 1: memory region 0 size: 1073741824, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: dependent_reads, thread numa nodes: [0], thread count: 1, thread pinning: single-fixed, thread core IDs: [0], min io chunk size: 1073741824, access size: 128, operation: read
+[2024-07-13 13:15:40.616] [info] Starting data generation.
+[2024-07-13 13:15:40.617] [info] Preparing memory region 0.
+[2024-07-13 13:15:40.617] [info] Preparing interleaved data.
+[2024-07-13 13:15:41.587] [info] Finished preparing interleaved data.
+[2024-07-13 13:15:41.587] [info] Preparing memory region 0.
+[2024-07-13 13:15:41.587] [info] Preparing interleaved data.
+[2024-07-13 13:15:41.884] [info] Verify shuffled access positions.
+[2024-07-13 13:15:42.018] [info] Finished preparing interleaved data.
+[2024-07-13 13:15:42.019] [info] Finished generating data. Starting set up.
+[2024-07-13 13:15:42.019] [info] Finished setting up benchmark. Starting benchmark execution.
+[2024-07-13 13:15:45.944] [info] Thread 0: Average access latency: 106 ns
+[2024-07-13 13:15:52.053] [info] Finished running benchmark. Starting page location verification.
+[2024-07-13 13:15:52.053] [info] Verify page locations of region 0.
+[2024-07-13 13:15:52.065] [info] Verify page locations of region 1.
+[2024-07-13 13:15:52.065] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:15:52.065] [info] Verify page locations of region 0.
+[2024-07-13 13:15:52.066] [info] Verify page locations of region 1.
+[2024-07-13 13:15:52.066] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:15:52.066] [info] Finished verifying page locations.
+[2024-07-13 13:15:52.067] [warning] Benchmark ran less then 1 second (895 ms). The results may be inaccurate due to the short execution time.
+[2024-07-13 13:15:52.101] [info] Completed 6/16 benchmarks.
+[2024-07-13 13:15:52.101] [info] Starting benchmark 7 (loaded_latency):
+[2024-07-13 13:15:52.101] [info] Parallel workload 0: memory region 0 size: 7516192768, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [], thread count: 5, thread pinning: single-fixed, thread core IDs: [8,12,16,20,24,28,32,36,40,44,48,52,56,60], min io chunk size: 67108864, access size: 65536, operation: read, run time: 10
+[2024-07-13 13:15:52.101] [info] Parallel workload 1: memory region 0 size: 1073741824, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: dependent_reads, thread numa nodes: [0], thread count: 1, thread pinning: single-fixed, thread core IDs: [0], min io chunk size: 1073741824, access size: 128, operation: read
+[2024-07-13 13:15:52.101] [info] Starting data generation.
+[2024-07-13 13:15:52.101] [info] Preparing memory region 0.
+[2024-07-13 13:15:52.101] [info] Preparing interleaved data.
+[2024-07-13 13:15:53.072] [info] Finished preparing interleaved data.
+[2024-07-13 13:15:53.072] [info] Preparing memory region 0.
+[2024-07-13 13:15:53.072] [info] Preparing interleaved data.
+[2024-07-13 13:15:53.368] [info] Verify shuffled access positions.
+[2024-07-13 13:15:53.502] [info] Finished preparing interleaved data.
+[2024-07-13 13:15:53.503] [info] Finished generating data. Starting set up.
+[2024-07-13 13:15:53.503] [info] Finished setting up benchmark. Starting benchmark execution.
+[2024-07-13 13:15:57.461] [info] Thread 0: Average access latency: 110 ns
+[2024-07-13 13:16:03.538] [info] Finished running benchmark. Starting page location verification.
+[2024-07-13 13:16:03.539] [info] Verify page locations of region 0.
+[2024-07-13 13:16:03.558] [info] Verify page locations of region 1.
+[2024-07-13 13:16:03.558] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:16:03.558] [info] Verify page locations of region 0.
+[2024-07-13 13:16:03.561] [info] Verify page locations of region 1.
+[2024-07-13 13:16:03.561] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:16:03.561] [info] Finished verifying page locations.
+[2024-07-13 13:16:03.561] [warning] Benchmark ran less then 1 second (929 ms). The results may be inaccurate due to the short execution time.
+[2024-07-13 13:16:03.596] [info] Completed 7/16 benchmarks.
+[2024-07-13 13:16:03.596] [info] Starting benchmark 8 (loaded_latency):
+[2024-07-13 13:16:03.596] [info] Parallel workload 0: memory region 0 size: 7516192768, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [], thread count: 6, thread pinning: single-fixed, thread core IDs: [8,12,16,20,24,28,32,36,40,44,48,52,56,60], min io chunk size: 67108864, access size: 65536, operation: read, run time: 10
+[2024-07-13 13:16:03.596] [info] Parallel workload 1: memory region 0 size: 1073741824, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: dependent_reads, thread numa nodes: [0], thread count: 1, thread pinning: single-fixed, thread core IDs: [0], min io chunk size: 1073741824, access size: 128, operation: read
+[2024-07-13 13:16:03.596] [info] Starting data generation.
+[2024-07-13 13:16:03.596] [info] Preparing memory region 0.
+[2024-07-13 13:16:03.596] [info] Preparing interleaved data.
+[2024-07-13 13:16:04.567] [info] Finished preparing interleaved data.
+[2024-07-13 13:16:04.568] [info] Preparing memory region 0.
+[2024-07-13 13:16:04.568] [info] Preparing interleaved data.
+[2024-07-13 13:16:04.864] [info] Verify shuffled access positions.
+[2024-07-13 13:16:04.998] [info] Finished preparing interleaved data.
+[2024-07-13 13:16:04.998] [info] Finished generating data. Starting set up.
+[2024-07-13 13:16:04.998] [info] Finished setting up benchmark. Starting benchmark execution.
+[2024-07-13 13:16:08.980] [info] Thread 0: Average access latency: 113 ns
+[2024-07-13 13:16:15.033] [info] Finished running benchmark. Starting page location verification.
+[2024-07-13 13:16:15.034] [info] Verify page locations of region 0.
+[2024-07-13 13:16:15.046] [info] Verify page locations of region 1.
+[2024-07-13 13:16:15.046] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:16:15.046] [info] Verify page locations of region 0.
+[2024-07-13 13:16:15.047] [info] Verify page locations of region 1.
+[2024-07-13 13:16:15.047] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:16:15.047] [info] Finished verifying page locations.
+[2024-07-13 13:16:15.047] [warning] Benchmark ran less then 1 second (952 ms). The results may be inaccurate due to the short execution time.
+[2024-07-13 13:16:15.082] [info] Completed 8/16 benchmarks.
+[2024-07-13 13:16:15.082] [info] Starting benchmark 9 (loaded_latency):
+[2024-07-13 13:16:15.082] [info] Parallel workload 0: memory region 0 size: 7516192768, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [], thread count: 7, thread pinning: single-fixed, thread core IDs: [8,12,16,20,24,28,32,36,40,44,48,52,56,60], min io chunk size: 67108864, access size: 65536, operation: read, run time: 10
+[2024-07-13 13:16:15.082] [info] Parallel workload 1: memory region 0 size: 1073741824, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: dependent_reads, thread numa nodes: [0], thread count: 1, thread pinning: single-fixed, thread core IDs: [0], min io chunk size: 1073741824, access size: 128, operation: read
+[2024-07-13 13:16:15.082] [info] Starting data generation.
+[2024-07-13 13:16:15.082] [info] Preparing memory region 0.
+[2024-07-13 13:16:15.082] [info] Preparing interleaved data.
+[2024-07-13 13:16:16.053] [info] Finished preparing interleaved data.
+[2024-07-13 13:16:16.053] [info] Preparing memory region 0.
+[2024-07-13 13:16:16.053] [info] Preparing interleaved data.
+[2024-07-13 13:16:16.351] [info] Verify shuffled access positions.
+[2024-07-13 13:16:16.486] [info] Finished preparing interleaved data.
+[2024-07-13 13:16:16.486] [info] Finished generating data. Starting set up.
+[2024-07-13 13:16:16.486] [info] Finished setting up benchmark. Starting benchmark execution.
+[2024-07-13 13:16:20.522] [info] Thread 0: Average access latency: 119 ns
+[2024-07-13 13:16:26.522] [info] Finished running benchmark. Starting page location verification.
+[2024-07-13 13:16:26.522] [info] Verify page locations of region 0.
+[2024-07-13 13:16:26.534] [info] Verify page locations of region 1.
+[2024-07-13 13:16:26.534] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:16:26.534] [info] Verify page locations of region 0.
+[2024-07-13 13:16:26.535] [info] Verify page locations of region 1.
+[2024-07-13 13:16:26.535] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:16:26.535] [info] Finished verifying page locations.
+[2024-07-13 13:16:26.570] [info] Completed 9/16 benchmarks.
+[2024-07-13 13:16:26.570] [info] Starting benchmark 10 (loaded_latency):
+[2024-07-13 13:16:26.570] [info] Parallel workload 0: memory region 0 size: 7516192768, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [], thread count: 8, thread pinning: single-fixed, thread core IDs: [8,12,16,20,24,28,32,36,40,44,48,52,56,60], min io chunk size: 67108864, access size: 65536, operation: read, run time: 10
+[2024-07-13 13:16:26.570] [info] Parallel workload 1: memory region 0 size: 1073741824, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: dependent_reads, thread numa nodes: [0], thread count: 1, thread pinning: single-fixed, thread core IDs: [0], min io chunk size: 1073741824, access size: 128, operation: read
+[2024-07-13 13:16:26.570] [info] Starting data generation.
+[2024-07-13 13:16:26.570] [info] Preparing memory region 0.
+[2024-07-13 13:16:26.570] [info] Preparing interleaved data.
+[2024-07-13 13:16:27.547] [info] Finished preparing interleaved data.
+[2024-07-13 13:16:27.547] [info] Preparing memory region 0.
+[2024-07-13 13:16:27.547] [info] Preparing interleaved data.
+[2024-07-13 13:16:27.844] [info] Verify shuffled access positions.
+[2024-07-13 13:16:27.979] [info] Finished preparing interleaved data.
+[2024-07-13 13:16:27.979] [info] Finished generating data. Starting set up.
+[2024-07-13 13:16:27.979] [info] Finished setting up benchmark. Starting benchmark execution.
+[2024-07-13 13:16:32.117] [info] Thread 0: Average access latency: 132 ns
+[2024-07-13 13:16:38.014] [info] Finished running benchmark. Starting page location verification.
+[2024-07-13 13:16:38.014] [info] Verify page locations of region 0.
+[2024-07-13 13:16:38.031] [info] Verify page locations of region 1.
+[2024-07-13 13:16:38.031] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:16:38.031] [info] Verify page locations of region 0.
+[2024-07-13 13:16:38.033] [info] Verify page locations of region 1.
+[2024-07-13 13:16:38.033] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:16:38.033] [info] Finished verifying page locations.
+[2024-07-13 13:16:38.067] [info] Completed 10/16 benchmarks.
+[2024-07-13 13:16:38.067] [info] Starting benchmark 11 (loaded_latency):
+[2024-07-13 13:16:38.068] [info] Parallel workload 0: memory region 0 size: 7516192768, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [], thread count: 9, thread pinning: single-fixed, thread core IDs: [8,12,16,20,24,28,32,36,40,44,48,52,56,60], min io chunk size: 67108864, access size: 65536, operation: read, run time: 10
+[2024-07-13 13:16:38.068] [info] Parallel workload 1: memory region 0 size: 1073741824, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: dependent_reads, thread numa nodes: [0], thread count: 1, thread pinning: single-fixed, thread core IDs: [0], min io chunk size: 1073741824, access size: 128, operation: read
+[2024-07-13 13:16:38.068] [info] Starting data generation.
+[2024-07-13 13:16:38.068] [info] Preparing memory region 0.
+[2024-07-13 13:16:38.068] [info] Preparing interleaved data.
+[2024-07-13 13:16:39.039] [info] Finished preparing interleaved data.
+[2024-07-13 13:16:39.039] [info] Preparing memory region 0.
+[2024-07-13 13:16:39.039] [info] Preparing interleaved data.
+[2024-07-13 13:16:39.335] [info] Verify shuffled access positions.
+[2024-07-13 13:16:39.469] [info] Finished preparing interleaved data.
+[2024-07-13 13:16:39.469] [info] Finished generating data. Starting set up.
+[2024-07-13 13:16:39.469] [info] Finished setting up benchmark. Starting benchmark execution.
+[2024-07-13 13:16:43.667] [info] Thread 0: Average access latency: 139 ns
+[2024-07-13 13:16:49.505] [info] Finished running benchmark. Starting page location verification.
+[2024-07-13 13:16:49.505] [info] Verify page locations of region 0.
+[2024-07-13 13:16:49.517] [info] Verify page locations of region 1.
+[2024-07-13 13:16:49.517] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:16:49.517] [info] Verify page locations of region 0.
+[2024-07-13 13:16:49.519] [info] Verify page locations of region 1.
+[2024-07-13 13:16:49.519] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:16:49.519] [info] Finished verifying page locations.
+[2024-07-13 13:16:49.553] [info] Completed 11/16 benchmarks.
+[2024-07-13 13:16:49.553] [info] Starting benchmark 12 (loaded_latency):
+[2024-07-13 13:16:49.553] [info] Parallel workload 0: memory region 0 size: 7516192768, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [], thread count: 10, thread pinning: single-fixed, thread core IDs: [8,12,16,20,24,28,32,36,40,44,48,52,56,60], min io chunk size: 67108864, access size: 65536, operation: read, run time: 10
+[2024-07-13 13:16:49.553] [info] Parallel workload 1: memory region 0 size: 1073741824, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: dependent_reads, thread numa nodes: [0], thread count: 1, thread pinning: single-fixed, thread core IDs: [0], min io chunk size: 1073741824, access size: 128, operation: read
+[2024-07-13 13:16:49.553] [info] Starting data generation.
+[2024-07-13 13:16:49.553] [info] Preparing memory region 0.
+[2024-07-13 13:16:49.553] [info] Preparing interleaved data.
+[2024-07-13 13:16:50.524] [info] Finished preparing interleaved data.
+[2024-07-13 13:16:50.524] [info] Preparing memory region 0.
+[2024-07-13 13:16:50.524] [info] Preparing interleaved data.
+[2024-07-13 13:16:50.820] [info] Verify shuffled access positions.
+[2024-07-13 13:16:50.954] [info] Finished preparing interleaved data.
+[2024-07-13 13:16:50.954] [info] Finished generating data. Starting set up.
+[2024-07-13 13:16:50.954] [info] Finished setting up benchmark. Starting benchmark execution.
+[2024-07-13 13:16:55.217] [info] Thread 0: Average access latency: 147 ns
+[2024-07-13 13:17:00.991] [info] Finished running benchmark. Starting page location verification.
+[2024-07-13 13:17:00.991] [info] Verify page locations of region 0.
+[2024-07-13 13:17:01.008] [info] Verify page locations of region 1.
+[2024-07-13 13:17:01.008] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:17:01.008] [info] Verify page locations of region 0.
+[2024-07-13 13:17:01.010] [info] Verify page locations of region 1.
+[2024-07-13 13:17:01.010] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:17:01.010] [info] Finished verifying page locations.
+[2024-07-13 13:17:01.045] [info] Completed 12/16 benchmarks.
+[2024-07-13 13:17:01.045] [info] Starting benchmark 13 (loaded_latency):
+[2024-07-13 13:17:01.045] [info] Parallel workload 0: memory region 0 size: 7516192768, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [], thread count: 11, thread pinning: single-fixed, thread core IDs: [8,12,16,20,24,28,32,36,40,44,48,52,56,60], min io chunk size: 67108864, access size: 65536, operation: read, run time: 10
+[2024-07-13 13:17:01.045] [info] Parallel workload 1: memory region 0 size: 1073741824, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: dependent_reads, thread numa nodes: [0], thread count: 1, thread pinning: single-fixed, thread core IDs: [0], min io chunk size: 1073741824, access size: 128, operation: read
+[2024-07-13 13:17:01.045] [info] Starting data generation.
+[2024-07-13 13:17:01.046] [info] Preparing memory region 0.
+[2024-07-13 13:17:01.046] [info] Preparing interleaved data.
+[2024-07-13 13:17:02.032] [info] Finished preparing interleaved data.
+[2024-07-13 13:17:02.032] [info] Preparing memory region 0.
+[2024-07-13 13:17:02.032] [info] Preparing interleaved data.
+[2024-07-13 13:17:02.367] [info] Verify shuffled access positions.
+[2024-07-13 13:17:02.508] [info] Finished preparing interleaved data.
+[2024-07-13 13:17:02.508] [info] Finished generating data. Starting set up.
+[2024-07-13 13:17:02.508] [info] Finished setting up benchmark. Starting benchmark execution.
+[2024-07-13 13:17:06.827] [info] Thread 0: Average access latency: 153 ns
+[2024-07-13 13:17:12.545] [info] Finished running benchmark. Starting page location verification.
+[2024-07-13 13:17:12.545] [info] Verify page locations of region 0.
+[2024-07-13 13:17:12.557] [info] Verify page locations of region 1.
+[2024-07-13 13:17:12.557] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:17:12.557] [info] Verify page locations of region 0.
+[2024-07-13 13:17:12.559] [info] Verify page locations of region 1.
+[2024-07-13 13:17:12.559] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:17:12.559] [info] Finished verifying page locations.
+[2024-07-13 13:17:12.593] [info] Completed 13/16 benchmarks.
+[2024-07-13 13:17:12.593] [info] Starting benchmark 14 (loaded_latency):
+[2024-07-13 13:17:12.593] [info] Parallel workload 0: memory region 0 size: 7516192768, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [], thread count: 12, thread pinning: single-fixed, thread core IDs: [8,12,16,20,24,28,32,36,40,44,48,52,56,60], min io chunk size: 67108864, access size: 65536, operation: read, run time: 10
+[2024-07-13 13:17:12.593] [info] Parallel workload 1: memory region 0 size: 1073741824, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: dependent_reads, thread numa nodes: [0], thread count: 1, thread pinning: single-fixed, thread core IDs: [0], min io chunk size: 1073741824, access size: 128, operation: read
+[2024-07-13 13:17:12.593] [info] Starting data generation.
+[2024-07-13 13:17:12.593] [info] Preparing memory region 0.
+[2024-07-13 13:17:12.593] [info] Preparing interleaved data.
+[2024-07-13 13:17:13.564] [info] Finished preparing interleaved data.
+[2024-07-13 13:17:13.564] [info] Preparing memory region 0.
+[2024-07-13 13:17:13.564] [info] Preparing interleaved data.
+[2024-07-13 13:17:13.861] [info] Verify shuffled access positions.
+[2024-07-13 13:17:13.996] [info] Finished preparing interleaved data.
+[2024-07-13 13:17:13.996] [info] Finished generating data. Starting set up.
+[2024-07-13 13:17:13.996] [info] Finished setting up benchmark. Starting benchmark execution.
+[2024-07-13 13:17:18.363] [info] Thread 0: Average access latency: 159 ns
+[2024-07-13 13:17:24.035] [info] Finished running benchmark. Starting page location verification.
+[2024-07-13 13:17:24.035] [info] Verify page locations of region 0.
+[2024-07-13 13:17:24.047] [info] Verify page locations of region 1.
+[2024-07-13 13:17:24.047] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:17:24.047] [info] Verify page locations of region 0.
+[2024-07-13 13:17:24.049] [info] Verify page locations of region 1.
+[2024-07-13 13:17:24.049] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:17:24.049] [info] Finished verifying page locations.
+[2024-07-13 13:17:24.083] [info] Completed 14/16 benchmarks.
+[2024-07-13 13:17:24.083] [info] Starting benchmark 15 (loaded_latency):
+[2024-07-13 13:17:24.083] [info] Parallel workload 0: memory region 0 size: 7516192768, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [], thread count: 13, thread pinning: single-fixed, thread core IDs: [8,12,16,20,24,28,32,36,40,44,48,52,56,60], min io chunk size: 67108864, access size: 65536, operation: read, run time: 10
+[2024-07-13 13:17:24.083] [info] Parallel workload 1: memory region 0 size: 1073741824, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: dependent_reads, thread numa nodes: [0], thread count: 1, thread pinning: single-fixed, thread core IDs: [0], min io chunk size: 1073741824, access size: 128, operation: read
+[2024-07-13 13:17:24.083] [info] Starting data generation.
+[2024-07-13 13:17:24.083] [info] Preparing memory region 0.
+[2024-07-13 13:17:24.083] [info] Preparing interleaved data.
+[2024-07-13 13:17:25.053] [info] Finished preparing interleaved data.
+[2024-07-13 13:17:25.053] [info] Preparing memory region 0.
+[2024-07-13 13:17:25.053] [info] Preparing interleaved data.
+[2024-07-13 13:17:25.349] [info] Verify shuffled access positions.
+[2024-07-13 13:17:25.484] [info] Finished preparing interleaved data.
+[2024-07-13 13:17:25.484] [info] Finished generating data. Starting set up.
+[2024-07-13 13:17:25.484] [info] Finished setting up benchmark. Starting benchmark execution.
+[2024-07-13 13:17:29.931] [info] Thread 0: Average access latency: 168 ns
+[2024-07-13 13:17:35.522] [info] Finished running benchmark. Starting page location verification.
+[2024-07-13 13:17:35.522] [info] Verify page locations of region 0.
+[2024-07-13 13:17:35.540] [info] Verify page locations of region 1.
+[2024-07-13 13:17:35.540] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:17:35.540] [info] Verify page locations of region 0.
+[2024-07-13 13:17:35.543] [info] Verify page locations of region 1.
+[2024-07-13 13:17:35.543] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:17:35.543] [info] Finished verifying page locations.
+[2024-07-13 13:17:35.578] [info] Completed 15/16 benchmarks.
+[2024-07-13 13:17:35.578] [info] Starting benchmark 16 (loaded_latency):
+[2024-07-13 13:17:35.578] [info] Parallel workload 0: memory region 0 size: 7516192768, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [], thread count: 14, thread pinning: single-fixed, thread core IDs: [8,12,16,20,24,28,32,36,40,44,48,52,56,60], min io chunk size: 67108864, access size: 65536, operation: read, run time: 10
+[2024-07-13 13:17:35.578] [info] Parallel workload 1: memory region 0 size: 1073741824, numa nodes: [0], partition count: 1, page placement: interleaved, exec mode: dependent_reads, thread numa nodes: [0], thread count: 1, thread pinning: single-fixed, thread core IDs: [0], min io chunk size: 1073741824, access size: 128, operation: read
+[2024-07-13 13:17:35.578] [info] Starting data generation.
+[2024-07-13 13:17:35.578] [info] Preparing memory region 0.
+[2024-07-13 13:17:35.578] [info] Preparing interleaved data.
+[2024-07-13 13:17:36.548] [info] Finished preparing interleaved data.
+[2024-07-13 13:17:36.549] [info] Preparing memory region 0.
+[2024-07-13 13:17:36.549] [info] Preparing interleaved data.
+[2024-07-13 13:17:36.842] [info] Verify shuffled access positions.
+[2024-07-13 13:17:36.977] [info] Finished preparing interleaved data.
+[2024-07-13 13:17:36.977] [info] Finished generating data. Starting set up.
+[2024-07-13 13:17:36.977] [info] Finished setting up benchmark. Starting benchmark execution.
+[2024-07-13 13:17:41.487] [info] Thread 0: Average access latency: 176 ns
+[2024-07-13 13:17:47.014] [info] Finished running benchmark. Starting page location verification.
+[2024-07-13 13:17:47.014] [info] Verify page locations of region 0.
+[2024-07-13 13:17:47.026] [info] Verify page locations of region 1.
+[2024-07-13 13:17:47.026] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:17:47.026] [info] Verify page locations of region 0.
+[2024-07-13 13:17:47.028] [info] Verify page locations of region 1.
+[2024-07-13 13:17:47.028] [info] Skipped interleaved page placement verification since region size is 0.
+[2024-07-13 13:17:47.028] [info] Finished verifying page locations.
+[2024-07-13 13:17:47.062] [info] Completed 16/16 benchmarks.
+[2024-07-13 13:17:47.089] [info] Summary:
+[2024-07-13 13:17:47.089] [info] Skipping summary for execution mode: dependent_reads
+[2024-07-13 13:17:47.089] [info] loaded_latency:
+[2024-07-13 13:17:47.089] [info] 	loaded_threads:	avg_bandwidth (GB/s): 94.65029035734564	min_bandwidth (GB/s): 15.243681267967531	max_bandwidth (GB/s): 142.58092726283508
+[2024-07-13 13:17:47.090] [info] 	min_bandwidth config: {"access_size":65536,"exec_mode":"sequential","m0_explicit_hugepages_size":0,"m0_node_count_first_partition":18446744073709551615,"m0_numa_nodes":[0],"m0_percentage_pages_first_partition":18446744073709551615,"m0_region_size":7516192768,"m0_transparent_huge_pages":false,"m1_explicit_hugepages_size":0,"m1_node_count_first_partition":18446744073709551615,"m1_numa_nodes":[],"m1_percentage_pages_first_partition":18446744073709551615,"m1_region_size":0,"m1_transparent_huge_pages":false,"min_io_chunk_size":67108864,"numa_task_nodes":[],"number_partitions":1,"number_threads":1,"operation":"read","run_time":10,"thread_cores":[8,12,16,20,24,28,32,36,40,44,48,52,56,60],"thread_pin_mode":"single-fixed"}
+[2024-07-13 13:17:47.090] [info] 	max_bandwidth config: {"access_size":65536,"exec_mode":"sequential","m0_explicit_hugepages_size":0,"m0_node_count_first_partition":18446744073709551615,"m0_numa_nodes":[0],"m0_percentage_pages_first_partition":18446744073709551615,"m0_region_size":7516192768,"m0_transparent_huge_pages":false,"m1_explicit_hugepages_size":0,"m1_node_count_first_partition":18446744073709551615,"m1_numa_nodes":[],"m1_percentage_pages_first_partition":18446744073709551615,"m1_region_size":0,"m1_transparent_huge_pages":false,"min_io_chunk_size":67108864,"numa_task_nodes":[],"number_partitions":1,"number_threads":15,"operation":"read","run_time":10,"thread_cores":[4,8,12,16,20,24,28,32,36,40,44,48,52,56,60],"thread_pin_mode":"single-fixed"}
+[2024-07-13 13:17:47.090] [info] Skipping summary for execution mode: dependent_reads
+[2024-07-13 13:17:47.090] [info] Finished all benchmarks successfully.
+All results are written to /home/felix.werner/mema-bench/scripts/../results/power9-latency/build/2024-07-13T13-10-27-866274354.
+If you want to copy the data to your dev machine, the following command might help:
+./scripts/scp.sh gp01.delab /home/felix.werner/mema-bench/scripts/../results/power9-latency/build/2024-07-13T13-10-27-866274354 ./results/power9-latency/build
