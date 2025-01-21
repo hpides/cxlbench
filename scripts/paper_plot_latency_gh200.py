@@ -1,8 +1,11 @@
+#! /usr/bin/env python3
+
 import matplotlib
 import numpy as np
 import pandas as pd
 from builtins import len, enumerate
 from matplotlib import pyplot as plt
+from matplotlib import ticker
 import seaborn as sns
 
 # GH200
@@ -162,7 +165,7 @@ df = pd.DataFrame(
         "Number of Loaded Threads": loaded_threads,
         "Latency in ns": loaded_latency_nvlink,
         "Loaded Operation": "Sequential Read",
-        "Memory Region": "GPU",
+        "Memory Region": "HBM3\n(GPU)",
     }
 )
 df = pd.concat(
@@ -173,7 +176,7 @@ df = pd.concat(
                 "Number of Loaded Threads": loaded_threads,
                 "Latency in ns": loaded_latency_nvlink_reads_random,
                 "Loaded Operation": "Random Read",
-                "Memory Region": "GPU",
+                "Memory Region": "HBM3\n(GPU)",
             }
         ),
     ],
@@ -187,7 +190,7 @@ df = pd.concat(
                 "Number of Loaded Threads": loaded_threads,
                 "Latency in ns": loaded_latency_nvlink_writes,
                 "Loaded Operation": "Sequential Write",
-                "Memory Region": "GPU",
+                "Memory Region": "HBM3\n(GPU)",
             }
         ),
     ],
@@ -201,7 +204,7 @@ df = pd.concat(
                 "Number of Loaded Threads": loaded_threads,
                 "Latency in ns": loaded_latency_nvlink_writes_random,
                 "Loaded Operation": "Random Write",
-                "Memory Region": "GPU",
+                "Memory Region": "HBM3\n(GPU)",
             }
         ),
     ],
@@ -215,7 +218,7 @@ df = pd.concat(
                 "Number of Loaded Threads": loaded_threads,
                 "Latency in ns": loaded_latency_local,
                 "Loaded Operation": "Sequential Read",
-                "Memory Region": "CPU",
+                "Memory Region": "LPDDR5X\n(CPU)",
             }
         ),
     ],
@@ -229,7 +232,7 @@ df = pd.concat(
                 "Number of Loaded Threads": loaded_threads,
                 "Latency in ns": loaded_latency_local_reads_random,
                 "Loaded Operation": "Random Read",
-                "Memory Region": "CPU",
+                "Memory Region": "LPDDR5X\n(CPU)",
             }
         ),
     ],
@@ -243,7 +246,7 @@ df = pd.concat(
                 "Number of Loaded Threads": loaded_threads,
                 "Latency in ns": loaded_latency_local_writes,
                 "Loaded Operation": "Sequential Write",
-                "Memory Region": "CPU",
+                "Memory Region": "LPDDR5X\n(CPU)",
             }
         ),
     ],
@@ -257,7 +260,7 @@ df = pd.concat(
                 "Number of Loaded Threads": loaded_threads,
                 "Latency in ns": loaded_latency_local_writes_random,
                 "Loaded Operation": "Random Write",
-                "Memory Region": "CPU",
+                "Memory Region": "LPDDR5X\n(CPU)",
             }
         ),
     ],
@@ -265,7 +268,7 @@ df = pd.concat(
 )
 
 sns.set_style("darkgrid")
-sns.set(font_scale=1.5)
+sns.set_theme(font_scale=1.5)
 g = sns.relplot(
     data=df,
     x="Number of Loaded Threads",
@@ -273,22 +276,36 @@ g = sns.relplot(
     hue="Memory Region",
     style="Memory Region",
     markers=True,
+    markersize=8,
     col="Loaded Operation",
     kind="line",
-    col_wrap=2,
+    col_wrap=4,
+    height=3.5,
+    aspect=1.2,
+    # facet_kws={'sharey': True}
 )
+
 sns.move_legend(
     g,
     "lower center",
-    bbox_to_anchor=(0.3, 1),
+    bbox_to_anchor=(0.93, 0.35),
     ncol=1,
-    title=None,
+    title="",
     frameon=False,
+    columnspacing=0.5,
+    handlelength=1.2,
+    handletextpad=0.5,
 )
-g.set(xticks=loaded_threads, yticks=np.arange(1200, step=200))
-for ax in g.axes:
-    [l.set_visible(False) for (i, l) in enumerate(ax.xaxis.get_ticklabels()) if i % 2 != 0]
+
+plt.subplots_adjust(wspace=0.03)
+
+g.axes[0].set_ylabel("Latency [ns]")
+g.set(xticks=loaded_threads, yticks=np.arange(1100, step=100))
 g.set_titles(col_template="{col_name}")
+for idx, ax in enumerate(g.axes.flat):
+    ax.set_xlabel("# Load Threads")
+    [l.set_visible(False) for (i, l) in enumerate(ax.xaxis.get_ticklabels()) if i % 2 != 0]
+    [l.set_visible(False) for (i, l) in enumerate(ax.yaxis.get_ticklabels()) if i % 2 != 0]
 
 # ax.set(xticks=xticks, xlabel="Number of Loaded Threads", ylabel="Latency in ns")
 

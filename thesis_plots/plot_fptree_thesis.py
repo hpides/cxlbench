@@ -116,7 +116,7 @@ def main():
         if FILE_TAG_SUBSTRING in path:
             path_parts = path.split(FILE_TAG_SUBSTRING)
             assert (
-                    len(path_parts) == 2
+                len(path_parts) == 2
             ), "Make sure that the substring {} appears only once in a result file name.".format(FILE_TAG_SUBSTRING)
             tag_part = path_parts[-1]
             assert "-" not in tag_part, "Make sure that the tag is the last part of the name before the file extension."
@@ -168,30 +168,27 @@ def main():
 
     df.to_csv("{}/data-reduced.csv".format(output_dir))
 
-    node_mapping = {
-        "0" : "CPU0",
-        "8" : "CPU1",
-        "255": "GPU",
-        "CPU0": "CPU",
-        "CPU1":"GPU"
-    }
+    node_mapping = {"0": "CPU0", "8": "CPU1", "255": "GPU", "CPU0": "CPU", "CPU1": "GPU"}
     # Define the configuration column
-    df["Memory Tiers"] = "Inner: " + df[KEY_LOCATION_M0].apply(lambda x: node_mapping[x]) + ", Leaf: " + df[KEY_LOCATION_M1].apply(lambda x: node_mapping[x])
-    df = df.rename({
-        "M_ops": "Million Ops/s",
-        "number_threads": "Number of Threads"
-    }, axis='columns')
+    df["Memory Tiers"] = (
+        "Inner: "
+        + df[KEY_LOCATION_M0].apply(lambda x: node_mapping[x])
+        + ", Leaf: "
+        + df[KEY_LOCATION_M1].apply(lambda x: node_mapping[x])
+    )
+    df = df.rename({"M_ops": "Million Ops/s", "number_threads": "Number of Threads"}, axis="columns")
     # Get unique workloads
     unique_workloads = df["workload"].unique()
 
     # Define the number of rows and columns for the subplots
     num_cols = len(unique_workloads)
     sns.set_style("darkgrid")
-    sns.set( font_scale=1.5)
+    sns.set(font_scale=1.5)
 
     # Iterate over each workload
     g = sns.relplot(
-        data=df, x="Number of Threads",
+        data=df,
+        x="Number of Threads",
         y="Million Ops/s",
         hue="Memory Tiers",
         style="Memory Tiers",
@@ -201,13 +198,17 @@ def main():
         col_wrap=num_cols,
     )
     sns.move_legend(
-        g, "lower center",
-        bbox_to_anchor=(.4, 0.9), ncol=3, title=None, frameon=False,
+        g,
+        "lower center",
+        bbox_to_anchor=(0.4, 0.9),
+        ncol=3,
+        title=None,
+        frameon=False,
     )
     g.set(xticks=np.arange(18, step=2))
-    #g.set(xticks=np.arange(80, step=8))
-    g.axes[0].set_title('Lookup')
-    g.axes[1].set_title('Update')
+    # g.set(xticks=np.arange(80, step=8))
+    g.axes[0].set_title("Lookup")
+    g.axes[1].set_title("Update")
     # Save the figure
     g.savefig(
         "{}/{}{}-lineplots.pdf".format(output_dir, PLOT_FILE_PREFIX, "fptree"),

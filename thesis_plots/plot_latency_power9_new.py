@@ -40,194 +40,371 @@ nvlink_writes_random_f = [1225, 1254, 1270, 1282, 1293, 1307, 1354, 1512, 1513, 
 
 loaded_threads = np.arange(16)
 
-df = pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": nvlink_idle + nvlink_reads_seq,
-    "Loaded Operation": "Sequential Read",
-    "Meas.-Core Pair": "Assign Last",
-    "Memory Region": "GPU",
-})
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": nvlink_idle + nvlink_reads_seq_f,
-    "Loaded Operation": "Sequential Read",
-    "Meas.-Core Pair": "Assign First",
-    "Memory Region": "GPU",
-})], ignore_index=True)
+df = pd.DataFrame(
+    data={
+        "Number of Loaded Threads": loaded_threads,
+        "Latency in ns": nvlink_idle + nvlink_reads_seq,
+        "Loaded Operation": "Sequential Read",
+        "Meas.-Core Pair": "Assign Last",
+        "Memory Region": "GPU",
+    }
+)
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": nvlink_idle + nvlink_reads_seq_f,
+                "Loaded Operation": "Sequential Read",
+                "Meas.-Core Pair": "Assign First",
+                "Memory Region": "GPU",
+            }
+        ),
+    ],
+    ignore_index=True,
+)
 
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": local_idle + local_reads_seq,
-    "Loaded Operation": "Sequential Read",
-    "Meas.-Core Pair": "Assign Last",
-    "Memory Region": "Local",
-})])
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": local_idle + local_reads_seq_f,
-    "Loaded Operation": "Sequential Read",
-    "Meas.-Core Pair": "Assign First",
-    "Memory Region": "Local",
-})], ignore_index=True)
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": local_idle + local_reads_seq,
+                "Loaded Operation": "Sequential Read",
+                "Meas.-Core Pair": "Assign Last",
+                "Memory Region": "Local",
+            }
+        ),
+    ]
+)
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": local_idle + local_reads_seq_f,
+                "Loaded Operation": "Sequential Read",
+                "Meas.-Core Pair": "Assign First",
+                "Memory Region": "Local",
+            }
+        ),
+    ],
+    ignore_index=True,
+)
 
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": intersocket_idle + intersocket_reads_seq,
-    "Loaded Operation": "Sequential Read",
-    "Meas.-Core Pair": "Assign Last",
-    "Memory Region": "Remote Socket",
-})])
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": intersocket_idle + intersocket_reads_seq_f,
-    "Loaded Operation": "Sequential Read",
-    "Meas.-Core Pair": "Assign First",
-    "Memory Region": "Remote Socket",
-})], ignore_index=True)
-
-
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": nvlink_idle + nvlink_reads_random,
-    "Loaded Operation": "Random Read",
-    "Meas.-Core Pair": "Assign Last",
-    "Memory Region": "GPU",
-})])
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": nvlink_idle + nvlink_reads_random_f,
-    "Loaded Operation": "Random Read",
-    "Meas.-Core Pair": "Assign First",
-    "Memory Region": "GPU",
-})], ignore_index=True)
-
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": local_idle + local_reads_random,
-    "Loaded Operation": "Random Read",
-    "Meas.-Core Pair": "Assign Last",
-    "Memory Region": "Local",
-})])
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": local_idle + local_reads_random_f,
-    "Loaded Operation": "Random Read",
-    "Meas.-Core Pair": "Assign First",
-    "Memory Region": "Local",
-})], ignore_index=True)
-
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": intersocket_idle + intersocket_reads_random,
-    "Loaded Operation": "Random Read",
-    "Meas.-Core Pair": "Assign Last",
-    "Memory Region": "Remote Socket",
-})])
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": intersocket_idle + intersocket_reads_random_f,
-    "Loaded Operation": "Random Read",
-    "Meas.-Core Pair": "Assign First",
-    "Memory Region": "Remote Socket",
-})], ignore_index=True)
-
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": nvlink_idle + nvlink_writes_seq,
-    "Loaded Operation": "Sequential Write",
-    "Meas.-Core Pair": "Assign Last",
-    "Memory Region": "GPU",
-})])
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": nvlink_idle + nvlink_writes_seq_f,
-    "Loaded Operation": "Sequential Write",
-    "Meas.-Core Pair": "Assign First",
-    "Memory Region": "GPU",
-})], ignore_index=True)
-
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": local_idle + local_writes_seq,
-    "Loaded Operation": "Sequential Write",
-    "Meas.-Core Pair": "Assign Last",
-    "Memory Region": "Local",
-})])
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": local_idle + local_writes_seq_f,
-    "Loaded Operation": "Sequential Write",
-    "Meas.-Core Pair": "Assign First",
-    "Memory Region": "Local",
-})], ignore_index=True)
-
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": intersocket_idle + intersocket_writes_seq,
-    "Loaded Operation": "Sequential Write",
-    "Meas.-Core Pair": "Assign Last",
-    "Memory Region": "Remote Socket",
-})])
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": intersocket_idle + intersocket_writes_seq_f,
-    "Loaded Operation": "Sequential Write",
-    "Meas.-Core Pair": "Assign First",
-    "Memory Region": "Remote Socket",
-})], ignore_index=True)
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": intersocket_idle + intersocket_reads_seq,
+                "Loaded Operation": "Sequential Read",
+                "Meas.-Core Pair": "Assign Last",
+                "Memory Region": "Remote Socket",
+            }
+        ),
+    ]
+)
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": intersocket_idle + intersocket_reads_seq_f,
+                "Loaded Operation": "Sequential Read",
+                "Meas.-Core Pair": "Assign First",
+                "Memory Region": "Remote Socket",
+            }
+        ),
+    ],
+    ignore_index=True,
+)
 
 
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": nvlink_idle + nvlink_writes_random,
-    "Loaded Operation": "Random Write",
-    "Meas.-Core Pair": "Assign Last",
-    "Memory Region": "GPU",
-})])
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": nvlink_idle + nvlink_writes_random_f,
-    "Loaded Operation": "Random Write",
-    "Meas.-Core Pair": "Assign First",
-    "Memory Region": "GPU",
-})], ignore_index=True)
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": nvlink_idle + nvlink_reads_random,
+                "Loaded Operation": "Random Read",
+                "Meas.-Core Pair": "Assign Last",
+                "Memory Region": "GPU",
+            }
+        ),
+    ]
+)
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": nvlink_idle + nvlink_reads_random_f,
+                "Loaded Operation": "Random Read",
+                "Meas.-Core Pair": "Assign First",
+                "Memory Region": "GPU",
+            }
+        ),
+    ],
+    ignore_index=True,
+)
 
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": local_idle + local_writes_random,
-    "Loaded Operation": "Random Write",
-    "Meas.-Core Pair": "Assign Last",
-    "Memory Region": "Local",
-})])
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": local_idle + local_writes_random_f,
-    "Loaded Operation": "Random Write",
-    "Meas.-Core Pair": "Assign First",
-    "Memory Region": "Local",
-})], ignore_index=True)
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": local_idle + local_reads_random,
+                "Loaded Operation": "Random Read",
+                "Meas.-Core Pair": "Assign Last",
+                "Memory Region": "Local",
+            }
+        ),
+    ]
+)
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": local_idle + local_reads_random_f,
+                "Loaded Operation": "Random Read",
+                "Meas.-Core Pair": "Assign First",
+                "Memory Region": "Local",
+            }
+        ),
+    ],
+    ignore_index=True,
+)
 
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": intersocket_idle + intersocket_writes_random,
-    "Loaded Operation": "Random Write",
-    "Meas.-Core Pair": "Assign Last",
-    "Memory Region": "Remote Socket",
-})])
-df = pd.concat([df, pd.DataFrame(data={
-    "Number of Loaded Threads": loaded_threads,
-    "Latency in ns": intersocket_idle + intersocket_writes_random_f,
-    "Loaded Operation": "Random Write",
-    "Meas.-Core Pair": "Assign First",
-    "Memory Region": "Remote Socket",
-})], ignore_index=True)
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": intersocket_idle + intersocket_reads_random,
+                "Loaded Operation": "Random Read",
+                "Meas.-Core Pair": "Assign Last",
+                "Memory Region": "Remote Socket",
+            }
+        ),
+    ]
+)
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": intersocket_idle + intersocket_reads_random_f,
+                "Loaded Operation": "Random Read",
+                "Meas.-Core Pair": "Assign First",
+                "Memory Region": "Remote Socket",
+            }
+        ),
+    ],
+    ignore_index=True,
+)
+
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": nvlink_idle + nvlink_writes_seq,
+                "Loaded Operation": "Sequential Write",
+                "Meas.-Core Pair": "Assign Last",
+                "Memory Region": "GPU",
+            }
+        ),
+    ]
+)
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": nvlink_idle + nvlink_writes_seq_f,
+                "Loaded Operation": "Sequential Write",
+                "Meas.-Core Pair": "Assign First",
+                "Memory Region": "GPU",
+            }
+        ),
+    ],
+    ignore_index=True,
+)
+
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": local_idle + local_writes_seq,
+                "Loaded Operation": "Sequential Write",
+                "Meas.-Core Pair": "Assign Last",
+                "Memory Region": "Local",
+            }
+        ),
+    ]
+)
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": local_idle + local_writes_seq_f,
+                "Loaded Operation": "Sequential Write",
+                "Meas.-Core Pair": "Assign First",
+                "Memory Region": "Local",
+            }
+        ),
+    ],
+    ignore_index=True,
+)
+
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": intersocket_idle + intersocket_writes_seq,
+                "Loaded Operation": "Sequential Write",
+                "Meas.-Core Pair": "Assign Last",
+                "Memory Region": "Remote Socket",
+            }
+        ),
+    ]
+)
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": intersocket_idle + intersocket_writes_seq_f,
+                "Loaded Operation": "Sequential Write",
+                "Meas.-Core Pair": "Assign First",
+                "Memory Region": "Remote Socket",
+            }
+        ),
+    ],
+    ignore_index=True,
+)
+
+
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": nvlink_idle + nvlink_writes_random,
+                "Loaded Operation": "Random Write",
+                "Meas.-Core Pair": "Assign Last",
+                "Memory Region": "GPU",
+            }
+        ),
+    ]
+)
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": nvlink_idle + nvlink_writes_random_f,
+                "Loaded Operation": "Random Write",
+                "Meas.-Core Pair": "Assign First",
+                "Memory Region": "GPU",
+            }
+        ),
+    ],
+    ignore_index=True,
+)
+
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": local_idle + local_writes_random,
+                "Loaded Operation": "Random Write",
+                "Meas.-Core Pair": "Assign Last",
+                "Memory Region": "Local",
+            }
+        ),
+    ]
+)
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": local_idle + local_writes_random_f,
+                "Loaded Operation": "Random Write",
+                "Meas.-Core Pair": "Assign First",
+                "Memory Region": "Local",
+            }
+        ),
+    ],
+    ignore_index=True,
+)
+
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": intersocket_idle + intersocket_writes_random,
+                "Loaded Operation": "Random Write",
+                "Meas.-Core Pair": "Assign Last",
+                "Memory Region": "Remote Socket",
+            }
+        ),
+    ]
+)
+df = pd.concat(
+    [
+        df,
+        pd.DataFrame(
+            data={
+                "Number of Loaded Threads": loaded_threads,
+                "Latency in ns": intersocket_idle + intersocket_writes_random_f,
+                "Loaded Operation": "Random Write",
+                "Meas.-Core Pair": "Assign First",
+                "Memory Region": "Remote Socket",
+            }
+        ),
+    ],
+    ignore_index=True,
+)
 
 sns.set_style("darkgrid")
-sns.set( font_scale=1.5)
+sns.set(font_scale=1.5)
 
 g = sns.relplot(
-    data=df, x="Number of Loaded Threads",
-    y="Latency in ns", hue="Memory Region",
+    data=df,
+    x="Number of Loaded Threads",
+    y="Latency in ns",
+    hue="Memory Region",
     style="Meas.-Core Pair",
     markers=True,
     col="Loaded Operation",
@@ -235,13 +412,17 @@ g = sns.relplot(
     col_wrap=2,
 )
 sns.move_legend(
-    g, "lower center",
-    bbox_to_anchor=(.4, 1), ncol=2, title=None, frameon=False,
+    g,
+    "lower center",
+    bbox_to_anchor=(0.4, 1),
+    ncol=2,
+    title=None,
+    frameon=False,
 )
 g.set_titles(col_template="{col_name}")
 g.set(xticks=loaded_threads, yticks=np.arange(1600, step=200))
 for ax in g.axes:
-    [l.set_visible(False) for (i,l) in enumerate(ax.xaxis.get_ticklabels()) if i % 2 != 0]
+    [l.set_visible(False) for (i, l) in enumerate(ax.xaxis.get_ticklabels()) if i % 2 != 0]
 
 # ax.set(xticks=xticks, xlabel="Number of Loaded Threads", ylabel="Latency in ns")
 g.savefig("power9-latencies.pdf")

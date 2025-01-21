@@ -51,7 +51,7 @@ class Heatmap:
         if len(self.df[BMKeys.BM_GROUP].unique()) != 1:
             return
         self.add_heatmap()
-        #self.mark_max_value_zones()
+        # self.mark_max_value_zones()
 
         self.mark_maximum()
         fig = self.heatmap.get_figure()
@@ -73,7 +73,7 @@ class Heatmap:
         bm_group = self.df[BMKeys.BM_GROUP].unique()[0]
 
         if self.compact:
-            x_scale = 0.16
+            x_scale = 0.25
             y_scale = 0.25
             x_padding = 3 * x_scale
             y_padding = 0
@@ -88,22 +88,23 @@ class Heatmap:
             )
         )
 
-        #self.df_heatmap = self.df_heatmap.drop(index=64, errors='ignore')
+        # self.df_heatmap = self.df_heatmap.drop(index=64, errors='ignore')
         rounded_df_heatmap = self.df_heatmap.round().astype(int)
+
         self.heatmap = sns.heatmap(
             self.df_heatmap,
             annot=rounded_df_heatmap,
-            annot_kws={"fontsize": 7, "va": "center_baseline"},
+            annot_kws={"fontsize": 8, "va": "center_baseline"},
             fmt=self.value_format,
             cmap=self.color_theme,
             linewidths=0.5,  # Add thin grid lines between cells
-            linecolor="white",  # Color of the grid lines
+            linecolor="gray",  # Color of the grid lines
             cbar_kws={"label": self.value_label, "pad": 0.02},
             cbar=not self.compact,
         )
 
-        self.heatmap.set_xlabel("Thread Count")
-        self.heatmap.set_ylabel("Access size (Byte)")
+        self.heatmap.set_xlabel("# Threads")
+        self.heatmap.set_ylabel("Access size [Bytes]")
         self.heatmap.invert_yaxis()
         self.heatmap.set_title(self.title)
 
@@ -136,7 +137,7 @@ class Heatmap:
             (max_value_col_idx, max_value_row_idx),
             1,
             1,
-            linewidth=self.mark_linewidth,
+            linewidth=self.mark_linewidth * 1.5,
             edgecolor=self.max_color,
             facecolor="none",
         )

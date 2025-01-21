@@ -20,9 +20,9 @@ from heatmaps.latency_heatmap import LatencyHeatmap
 def assert_has_one_value(df, attribute_name):
     assert attribute_name in df.columns, "{} is not in present as a column in the data frame.".format(attribute_name)
     distinct_value_count = len(df[attribute_name].unique())
-    #assert distinct_value_count == 1, "{} has {} distinct values but 1 is expected.\n{}".format(
+    # assert distinct_value_count == 1, "{} has {} distinct values but 1 is expected.\n{}".format(
     #    attribute_name, distinct_value_count, df
-    #)
+    # )
 
 
 def assert_has_multiple_values(df, attribute_name):
@@ -127,7 +127,7 @@ class PlotGenerator:
                 & (df[BMKeys.PARTITION_COUNT] == partition_count)
                 & (df[BMKeys.FLUSH_INSTRUCTION] == flush_type)
                 & (df[BMKeys.TAG] == tag)
-                #& (df[BMKeys.NUMA_TASK_NODES] == numa_task_node)
+                # & (df[BMKeys.NUMA_TASK_NODES] == numa_task_node)
             ]
 
             # Since we check for certain flush instructions, the data frame is empty for read and
@@ -189,6 +189,8 @@ class PlotGenerator:
                 custom_suffix = f"heatmap_memory_node_{memory_node}"
                 filename = filename_template.replace("<custom>", custom_suffix)
                 df_sub.to_csv("{}/{}{}.csv".format(self.output_dir, DATA_FILE_PREFIX, filename))
+                show_threads = [1, 4, 8, 16, 24, 32, 40, 48, 56, 64, 72]
+                df_sub = df_sub[df_sub[BMKeys.THREAD_COUNT].isin(show_threads)]
 
                 if self.latency_heatmap:
                     heatmap = LatencyHeatmap(df_sub, plot_title, self.output_dir, filename)
