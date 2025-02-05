@@ -1,0 +1,15 @@
+random_reads:
+  matrix:
+    numa_memory_node_weights: [[1,0], [1,1], [2,1], [3,1], [4,1], [5,1], [6,1], [7,1], [8,1], [9,1], [10,1], [15,1], [20,1], [40,1], [80,1]]
+
+  args:
+    numa_memory_nodes: [ 0, 1 ]
+    number_threads: 72
+    access_size: 64
+    memory_region_size: 180G
+    exec_mode: random
+    numa_task_nodes: [ 0 ]
+    number_partitions: 1
+    operation: read
+    number_operations: 110000000
+    run_time: 10
