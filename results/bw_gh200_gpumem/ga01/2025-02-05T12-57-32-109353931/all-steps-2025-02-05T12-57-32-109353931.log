@@ -1,0 +1,853 @@
+Given start time: 2025-02-05T12-57-32-109353931
+/
+Workload: bw_gh200_gpumem
+Build directory: "/enroot_mount/cxlbench/scripts/../exp-ga01-rel-gcc-12"
+Copying workload bw_gh200_gpumem to the build dir's workload directory.
+CMake setup...
+Using make instead
+-- The C compiler identification is GNU 12.3.0
+-- The CXX compiler identification is GNU 12.3.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/gcc-12 - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/g++-12 - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- CPU architecture: aarch64
+-- Set -march=native
+-- Release mode, all optimizations enabled
+-- Performing Test HAS_AVX_512
+-- Performing Test HAS_AVX_512 - Failed
+-- Performing Test HAS_AVX_2
+-- Performing Test HAS_AVX_2 - Failed
+CMake Warning at CMakeLists.txt:120 (message):
+  System does not support any non-temporal store instructions.
+
+
+-- Performing Test HAS_CLWB
+-- Performing Test HAS_CLWB - Failed
+CMake Warning at CMakeLists.txt:136 (message):
+  System does not support CLWB.
+
+
+-- NUMA provided. Including /usr/include and linking /usr/lib/aarch64-linux-gnu/libnuma.so.
+CMake Deprecation Warning at exp-ga01-rel-gcc-12/_deps/yaml_cpp-src/CMakeLists.txt:5 (cmake_minimum_required):
+  Compatibility with CMake < 3.5 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value or use a ...<max> suffix to tell
+  CMake that the project does not need compatibility with older versions.
+
+
+-- Performing Test FLAG_WEXTRA
+-- Performing Test FLAG_WEXTRA - Failed
+CMake Warning at exp-ga01-rel-gcc-12/_deps/yaml_cpp-src/CMakeLists.txt:313 (export):
+  Cannot create package registry file:
+
+    /hpi/fs00/home/marcel.weisgut/.cmake/packages/yaml-cpp/7f16e40016ca5d460ee6e60beee78c0f
+
+  No such file or directory
+
+
+
+-- Found ZLIB: /usr/lib/aarch64-linux-gnu/libz.so (found version "1.3")  
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+-- Looking for pthread_create in pthreads
+-- Looking for pthread_create in pthreads - not found
+-- Looking for pthread_create in pthread
+-- Looking for pthread_create in pthread - not found
+-- Check if compiler accepts -pthread
+-- Check if compiler accepts -pthread - yes
+-- Found Threads: TRUE  
+-- Looking for ceil in m
+-- Looking for ceil in m - not found
+-- Looking for clock_gettime in rt
+-- Looking for clock_gettime in rt - not found
+-- Build spdlog: 1.9.2
+-- Build type: Release
+-- Found Git: /usr/bin/git (found version "2.43.0") 
+-- git version: v1.7.1 normalized to 1.7.1
+-- Version: 1.7.1
+-- Looking for shm_open in rt
+-- Looking for shm_open in rt - not found
+-- Performing Test HAVE_CXX_FLAG_WALL
+-- Performing Test HAVE_CXX_FLAG_WALL - Failed
+-- Performing Test HAVE_CXX_FLAG_WEXTRA
+-- Performing Test HAVE_CXX_FLAG_WEXTRA - Failed
+-- Performing Test HAVE_CXX_FLAG_WSHADOW
+-- Performing Test HAVE_CXX_FLAG_WSHADOW - Failed
+-- Performing Test HAVE_CXX_FLAG_WFLOAT_EQUAL
+-- Performing Test HAVE_CXX_FLAG_WFLOAT_EQUAL - Failed
+-- Performing Test HAVE_CXX_FLAG_WERROR
+-- Performing Test HAVE_CXX_FLAG_WERROR - Failed
+-- Performing Test HAVE_CXX_FLAG_WSUGGEST_OVERRIDE
+-- Performing Test HAVE_CXX_FLAG_WSUGGEST_OVERRIDE - Failed
+-- Performing Test HAVE_CXX_FLAG_PEDANTIC
+-- Performing Test HAVE_CXX_FLAG_PEDANTIC - Failed
+-- Performing Test HAVE_CXX_FLAG_PEDANTIC_ERRORS
+-- Performing Test HAVE_CXX_FLAG_PEDANTIC_ERRORS - Failed
+-- Performing Test HAVE_CXX_FLAG_WSHORTEN_64_TO_32
+-- Performing Test HAVE_CXX_FLAG_WSHORTEN_64_TO_32 - Failed
+-- Performing Test HAVE_CXX_FLAG_FSTRICT_ALIASING
+-- Performing Test HAVE_CXX_FLAG_FSTRICT_ALIASING - Failed
+-- Performing Test HAVE_CXX_FLAG_WNO_DEPRECATED_DECLARATIONS
+-- Performing Test HAVE_CXX_FLAG_WNO_DEPRECATED_DECLARATIONS - Failed
+-- Performing Test HAVE_CXX_FLAG_WNO_DEPRECATED
+-- Performing Test HAVE_CXX_FLAG_WNO_DEPRECATED - Failed
+-- Performing Test HAVE_CXX_FLAG_WD654
+-- Performing Test HAVE_CXX_FLAG_WD654 - Failed
+-- Performing Test HAVE_CXX_FLAG_WTHREAD_SAFETY
+-- Performing Test HAVE_CXX_FLAG_WTHREAD_SAFETY - Failed
+-- Performing Test HAVE_CXX_FLAG_COVERAGE
+-- Performing Test HAVE_CXX_FLAG_COVERAGE - Failed
+-- Compiling and running to test HAVE_STD_REGEX
+-- Performing Test HAVE_STD_REGEX -- success
+-- Compiling and running to test HAVE_GNU_POSIX_REGEX
+-- Performing Test HAVE_GNU_POSIX_REGEX -- failed to compile
+-- Compiling and running to test HAVE_POSIX_REGEX
+-- Performing Test HAVE_POSIX_REGEX -- success
+-- Compiling and running to test HAVE_STEADY_CLOCK
+-- Performing Test HAVE_STEADY_CLOCK -- success
+-- CMAKE_CXX_FLAGS=" -march=native -pthread -O3 -DNDEBUG "
+-- Tests are included in this build.
+-- Found Python: /usr/bin/python3 (found version "3.12.3") found components: Interpreter 
+-- Configuring done (15.9s)
+-- Generating done (0.1s)
+-- Build files have been written to: /enroot_mount/cxlbench/exp-ga01-rel-gcc-12
+[  1%] Building CXX object _deps/googlebenchmark-build/src/CMakeFiles/benchmark.dir/benchmark.cc.o
+[  3%] Building CXX object _deps/spdlog-build/CMakeFiles/spdlog.dir/src/stdout_sinks.cpp.o
+[  6%] Building C object _deps/hdr_histogram-build/src/CMakeFiles/hdr_histogram_static.dir/hdr_histogram.c.o
+[  6%] Building C object _deps/hdr_histogram-build/src/CMakeFiles/hdr_histogram_static.dir/hdr_encoding.c.o
+[  7%] Building CXX object _deps/spdlog-build/CMakeFiles/spdlog.dir/src/file_sinks.cpp.o
+[  9%] Building CXX object _deps/googlebenchmark-build/src/CMakeFiles/benchmark.dir/benchmark_api_internal.cc.o
+[  9%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/binary.cpp.o
+[  9%] Building CXX object _deps/googlebenchmark-build/src/CMakeFiles/benchmark.dir/benchmark_register.cc.o
+[ 10%] Building CXX object _deps/spdlog-build/CMakeFiles/spdlog.dir/src/spdlog.cpp.o
+[ 12%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/directives.cpp.o
+[ 13%] Building CXX object _deps/spdlog-build/CMakeFiles/spdlog.dir/src/color_sinks.cpp.o
+[ 15%] Building C object _deps/hdr_histogram-build/src/CMakeFiles/hdr_histogram_static.dir/hdr_interval_recorder.c.o
+[ 15%] Building CXX object _deps/spdlog-build/CMakeFiles/spdlog.dir/src/fmt.cpp.o
+[ 15%] Building C object _deps/hdr_histogram-build/src/CMakeFiles/hdr_histogram_static.dir/hdr_histogram_log.c.o
+[ 18%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/convert.cpp.o
+[ 19%] Building CXX object _deps/googlebenchmark-build/src/CMakeFiles/benchmark.dir/benchmark_runner.cc.o
+[ 21%] Building CXX object _deps/spdlog-build/CMakeFiles/spdlog.dir/src/async.cpp.o
+[ 21%] Building CXX object _deps/googlebenchmark-build/src/CMakeFiles/benchmark.dir/benchmark_name.cc.o
+[ 22%] Building C object _deps/hdr_histogram-build/src/CMakeFiles/hdr_histogram_static.dir/hdr_time.c.o
+[ 24%] Building CXX object _deps/spdlog-build/CMakeFiles/spdlog.dir/src/cfg.cpp.o
+[ 25%] Building CXX object _deps/googlebenchmark-build/src/CMakeFiles/benchmark.dir/colorprint.cc.o
+[ 27%] Building C object _deps/hdr_histogram-build/src/CMakeFiles/hdr_histogram_static.dir/hdr_thread.c.o
+[ 28%] Building C object _deps/hdr_histogram-build/src/CMakeFiles/hdr_histogram_static.dir/hdr_writer_reader_phaser.c.o
+[ 31%] Building CXX object _deps/googlebenchmark-build/src/CMakeFiles/benchmark.dir/console_reporter.cc.o
+[ 31%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/emitter.cpp.o
+[ 33%] Building CXX object _deps/googlebenchmark-build/src/CMakeFiles/benchmark.dir/check.cc.o
+[ 33%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/emitfromevents.cpp.o
+[ 34%] Building CXX object _deps/googlebenchmark-build/src/CMakeFiles/benchmark.dir/commandlineflags.cc.o
+[ 36%] Building CXX object _deps/googlebenchmark-build/src/CMakeFiles/benchmark.dir/counter.cc.o
+[ 36%] Building CXX object _deps/googlebenchmark-build/src/CMakeFiles/benchmark.dir/complexity.cc.o
+[ 37%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/emit.cpp.o
+[ 39%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/exp.cpp.o
+[ 42%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/exceptions.cpp.o
+[ 43%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/node_data.cpp.o
+[ 43%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/node.cpp.o
+[ 46%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/emitterutils.cpp.o
+[ 46%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/emitterstate.cpp.o
+[ 48%] Building CXX object _deps/googlebenchmark-build/src/CMakeFiles/benchmark.dir/reporter.cc.o
+[ 50%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/nodeevents.cpp.o
+[ 50%] Building CXX object _deps/googlebenchmark-build/src/CMakeFiles/benchmark.dir/perf_counters.cc.o
+[ 54%] Building CXX object _deps/googlebenchmark-build/src/CMakeFiles/benchmark.dir/sleep.cc.o
+[ 54%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/nodebuilder.cpp.o
+[ 54%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/memory.cpp.o
+[ 54%] Building CXX object _deps/googlebenchmark-build/src/CMakeFiles/benchmark.dir/statistics.cc.o
+[ 54%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/null.cpp.o
+[ 56%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/parser.cpp.o
+[ 59%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/ostream_wrapper.cpp.o
+[ 59%] Building CXX object _deps/googlebenchmark-build/src/CMakeFiles/benchmark.dir/json_reporter.cc.o
+[ 60%] Building CXX object _deps/googlebenchmark-build/src/CMakeFiles/benchmark.dir/csv_reporter.cc.o
+[ 62%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/parse.cpp.o
+[ 62%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/scanner.cpp.o
+[ 63%] Building CXX object _deps/googlebenchmark-build/src/CMakeFiles/benchmark.dir/string_util.cc.o
+[ 65%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/regex_yaml.cpp.o
+[ 66%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/scantag.cpp.o
+[ 68%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/scanscalar.cpp.o
+[ 68%] Building CXX object _deps/googlebenchmark-build/src/CMakeFiles/benchmark.dir/sysinfo.cc.o
+[ 69%] Building CXX object _deps/googlebenchmark-build/src/CMakeFiles/benchmark.dir/timers.cc.o
+[ 71%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/scantoken.cpp.o
+[ 72%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/simplekey.cpp.o
+[ 72%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/singledocparser.cpp.o
+[ 75%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/stream.cpp.o
+[ 75%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/contrib/graphbuilderadapter.cpp.o
+[ 77%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/contrib/graphbuilder.cpp.o
+[ 78%] Building CXX object _deps/yaml_cpp-build/CMakeFiles/yaml-cpp.dir/src/tag.cpp.o
+[ 78%] Linking C static library libhdr_histogram_static.a
+[ 78%] Built target hdr_histogram_static
+[ 80%] Linking CXX static library libyaml-cpp.a
+[ 80%] Built target yaml-cpp
+[ 81%] Linking CXX static library libbenchmark.a
+[ 81%] Built target benchmark
+[ 83%] Linking CXX static library libspdlog.a
+[ 83%] Built target spdlog
+[ 86%] Building CXX object src/CMakeFiles/mema.dir/benchmark_config.cpp.o
+[ 87%] Building CXX object src/CMakeFiles/mema.dir/benchmark.cpp.o
+[ 89%] Building CXX object src/CMakeFiles/mema.dir/benchmark_factory.cpp.o
+[ 89%] Building CXX object src/CMakeFiles/mema.dir/fast_random.cpp.o
+[ 89%] Building CXX object src/CMakeFiles/mema.dir/benchmark_suite.cpp.o
+[ 90%] Building CXX object src/CMakeFiles/mema.dir/numa.cpp.o
+[ 93%] Building CXX object src/CMakeFiles/mema.dir/single_benchmark.cpp.o
+[ 93%] Building CXX object src/CMakeFiles/mema.dir/threads.cpp.o
+[ 95%] Building CXX object src/CMakeFiles/mema.dir/utils.cpp.o
+[ 95%] Building CXX object src/CMakeFiles/mema.dir/parallel_benchmark.cpp.o
+[ 96%] Linking CXX static library libmema.a
+[ 96%] Built target mema
+[ 98%] Building CXX object src/CMakeFiles/mema-bench.dir/mema.cpp.o
+[100%] Linking CXX executable ../mema-bench
+[100%] Built target mema-bench
+Not executing the system setup. If you want to run the system, add -s as the second option.
+[2025-02-05 12:58:16.963] [info] Running benchmarks with config(s) from '/enroot_mount/cxlbench/exp-ga01-rel-gcc-12/workloads'.
+[2025-02-05 12:58:16.963] [info] Writing results to '/enroot_mount/cxlbench/scripts/../results/bw_gh200_gpumem/ga01/2025-02-05T12-57-32-109353931'.
+[2025-02-05 12:58:16.963] [info] Thread Main: task binding: allowed nodes [0], forbidden nodes: [1, 2, 3, 4, 5, 6, 7, 8].
+[2025-02-05 12:58:16.963] [info] Thread Main: memory allocation: allowed nodes [0, 1], forbidden nodes: [2, 3, 4, 5, 6, 7, 8].
+[2025-02-05 12:58:16.963] [info] Number of NUMA nodes in system: 9
+[2025-02-05 12:58:16.965] [info] Found 44 single benchmarks.
+[2025-02-05 12:58:16.965] [info] Found 0 parallel benchmarks.
+[2025-02-05 12:58:16.965] [info] Starting benchmark 1 (sequential_writes):
+[2025-02-05 12:58:16.965] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [0], thread count: 1, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: write, flush instruction: none, run time: 10
+[2025-02-05 12:58:16.965] [info] Running single benchmark sequential_writes with matrix args ["access_size","flush_instruction","number_threads"]
+[2025-02-05 12:58:16.965] [info] Starting data generation.
+[2025-02-05 12:58:16.965] [info] Preparing memory region 0.
+[2025-02-05 12:58:16.965] [info] Preparing interleaved data.
+[2025-02-05 12:58:29.807] [info] Finished preparing interleaved data.
+[2025-02-05 12:58:29.807] [info] Finished generating data. Starting set up.
+[2025-02-05 12:58:29.807] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 12:58:41.499] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 12:58:41.499] [info] Verify page locations of region 0.
+[2025-02-05 12:58:41.598] [info] Verify page locations of region 1.
+[2025-02-05 12:58:41.599] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 12:58:41.599] [info] Finished verifying page locations.
+[2025-02-05 12:58:41.854] [info] Completed 1/44 benchmarks.
+[2025-02-05 12:58:41.854] [info] Starting benchmark 2 (sequential_writes):
+[2025-02-05 12:58:41.854] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [0], thread count: 4, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: write, flush instruction: none, run time: 10
+[2025-02-05 12:58:41.854] [info] Starting data generation.
+[2025-02-05 12:58:41.854] [info] Preparing memory region 0.
+[2025-02-05 12:58:41.854] [info] Preparing interleaved data.
+[2025-02-05 12:58:54.579] [info] Finished preparing interleaved data.
+[2025-02-05 12:58:54.579] [info] Finished generating data. Starting set up.
+[2025-02-05 12:58:54.580] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 12:59:05.036] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 12:59:05.036] [info] Verify page locations of region 0.
+[2025-02-05 12:59:05.133] [info] Verify page locations of region 1.
+[2025-02-05 12:59:05.133] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 12:59:05.133] [info] Finished verifying page locations.
+[2025-02-05 12:59:05.399] [info] Completed 2/44 benchmarks.
+[2025-02-05 12:59:05.399] [info] Starting benchmark 3 (sequential_writes):
+[2025-02-05 12:59:05.399] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [0], thread count: 8, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: write, flush instruction: none, run time: 10
+[2025-02-05 12:59:05.399] [info] Starting data generation.
+[2025-02-05 12:59:05.400] [info] Preparing memory region 0.
+[2025-02-05 12:59:05.400] [info] Preparing interleaved data.
+[2025-02-05 12:59:18.248] [info] Finished preparing interleaved data.
+[2025-02-05 12:59:18.248] [info] Finished generating data. Starting set up.
+[2025-02-05 12:59:18.248] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 12:59:28.599] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 12:59:28.599] [info] Verify page locations of region 0.
+[2025-02-05 12:59:28.699] [info] Verify page locations of region 1.
+[2025-02-05 12:59:28.699] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 12:59:28.699] [info] Finished verifying page locations.
+[2025-02-05 12:59:28.963] [info] Completed 3/44 benchmarks.
+[2025-02-05 12:59:28.963] [info] Starting benchmark 4 (sequential_writes):
+[2025-02-05 12:59:28.963] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [0], thread count: 16, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: write, flush instruction: none, run time: 10
+[2025-02-05 12:59:28.963] [info] Starting data generation.
+[2025-02-05 12:59:28.963] [info] Preparing memory region 0.
+[2025-02-05 12:59:28.963] [info] Preparing interleaved data.
+[2025-02-05 12:59:41.809] [info] Finished preparing interleaved data.
+[2025-02-05 12:59:41.809] [info] Finished generating data. Starting set up.
+[2025-02-05 12:59:41.809] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 12:59:52.034] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 12:59:52.034] [info] Verify page locations of region 0.
+[2025-02-05 12:59:52.138] [info] Verify page locations of region 1.
+[2025-02-05 12:59:52.138] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 12:59:52.138] [info] Finished verifying page locations.
+[2025-02-05 12:59:52.405] [info] Completed 4/44 benchmarks.
+[2025-02-05 12:59:52.405] [info] Starting benchmark 5 (sequential_writes):
+[2025-02-05 12:59:52.405] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [0], thread count: 24, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: write, flush instruction: none, run time: 10
+[2025-02-05 12:59:52.405] [info] Starting data generation.
+[2025-02-05 12:59:52.405] [info] Preparing memory region 0.
+[2025-02-05 12:59:52.405] [info] Preparing interleaved data.
+[2025-02-05 13:00:05.138] [info] Finished preparing interleaved data.
+[2025-02-05 13:00:05.138] [info] Finished generating data. Starting set up.
+[2025-02-05 13:00:05.138] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:00:15.334] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:00:15.334] [info] Verify page locations of region 0.
+[2025-02-05 13:00:15.434] [info] Verify page locations of region 1.
+[2025-02-05 13:00:15.434] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:00:15.434] [info] Finished verifying page locations.
+[2025-02-05 13:00:15.704] [info] Completed 5/44 benchmarks.
+[2025-02-05 13:00:15.705] [info] Starting benchmark 6 (sequential_writes):
+[2025-02-05 13:00:15.705] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [0], thread count: 32, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: write, flush instruction: none, run time: 10
+[2025-02-05 13:00:15.705] [info] Starting data generation.
+[2025-02-05 13:00:15.705] [info] Preparing memory region 0.
+[2025-02-05 13:00:15.705] [info] Preparing interleaved data.
+[2025-02-05 13:00:28.563] [info] Finished preparing interleaved data.
+[2025-02-05 13:00:28.563] [info] Finished generating data. Starting set up.
+[2025-02-05 13:00:28.563] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:00:38.728] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:00:38.728] [info] Verify page locations of region 0.
+[2025-02-05 13:00:38.827] [info] Verify page locations of region 1.
+[2025-02-05 13:00:38.827] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:00:38.827] [info] Finished verifying page locations.
+[2025-02-05 13:00:39.097] [info] Completed 6/44 benchmarks.
+[2025-02-05 13:00:39.097] [info] Starting benchmark 7 (sequential_writes):
+[2025-02-05 13:00:39.097] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [0], thread count: 40, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: write, flush instruction: none, run time: 10
+[2025-02-05 13:00:39.097] [info] Starting data generation.
+[2025-02-05 13:00:39.097] [info] Preparing memory region 0.
+[2025-02-05 13:00:39.097] [info] Preparing interleaved data.
+[2025-02-05 13:00:51.958] [info] Finished preparing interleaved data.
+[2025-02-05 13:00:51.958] [info] Finished generating data. Starting set up.
+[2025-02-05 13:00:51.958] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:01:02.118] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:01:02.118] [info] Verify page locations of region 0.
+[2025-02-05 13:01:02.219] [info] Verify page locations of region 1.
+[2025-02-05 13:01:02.219] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:01:02.219] [info] Finished verifying page locations.
+[2025-02-05 13:01:02.492] [info] Completed 7/44 benchmarks.
+[2025-02-05 13:01:02.492] [info] Starting benchmark 8 (sequential_writes):
+[2025-02-05 13:01:02.492] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [0], thread count: 48, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: write, flush instruction: none, run time: 10
+[2025-02-05 13:01:02.492] [info] Starting data generation.
+[2025-02-05 13:01:02.492] [info] Preparing memory region 0.
+[2025-02-05 13:01:02.492] [info] Preparing interleaved data.
+[2025-02-05 13:01:15.234] [info] Finished preparing interleaved data.
+[2025-02-05 13:01:15.234] [info] Finished generating data. Starting set up.
+[2025-02-05 13:01:15.234] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:01:25.406] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:01:25.406] [info] Verify page locations of region 0.
+[2025-02-05 13:01:25.504] [info] Verify page locations of region 1.
+[2025-02-05 13:01:25.505] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:01:25.505] [info] Finished verifying page locations.
+[2025-02-05 13:01:25.774] [info] Completed 8/44 benchmarks.
+[2025-02-05 13:01:25.774] [info] Starting benchmark 9 (sequential_writes):
+[2025-02-05 13:01:25.774] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [0], thread count: 56, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: write, flush instruction: none, run time: 10
+[2025-02-05 13:01:25.774] [info] Starting data generation.
+[2025-02-05 13:01:25.774] [info] Preparing memory region 0.
+[2025-02-05 13:01:25.774] [info] Preparing interleaved data.
+[2025-02-05 13:01:38.516] [info] Finished preparing interleaved data.
+[2025-02-05 13:01:38.516] [info] Finished generating data. Starting set up.
+[2025-02-05 13:01:38.516] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:01:48.686] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:01:48.686] [info] Verify page locations of region 0.
+[2025-02-05 13:01:48.785] [info] Verify page locations of region 1.
+[2025-02-05 13:01:48.785] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:01:48.785] [info] Finished verifying page locations.
+[2025-02-05 13:01:49.058] [info] Completed 9/44 benchmarks.
+[2025-02-05 13:01:49.058] [info] Starting benchmark 10 (sequential_writes):
+[2025-02-05 13:01:49.058] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [0], thread count: 64, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: write, flush instruction: none, run time: 10
+[2025-02-05 13:01:49.058] [info] Starting data generation.
+[2025-02-05 13:01:49.058] [info] Preparing memory region 0.
+[2025-02-05 13:01:49.058] [info] Preparing interleaved data.
+[2025-02-05 13:02:01.801] [info] Finished preparing interleaved data.
+[2025-02-05 13:02:01.801] [info] Finished generating data. Starting set up.
+[2025-02-05 13:02:01.801] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:02:11.979] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:02:11.979] [info] Verify page locations of region 0.
+[2025-02-05 13:02:12.087] [info] Verify page locations of region 1.
+[2025-02-05 13:02:12.087] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:02:12.087] [info] Finished verifying page locations.
+[2025-02-05 13:02:12.329] [info] Completed 10/44 benchmarks.
+[2025-02-05 13:02:12.329] [info] Starting benchmark 11 (sequential_writes):
+[2025-02-05 13:02:12.329] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [0], thread count: 72, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: write, flush instruction: none, run time: 10
+[2025-02-05 13:02:12.329] [info] Starting data generation.
+[2025-02-05 13:02:12.329] [info] Preparing memory region 0.
+[2025-02-05 13:02:12.329] [info] Preparing interleaved data.
+[2025-02-05 13:02:25.075] [info] Finished preparing interleaved data.
+[2025-02-05 13:02:25.075] [info] Finished generating data. Starting set up.
+[2025-02-05 13:02:25.075] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:02:35.266] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:02:35.266] [info] Verify page locations of region 0.
+[2025-02-05 13:02:35.367] [info] Verify page locations of region 1.
+[2025-02-05 13:02:35.367] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:02:35.368] [info] Finished verifying page locations.
+[2025-02-05 13:02:35.645] [info] Completed 11/44 benchmarks.
+[2025-02-05 13:02:35.645] [info] Starting benchmark 12 (random_writes):
+[2025-02-05 13:02:35.645] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: random, thread numa nodes: [0], thread count: 1, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: write, flush instruction: none, number operations: 110000000, random distribution: uniform, run time: 10
+[2025-02-05 13:02:35.943] [info] Running single benchmark random_writes with matrix args ["access_size","flush_instruction","number_threads"]
+[2025-02-05 13:02:35.943] [info] Starting data generation.
+[2025-02-05 13:02:35.943] [info] Preparing memory region 0.
+[2025-02-05 13:02:35.943] [info] Preparing interleaved data.
+[2025-02-05 13:02:48.696] [info] Finished preparing interleaved data.
+[2025-02-05 13:02:48.696] [info] Finished generating data. Starting set up.
+[2025-02-05 13:02:48.696] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:02:59.239] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:02:59.239] [info] Verify page locations of region 0.
+[2025-02-05 13:02:59.344] [info] Verify page locations of region 1.
+[2025-02-05 13:02:59.344] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:02:59.344] [info] Finished verifying page locations.
+[2025-02-05 13:02:59.559] [info] Completed 12/44 benchmarks.
+[2025-02-05 13:02:59.559] [info] Starting benchmark 13 (random_writes):
+[2025-02-05 13:02:59.559] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: random, thread numa nodes: [0], thread count: 4, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: write, flush instruction: none, number operations: 110000000, random distribution: uniform, run time: 10
+[2025-02-05 13:02:59.559] [info] Starting data generation.
+[2025-02-05 13:02:59.559] [info] Preparing memory region 0.
+[2025-02-05 13:02:59.559] [info] Preparing interleaved data.
+[2025-02-05 13:03:12.425] [info] Finished preparing interleaved data.
+[2025-02-05 13:03:12.425] [info] Finished generating data. Starting set up.
+[2025-02-05 13:03:12.425] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:03:22.585] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:03:22.585] [info] Verify page locations of region 0.
+[2025-02-05 13:03:22.690] [info] Verify page locations of region 1.
+[2025-02-05 13:03:22.690] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:03:22.690] [info] Finished verifying page locations.
+[2025-02-05 13:03:22.907] [info] Completed 13/44 benchmarks.
+[2025-02-05 13:03:22.907] [info] Starting benchmark 14 (random_writes):
+[2025-02-05 13:03:22.907] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: random, thread numa nodes: [0], thread count: 8, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: write, flush instruction: none, number operations: 110000000, random distribution: uniform, run time: 10
+[2025-02-05 13:03:22.907] [info] Starting data generation.
+[2025-02-05 13:03:22.907] [info] Preparing memory region 0.
+[2025-02-05 13:03:22.907] [info] Preparing interleaved data.
+[2025-02-05 13:03:35.656] [info] Finished preparing interleaved data.
+[2025-02-05 13:03:35.656] [info] Finished generating data. Starting set up.
+[2025-02-05 13:03:35.656] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:03:45.760] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:03:45.760] [info] Verify page locations of region 0.
+[2025-02-05 13:03:45.868] [info] Verify page locations of region 1.
+[2025-02-05 13:03:45.868] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:03:45.868] [info] Finished verifying page locations.
+[2025-02-05 13:03:46.093] [info] Completed 14/44 benchmarks.
+[2025-02-05 13:03:46.095] [info] Starting benchmark 15 (random_writes):
+[2025-02-05 13:03:46.095] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: random, thread numa nodes: [0], thread count: 16, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: write, flush instruction: none, number operations: 110000000, random distribution: uniform, run time: 10
+[2025-02-05 13:03:46.095] [info] Starting data generation.
+[2025-02-05 13:03:46.095] [info] Preparing memory region 0.
+[2025-02-05 13:03:46.095] [info] Preparing interleaved data.
+[2025-02-05 13:03:58.846] [info] Finished preparing interleaved data.
+[2025-02-05 13:03:58.846] [info] Finished generating data. Starting set up.
+[2025-02-05 13:03:58.846] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:04:08.919] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:04:08.924] [info] Verify page locations of region 0.
+[2025-02-05 13:04:09.021] [info] Verify page locations of region 1.
+[2025-02-05 13:04:09.021] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:04:09.021] [info] Finished verifying page locations.
+[2025-02-05 13:04:09.243] [info] Completed 15/44 benchmarks.
+[2025-02-05 13:04:09.243] [info] Starting benchmark 16 (random_writes):
+[2025-02-05 13:04:09.243] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: random, thread numa nodes: [0], thread count: 24, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: write, flush instruction: none, number operations: 110000000, random distribution: uniform, run time: 10
+[2025-02-05 13:04:09.243] [info] Starting data generation.
+[2025-02-05 13:04:09.243] [info] Preparing memory region 0.
+[2025-02-05 13:04:09.243] [info] Preparing interleaved data.
+[2025-02-05 13:04:22.003] [info] Finished preparing interleaved data.
+[2025-02-05 13:04:22.003] [info] Finished generating data. Starting set up.
+[2025-02-05 13:04:22.004] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:04:32.066] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:04:32.066] [info] Verify page locations of region 0.
+[2025-02-05 13:04:32.165] [info] Verify page locations of region 1.
+[2025-02-05 13:04:32.165] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:04:32.165] [info] Finished verifying page locations.
+[2025-02-05 13:04:32.388] [info] Completed 16/44 benchmarks.
+[2025-02-05 13:04:32.388] [info] Starting benchmark 17 (random_writes):
+[2025-02-05 13:04:32.388] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: random, thread numa nodes: [0], thread count: 32, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: write, flush instruction: none, number operations: 110000000, random distribution: uniform, run time: 10
+[2025-02-05 13:04:32.388] [info] Starting data generation.
+[2025-02-05 13:04:32.388] [info] Preparing memory region 0.
+[2025-02-05 13:04:32.388] [info] Preparing interleaved data.
+[2025-02-05 13:04:45.132] [info] Finished preparing interleaved data.
+[2025-02-05 13:04:45.132] [info] Finished generating data. Starting set up.
+[2025-02-05 13:04:45.132] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:04:55.193] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:04:55.193] [info] Verify page locations of region 0.
+[2025-02-05 13:04:55.293] [info] Verify page locations of region 1.
+[2025-02-05 13:04:55.293] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:04:55.293] [info] Finished verifying page locations.
+[2025-02-05 13:04:55.517] [info] Completed 17/44 benchmarks.
+[2025-02-05 13:04:55.517] [info] Starting benchmark 18 (random_writes):
+[2025-02-05 13:04:55.517] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: random, thread numa nodes: [0], thread count: 40, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: write, flush instruction: none, number operations: 110000000, random distribution: uniform, run time: 10
+[2025-02-05 13:04:55.517] [info] Starting data generation.
+[2025-02-05 13:04:55.517] [info] Preparing memory region 0.
+[2025-02-05 13:04:55.517] [info] Preparing interleaved data.
+[2025-02-05 13:05:08.263] [info] Finished preparing interleaved data.
+[2025-02-05 13:05:08.263] [info] Finished generating data. Starting set up.
+[2025-02-05 13:05:08.263] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:05:18.322] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:05:18.322] [info] Verify page locations of region 0.
+[2025-02-05 13:05:18.417] [info] Verify page locations of region 1.
+[2025-02-05 13:05:18.417] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:05:18.417] [info] Finished verifying page locations.
+[2025-02-05 13:05:18.642] [info] Completed 18/44 benchmarks.
+[2025-02-05 13:05:18.642] [info] Starting benchmark 19 (random_writes):
+[2025-02-05 13:05:18.642] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: random, thread numa nodes: [0], thread count: 48, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: write, flush instruction: none, number operations: 110000000, random distribution: uniform, run time: 10
+[2025-02-05 13:05:18.643] [info] Starting data generation.
+[2025-02-05 13:05:18.643] [info] Preparing memory region 0.
+[2025-02-05 13:05:18.643] [info] Preparing interleaved data.
+[2025-02-05 13:05:31.499] [info] Finished preparing interleaved data.
+[2025-02-05 13:05:31.499] [info] Finished generating data. Starting set up.
+[2025-02-05 13:05:31.499] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:05:41.562] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:05:41.562] [info] Verify page locations of region 0.
+[2025-02-05 13:05:41.656] [info] Verify page locations of region 1.
+[2025-02-05 13:05:41.656] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:05:41.656] [info] Finished verifying page locations.
+[2025-02-05 13:05:41.877] [info] Completed 19/44 benchmarks.
+[2025-02-05 13:05:41.877] [info] Starting benchmark 20 (random_writes):
+[2025-02-05 13:05:41.877] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: random, thread numa nodes: [0], thread count: 56, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: write, flush instruction: none, number operations: 110000000, random distribution: uniform, run time: 10
+[2025-02-05 13:05:41.877] [info] Starting data generation.
+[2025-02-05 13:05:41.877] [info] Preparing memory region 0.
+[2025-02-05 13:05:41.877] [info] Preparing interleaved data.
+[2025-02-05 13:05:54.619] [info] Finished preparing interleaved data.
+[2025-02-05 13:05:54.619] [info] Finished generating data. Starting set up.
+[2025-02-05 13:05:54.619] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:06:04.671] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:06:04.671] [info] Verify page locations of region 0.
+[2025-02-05 13:06:04.767] [info] Verify page locations of region 1.
+[2025-02-05 13:06:04.767] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:06:04.767] [info] Finished verifying page locations.
+[2025-02-05 13:06:04.989] [info] Completed 20/44 benchmarks.
+[2025-02-05 13:06:04.989] [info] Starting benchmark 21 (random_writes):
+[2025-02-05 13:06:04.989] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: random, thread numa nodes: [0], thread count: 64, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: write, flush instruction: none, number operations: 110000000, random distribution: uniform, run time: 10
+[2025-02-05 13:06:04.989] [info] Starting data generation.
+[2025-02-05 13:06:04.989] [info] Preparing memory region 0.
+[2025-02-05 13:06:04.989] [info] Preparing interleaved data.
+[2025-02-05 13:06:17.846] [info] Finished preparing interleaved data.
+[2025-02-05 13:06:17.846] [info] Finished generating data. Starting set up.
+[2025-02-05 13:06:17.847] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:06:27.895] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:06:27.896] [info] Verify page locations of region 0.
+[2025-02-05 13:06:27.996] [info] Verify page locations of region 1.
+[2025-02-05 13:06:27.996] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:06:27.996] [info] Finished verifying page locations.
+[2025-02-05 13:06:28.212] [info] Completed 21/44 benchmarks.
+[2025-02-05 13:06:28.212] [info] Starting benchmark 22 (random_writes):
+[2025-02-05 13:06:28.212] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: random, thread numa nodes: [0], thread count: 72, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: write, flush instruction: none, number operations: 110000000, random distribution: uniform, run time: 10
+[2025-02-05 13:06:28.212] [info] Starting data generation.
+[2025-02-05 13:06:28.212] [info] Preparing memory region 0.
+[2025-02-05 13:06:28.212] [info] Preparing interleaved data.
+[2025-02-05 13:06:41.083] [info] Finished preparing interleaved data.
+[2025-02-05 13:06:41.083] [info] Finished generating data. Starting set up.
+[2025-02-05 13:06:41.083] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:06:51.134] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:06:51.134] [info] Verify page locations of region 0.
+[2025-02-05 13:06:51.230] [info] Verify page locations of region 1.
+[2025-02-05 13:06:51.231] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:06:51.231] [info] Finished verifying page locations.
+[2025-02-05 13:06:51.469] [info] Completed 22/44 benchmarks.
+[2025-02-05 13:06:51.469] [info] Starting benchmark 23 (random_reads):
+[2025-02-05 13:06:51.469] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: random, thread numa nodes: [0], thread count: 1, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: read, number operations: 110000000, random distribution: uniform, run time: 10
+[2025-02-05 13:06:51.488] [info] Running single benchmark random_reads with matrix args ["access_size","number_threads"]
+[2025-02-05 13:06:51.488] [info] Starting data generation.
+[2025-02-05 13:06:51.488] [info] Preparing memory region 0.
+[2025-02-05 13:06:51.488] [info] Preparing interleaved data.
+[2025-02-05 13:07:05.555] [info] Finished preparing interleaved data.
+[2025-02-05 13:07:05.555] [info] Finished generating data. Starting set up.
+[2025-02-05 13:07:05.555] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:07:16.124] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:07:16.124] [info] Verify page locations of region 0.
+[2025-02-05 13:07:16.226] [info] Verify page locations of region 1.
+[2025-02-05 13:07:16.226] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:07:16.226] [info] Finished verifying page locations.
+[2025-02-05 13:07:16.441] [info] Completed 23/44 benchmarks.
+[2025-02-05 13:07:16.441] [info] Starting benchmark 24 (random_reads):
+[2025-02-05 13:07:16.441] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: random, thread numa nodes: [0], thread count: 4, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: read, number operations: 110000000, random distribution: uniform, run time: 10
+[2025-02-05 13:07:16.441] [info] Starting data generation.
+[2025-02-05 13:07:16.441] [info] Preparing memory region 0.
+[2025-02-05 13:07:16.441] [info] Preparing interleaved data.
+[2025-02-05 13:07:30.507] [info] Finished preparing interleaved data.
+[2025-02-05 13:07:30.507] [info] Finished generating data. Starting set up.
+[2025-02-05 13:07:30.507] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:07:40.694] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:07:40.694] [info] Verify page locations of region 0.
+[2025-02-05 13:07:40.794] [info] Verify page locations of region 1.
+[2025-02-05 13:07:40.794] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:07:40.794] [info] Finished verifying page locations.
+[2025-02-05 13:07:40.972] [info] Completed 24/44 benchmarks.
+[2025-02-05 13:07:40.972] [info] Starting benchmark 25 (random_reads):
+[2025-02-05 13:07:40.972] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: random, thread numa nodes: [0], thread count: 8, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: read, number operations: 110000000, random distribution: uniform, run time: 10
+[2025-02-05 13:07:40.972] [info] Starting data generation.
+[2025-02-05 13:07:40.972] [info] Preparing memory region 0.
+[2025-02-05 13:07:40.973] [info] Preparing interleaved data.
+[2025-02-05 13:07:55.031] [info] Finished preparing interleaved data.
+[2025-02-05 13:07:55.031] [info] Finished generating data. Starting set up.
+[2025-02-05 13:07:55.031] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:08:05.166] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:08:05.167] [info] Verify page locations of region 0.
+[2025-02-05 13:08:05.264] [info] Verify page locations of region 1.
+[2025-02-05 13:08:05.264] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:08:05.264] [info] Finished verifying page locations.
+[2025-02-05 13:08:05.479] [info] Completed 25/44 benchmarks.
+[2025-02-05 13:08:05.479] [info] Starting benchmark 26 (random_reads):
+[2025-02-05 13:08:05.479] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: random, thread numa nodes: [0], thread count: 16, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: read, number operations: 110000000, random distribution: uniform, run time: 10
+[2025-02-05 13:08:05.479] [info] Starting data generation.
+[2025-02-05 13:08:05.479] [info] Preparing memory region 0.
+[2025-02-05 13:08:05.479] [info] Preparing interleaved data.
+[2025-02-05 13:08:19.538] [info] Finished preparing interleaved data.
+[2025-02-05 13:08:19.538] [info] Finished generating data. Starting set up.
+[2025-02-05 13:08:19.538] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:08:29.646] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:08:29.646] [info] Verify page locations of region 0.
+[2025-02-05 13:08:29.742] [info] Verify page locations of region 1.
+[2025-02-05 13:08:29.742] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:08:29.742] [info] Finished verifying page locations.
+[2025-02-05 13:08:29.963] [info] Completed 26/44 benchmarks.
+[2025-02-05 13:08:29.963] [info] Starting benchmark 27 (random_reads):
+[2025-02-05 13:08:29.963] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: random, thread numa nodes: [0], thread count: 24, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: read, number operations: 110000000, random distribution: uniform, run time: 10
+[2025-02-05 13:08:29.963] [info] Starting data generation.
+[2025-02-05 13:08:29.963] [info] Preparing memory region 0.
+[2025-02-05 13:08:29.963] [info] Preparing interleaved data.
+[2025-02-05 13:08:44.024] [info] Finished preparing interleaved data.
+[2025-02-05 13:08:44.024] [info] Finished generating data. Starting set up.
+[2025-02-05 13:08:44.024] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:08:54.129] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:08:54.129] [info] Verify page locations of region 0.
+[2025-02-05 13:08:54.224] [info] Verify page locations of region 1.
+[2025-02-05 13:08:54.224] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:08:54.224] [info] Finished verifying page locations.
+[2025-02-05 13:08:54.440] [info] Completed 27/44 benchmarks.
+[2025-02-05 13:08:54.440] [info] Starting benchmark 28 (random_reads):
+[2025-02-05 13:08:54.440] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: random, thread numa nodes: [0], thread count: 32, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: read, number operations: 110000000, random distribution: uniform, run time: 10
+[2025-02-05 13:08:54.440] [info] Starting data generation.
+[2025-02-05 13:08:54.440] [info] Preparing memory region 0.
+[2025-02-05 13:08:54.440] [info] Preparing interleaved data.
+[2025-02-05 13:09:08.625] [info] Finished preparing interleaved data.
+[2025-02-05 13:09:08.625] [info] Finished generating data. Starting set up.
+[2025-02-05 13:09:08.625] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:09:18.725] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:09:18.725] [info] Verify page locations of region 0.
+[2025-02-05 13:09:18.822] [info] Verify page locations of region 1.
+[2025-02-05 13:09:18.822] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:09:18.822] [info] Finished verifying page locations.
+[2025-02-05 13:09:19.037] [info] Completed 28/44 benchmarks.
+[2025-02-05 13:09:19.037] [info] Starting benchmark 29 (random_reads):
+[2025-02-05 13:09:19.037] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: random, thread numa nodes: [0], thread count: 40, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: read, number operations: 110000000, random distribution: uniform, run time: 10
+[2025-02-05 13:09:19.037] [info] Starting data generation.
+[2025-02-05 13:09:19.037] [info] Preparing memory region 0.
+[2025-02-05 13:09:19.037] [info] Preparing interleaved data.
+[2025-02-05 13:09:33.242] [info] Finished preparing interleaved data.
+[2025-02-05 13:09:33.242] [info] Finished generating data. Starting set up.
+[2025-02-05 13:09:33.242] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:09:43.340] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:09:43.340] [info] Verify page locations of region 0.
+[2025-02-05 13:09:43.435] [info] Verify page locations of region 1.
+[2025-02-05 13:09:43.436] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:09:43.436] [info] Finished verifying page locations.
+[2025-02-05 13:09:43.648] [info] Completed 29/44 benchmarks.
+[2025-02-05 13:09:43.648] [info] Starting benchmark 30 (random_reads):
+[2025-02-05 13:09:43.648] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: random, thread numa nodes: [0], thread count: 48, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: read, number operations: 110000000, random distribution: uniform, run time: 10
+[2025-02-05 13:09:43.648] [info] Starting data generation.
+[2025-02-05 13:09:43.648] [info] Preparing memory region 0.
+[2025-02-05 13:09:43.648] [info] Preparing interleaved data.
+[2025-02-05 13:09:57.715] [info] Finished preparing interleaved data.
+[2025-02-05 13:09:57.715] [info] Finished generating data. Starting set up.
+[2025-02-05 13:09:57.715] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:10:07.812] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:10:07.812] [info] Verify page locations of region 0.
+[2025-02-05 13:10:07.908] [info] Verify page locations of region 1.
+[2025-02-05 13:10:07.908] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:10:07.908] [info] Finished verifying page locations.
+[2025-02-05 13:10:08.119] [info] Completed 30/44 benchmarks.
+[2025-02-05 13:10:08.119] [info] Starting benchmark 31 (random_reads):
+[2025-02-05 13:10:08.119] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: random, thread numa nodes: [0], thread count: 56, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: read, number operations: 110000000, random distribution: uniform, run time: 10
+[2025-02-05 13:10:08.119] [info] Starting data generation.
+[2025-02-05 13:10:08.119] [info] Preparing memory region 0.
+[2025-02-05 13:10:08.119] [info] Preparing interleaved data.
+[2025-02-05 13:10:22.184] [info] Finished preparing interleaved data.
+[2025-02-05 13:10:22.184] [info] Finished generating data. Starting set up.
+[2025-02-05 13:10:22.184] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:10:32.270] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:10:32.270] [info] Verify page locations of region 0.
+[2025-02-05 13:10:32.367] [info] Verify page locations of region 1.
+[2025-02-05 13:10:32.367] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:10:32.367] [info] Finished verifying page locations.
+[2025-02-05 13:10:32.578] [info] Completed 31/44 benchmarks.
+[2025-02-05 13:10:32.578] [info] Starting benchmark 32 (random_reads):
+[2025-02-05 13:10:32.578] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: random, thread numa nodes: [0], thread count: 64, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: read, number operations: 110000000, random distribution: uniform, run time: 10
+[2025-02-05 13:10:32.578] [info] Starting data generation.
+[2025-02-05 13:10:32.578] [info] Preparing memory region 0.
+[2025-02-05 13:10:32.578] [info] Preparing interleaved data.
+[2025-02-05 13:10:46.643] [info] Finished preparing interleaved data.
+[2025-02-05 13:10:46.644] [info] Finished generating data. Starting set up.
+[2025-02-05 13:10:46.644] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:10:56.727] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:10:56.728] [info] Verify page locations of region 0.
+[2025-02-05 13:10:56.822] [info] Verify page locations of region 1.
+[2025-02-05 13:10:56.822] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:10:56.822] [info] Finished verifying page locations.
+[2025-02-05 13:10:57.031] [info] Completed 32/44 benchmarks.
+[2025-02-05 13:10:57.031] [info] Starting benchmark 33 (random_reads):
+[2025-02-05 13:10:57.031] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: random, thread numa nodes: [0], thread count: 72, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: read, number operations: 110000000, random distribution: uniform, run time: 10
+[2025-02-05 13:10:57.031] [info] Starting data generation.
+[2025-02-05 13:10:57.031] [info] Preparing memory region 0.
+[2025-02-05 13:10:57.031] [info] Preparing interleaved data.
+[2025-02-05 13:11:11.235] [info] Finished preparing interleaved data.
+[2025-02-05 13:11:11.235] [info] Finished generating data. Starting set up.
+[2025-02-05 13:11:11.235] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:11:21.320] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:11:21.320] [info] Verify page locations of region 0.
+[2025-02-05 13:11:21.415] [info] Verify page locations of region 1.
+[2025-02-05 13:11:21.415] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:11:21.415] [info] Finished verifying page locations.
+[2025-02-05 13:11:21.592] [info] Completed 33/44 benchmarks.
+[2025-02-05 13:11:21.592] [info] Starting benchmark 34 (sequential_reads):
+[2025-02-05 13:11:21.592] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [0], thread count: 1, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: read, run time: 10
+[2025-02-05 13:11:21.618] [info] Running single benchmark sequential_reads with matrix args ["access_size","number_threads"]
+[2025-02-05 13:11:21.618] [info] Starting data generation.
+[2025-02-05 13:11:21.618] [info] Preparing memory region 0.
+[2025-02-05 13:11:21.618] [info] Preparing interleaved data.
+[2025-02-05 13:11:35.687] [info] Finished preparing interleaved data.
+[2025-02-05 13:11:35.687] [info] Finished generating data. Starting set up.
+[2025-02-05 13:11:35.687] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:11:47.372] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:11:47.372] [info] Verify page locations of region 0.
+[2025-02-05 13:11:47.473] [info] Verify page locations of region 1.
+[2025-02-05 13:11:47.473] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:11:47.473] [info] Finished verifying page locations.
+[2025-02-05 13:11:47.731] [info] Completed 34/44 benchmarks.
+[2025-02-05 13:11:47.732] [info] Starting benchmark 35 (sequential_reads):
+[2025-02-05 13:11:47.732] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [0], thread count: 4, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: read, run time: 10
+[2025-02-05 13:11:47.732] [info] Starting data generation.
+[2025-02-05 13:11:47.732] [info] Preparing memory region 0.
+[2025-02-05 13:11:47.732] [info] Preparing interleaved data.
+[2025-02-05 13:12:01.917] [info] Finished preparing interleaved data.
+[2025-02-05 13:12:01.917] [info] Finished generating data. Starting set up.
+[2025-02-05 13:12:01.917] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:12:12.390] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:12:12.390] [info] Verify page locations of region 0.
+[2025-02-05 13:12:12.488] [info] Verify page locations of region 1.
+[2025-02-05 13:12:12.488] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:12:12.488] [info] Finished verifying page locations.
+[2025-02-05 13:12:12.751] [info] Completed 35/44 benchmarks.
+[2025-02-05 13:12:12.751] [info] Starting benchmark 36 (sequential_reads):
+[2025-02-05 13:12:12.751] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [0], thread count: 8, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: read, run time: 10
+[2025-02-05 13:12:12.751] [info] Starting data generation.
+[2025-02-05 13:12:12.751] [info] Preparing memory region 0.
+[2025-02-05 13:12:12.751] [info] Preparing interleaved data.
+[2025-02-05 13:12:26.810] [info] Finished preparing interleaved data.
+[2025-02-05 13:12:26.810] [info] Finished generating data. Starting set up.
+[2025-02-05 13:12:26.810] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:12:37.154] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:12:37.154] [info] Verify page locations of region 0.
+[2025-02-05 13:12:37.253] [info] Verify page locations of region 1.
+[2025-02-05 13:12:37.253] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:12:37.253] [info] Finished verifying page locations.
+[2025-02-05 13:12:37.518] [info] Completed 36/44 benchmarks.
+[2025-02-05 13:12:37.518] [info] Starting benchmark 37 (sequential_reads):
+[2025-02-05 13:12:37.518] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [0], thread count: 16, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: read, run time: 10
+[2025-02-05 13:12:37.518] [info] Starting data generation.
+[2025-02-05 13:12:37.518] [info] Preparing memory region 0.
+[2025-02-05 13:12:37.518] [info] Preparing interleaved data.
+[2025-02-05 13:12:51.702] [info] Finished preparing interleaved data.
+[2025-02-05 13:12:51.702] [info] Finished generating data. Starting set up.
+[2025-02-05 13:12:51.702] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:13:01.938] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:13:01.939] [info] Verify page locations of region 0.
+[2025-02-05 13:13:02.036] [info] Verify page locations of region 1.
+[2025-02-05 13:13:02.036] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:13:02.036] [info] Finished verifying page locations.
+[2025-02-05 13:13:02.301] [info] Completed 37/44 benchmarks.
+[2025-02-05 13:13:02.301] [info] Starting benchmark 38 (sequential_reads):
+[2025-02-05 13:13:02.301] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [0], thread count: 24, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: read, run time: 10
+[2025-02-05 13:13:02.301] [info] Starting data generation.
+[2025-02-05 13:13:02.301] [info] Preparing memory region 0.
+[2025-02-05 13:13:02.301] [info] Preparing interleaved data.
+[2025-02-05 13:13:16.365] [info] Finished preparing interleaved data.
+[2025-02-05 13:13:16.365] [info] Finished generating data. Starting set up.
+[2025-02-05 13:13:16.365] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:13:26.560] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:13:26.560] [info] Verify page locations of region 0.
+[2025-02-05 13:13:26.660] [info] Verify page locations of region 1.
+[2025-02-05 13:13:26.660] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:13:26.660] [info] Finished verifying page locations.
+[2025-02-05 13:13:26.927] [info] Completed 38/44 benchmarks.
+[2025-02-05 13:13:26.927] [info] Starting benchmark 39 (sequential_reads):
+[2025-02-05 13:13:26.927] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [0], thread count: 32, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: read, run time: 10
+[2025-02-05 13:13:26.927] [info] Starting data generation.
+[2025-02-05 13:13:26.927] [info] Preparing memory region 0.
+[2025-02-05 13:13:26.927] [info] Preparing interleaved data.
+[2025-02-05 13:13:40.986] [info] Finished preparing interleaved data.
+[2025-02-05 13:13:40.986] [info] Finished generating data. Starting set up.
+[2025-02-05 13:13:40.987] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:13:51.149] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:13:51.149] [info] Verify page locations of region 0.
+[2025-02-05 13:13:51.246] [info] Verify page locations of region 1.
+[2025-02-05 13:13:51.246] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:13:51.246] [info] Finished verifying page locations.
+[2025-02-05 13:13:51.521] [info] Completed 39/44 benchmarks.
+[2025-02-05 13:13:51.521] [info] Starting benchmark 40 (sequential_reads):
+[2025-02-05 13:13:51.521] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [0], thread count: 40, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: read, run time: 10
+[2025-02-05 13:13:51.521] [info] Starting data generation.
+[2025-02-05 13:13:51.521] [info] Preparing memory region 0.
+[2025-02-05 13:13:51.521] [info] Preparing interleaved data.
+[2025-02-05 13:14:05.579] [info] Finished preparing interleaved data.
+[2025-02-05 13:14:05.579] [info] Finished generating data. Starting set up.
+[2025-02-05 13:14:05.579] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:14:15.754] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:14:15.755] [info] Verify page locations of region 0.
+[2025-02-05 13:14:15.852] [info] Verify page locations of region 1.
+[2025-02-05 13:14:15.852] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:14:15.852] [info] Finished verifying page locations.
+[2025-02-05 13:14:16.122] [info] Completed 40/44 benchmarks.
+[2025-02-05 13:14:16.122] [info] Starting benchmark 41 (sequential_reads):
+[2025-02-05 13:14:16.122] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [0], thread count: 48, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: read, run time: 10
+[2025-02-05 13:14:16.122] [info] Starting data generation.
+[2025-02-05 13:14:16.122] [info] Preparing memory region 0.
+[2025-02-05 13:14:16.122] [info] Preparing interleaved data.
+[2025-02-05 13:14:30.324] [info] Finished preparing interleaved data.
+[2025-02-05 13:14:30.324] [info] Finished generating data. Starting set up.
+[2025-02-05 13:14:30.325] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:14:40.493] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:14:40.493] [info] Verify page locations of region 0.
+[2025-02-05 13:14:40.589] [info] Verify page locations of region 1.
+[2025-02-05 13:14:40.589] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:14:40.589] [info] Finished verifying page locations.
+[2025-02-05 13:14:40.869] [info] Completed 41/44 benchmarks.
+[2025-02-05 13:14:40.869] [info] Starting benchmark 42 (sequential_reads):
+[2025-02-05 13:14:40.869] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [0], thread count: 56, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: read, run time: 10
+[2025-02-05 13:14:40.869] [info] Starting data generation.
+[2025-02-05 13:14:40.869] [info] Preparing memory region 0.
+[2025-02-05 13:14:40.869] [info] Preparing interleaved data.
+[2025-02-05 13:14:55.056] [info] Finished preparing interleaved data.
+[2025-02-05 13:14:55.056] [info] Finished generating data. Starting set up.
+[2025-02-05 13:14:55.056] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:15:05.227] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:15:05.227] [info] Verify page locations of region 0.
+[2025-02-05 13:15:05.327] [info] Verify page locations of region 1.
+[2025-02-05 13:15:05.327] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:15:05.327] [info] Finished verifying page locations.
+[2025-02-05 13:15:05.603] [info] Completed 42/44 benchmarks.
+[2025-02-05 13:15:05.603] [info] Starting benchmark 43 (sequential_reads):
+[2025-02-05 13:15:05.603] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [0], thread count: 64, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: read, run time: 10
+[2025-02-05 13:15:05.603] [info] Starting data generation.
+[2025-02-05 13:15:05.604] [info] Preparing memory region 0.
+[2025-02-05 13:15:05.604] [info] Preparing interleaved data.
+[2025-02-05 13:15:19.794] [info] Finished preparing interleaved data.
+[2025-02-05 13:15:19.794] [info] Finished generating data. Starting set up.
+[2025-02-05 13:15:19.794] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:15:29.984] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:15:29.984] [info] Verify page locations of region 0.
+[2025-02-05 13:15:30.079] [info] Verify page locations of region 1.
+[2025-02-05 13:15:30.080] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:15:30.080] [info] Finished verifying page locations.
+[2025-02-05 13:15:30.347] [info] Completed 43/44 benchmarks.
+[2025-02-05 13:15:30.347] [info] Starting benchmark 44 (sequential_reads):
+[2025-02-05 13:15:30.347] [info] Single workload: memory region 0 size: 96636764160, numa nodes: [1], partition count: 1, page placement: interleaved, exec mode: sequential, thread numa nodes: [0], thread count: 72, thread pinning: all-numa, thread core IDs: [], min io chunk size: 67108864, access size: 64, operation: read, run time: 10
+[2025-02-05 13:15:30.347] [info] Starting data generation.
+[2025-02-05 13:15:30.347] [info] Preparing memory region 0.
+[2025-02-05 13:15:30.347] [info] Preparing interleaved data.
+[2025-02-05 13:15:44.408] [info] Finished preparing interleaved data.
+[2025-02-05 13:15:44.408] [info] Finished generating data. Starting set up.
+[2025-02-05 13:15:44.408] [info] Finished setting up benchmark. Starting benchmark execution.
+[2025-02-05 13:15:54.594] [info] Finished running benchmark. Starting page location verification.
+[2025-02-05 13:15:54.594] [info] Verify page locations of region 0.
+[2025-02-05 13:15:54.692] [info] Verify page locations of region 1.
+[2025-02-05 13:15:54.692] [info] Skipped interleaved page placement verification since region size is 0.
+[2025-02-05 13:15:54.692] [info] Finished verifying page locations.
+[2025-02-05 13:15:54.982] [info] Completed 44/44 benchmarks.
+[2025-02-05 13:15:55.010] [info] Summary:
+[2025-02-05 13:15:55.011] [info] sequential_writes:	avg_bandwidth (GB/s): 125.10230425783585	min_bandwidth (GB/s): 8.709922621745545	max_bandwidth (GB/s): 162.24831584679734
+[2025-02-05 13:15:55.011] [info] min_bandwidth config: {"access_size":64,"exec_mode":"sequential","flush_instruction":"none","m0_explicit_hugepages_size":0,"m0_node_count_first_partition":18446744073709551615,"m0_numa_nodes":[1],"m0_percentage_pages_first_partition":18446744073709551615,"m0_region_size":96636764160,"m0_transparent_huge_pages":false,"m1_explicit_hugepages_size":0,"m1_node_count_first_partition":18446744073709551615,"m1_numa_nodes":[],"m1_percentage_pages_first_partition":18446744073709551615,"m1_region_size":0,"m1_transparent_huge_pages":false,"min_io_chunk_size":67108864,"numa_task_nodes":[0],"number_partitions":1,"number_threads":1,"operation":"write","run_time":10,"thread_cores":[],"thread_pin_mode":"all-numa"}
+[2025-02-05 13:15:55.011] [info] max_bandwidth config: {"access_size":64,"exec_mode":"sequential","flush_instruction":"none","m0_explicit_hugepages_size":0,"m0_node_count_first_partition":18446744073709551615,"m0_numa_nodes":[1],"m0_percentage_pages_first_partition":18446744073709551615,"m0_region_size":96636764160,"m0_transparent_huge_pages":false,"m1_explicit_hugepages_size":0,"m1_node_count_first_partition":18446744073709551615,"m1_numa_nodes":[],"m1_percentage_pages_first_partition":18446744073709551615,"m1_region_size":0,"m1_transparent_huge_pages":false,"min_io_chunk_size":67108864,"numa_task_nodes":[0],"number_partitions":1,"number_threads":32,"operation":"write","run_time":10,"thread_cores":[],"thread_pin_mode":"all-numa"}
+[2025-02-05 13:15:55.011] [info] random_writes:	avg_bandwidth (GB/s): 116.74803678493657	min_bandwidth (GB/s): 6.021383736222288	max_bandwidth (GB/s): 167.41462732320804
+[2025-02-05 13:15:55.011] [info] min_bandwidth config: {"access_size":64,"exec_mode":"random","flush_instruction":"none","m0_explicit_hugepages_size":0,"m0_node_count_first_partition":18446744073709551615,"m0_numa_nodes":[1],"m0_percentage_pages_first_partition":18446744073709551615,"m0_region_size":96636764160,"m0_transparent_huge_pages":false,"m1_explicit_hugepages_size":0,"m1_node_count_first_partition":18446744073709551615,"m1_numa_nodes":[],"m1_percentage_pages_first_partition":18446744073709551615,"m1_region_size":0,"m1_transparent_huge_pages":false,"min_io_chunk_size":67108864,"numa_task_nodes":[0],"number_operations":110000000,"number_partitions":1,"number_threads":1,"operation":"write","random_distribution":"uniform","run_time":10,"thread_cores":[],"thread_pin_mode":"all-numa"}
+[2025-02-05 13:15:55.011] [info] max_bandwidth config: {"access_size":64,"exec_mode":"random","flush_instruction":"none","m0_explicit_hugepages_size":0,"m0_node_count_first_partition":18446744073709551615,"m0_numa_nodes":[1],"m0_percentage_pages_first_partition":18446744073709551615,"m0_region_size":96636764160,"m0_transparent_huge_pages":false,"m1_explicit_hugepages_size":0,"m1_node_count_first_partition":18446744073709551615,"m1_numa_nodes":[],"m1_percentage_pages_first_partition":18446744073709551615,"m1_region_size":0,"m1_transparent_huge_pages":false,"min_io_chunk_size":67108864,"numa_task_nodes":[0],"number_operations":110000000,"number_partitions":1,"number_threads":40,"operation":"write","random_distribution":"uniform","run_time":10,"thread_cores":[],"thread_pin_mode":"all-numa"}
+[2025-02-05 13:15:55.011] [info] random_reads:	avg_bandwidth (GB/s): 43.32401902093558	min_bandwidth (GB/s): 1.3641668994587715	max_bandwidth (GB/s): 91.29225061776931
+[2025-02-05 13:15:55.011] [info] min_bandwidth config: {"access_size":64,"exec_mode":"random","m0_explicit_hugepages_size":0,"m0_node_count_first_partition":18446744073709551615,"m0_numa_nodes":[1],"m0_percentage_pages_first_partition":18446744073709551615,"m0_region_size":96636764160,"m0_transparent_huge_pages":false,"m1_explicit_hugepages_size":0,"m1_node_count_first_partition":18446744073709551615,"m1_numa_nodes":[],"m1_percentage_pages_first_partition":18446744073709551615,"m1_region_size":0,"m1_transparent_huge_pages":false,"min_io_chunk_size":67108864,"numa_task_nodes":[0],"number_operations":110000000,"number_partitions":1,"number_threads":1,"operation":"read","random_distribution":"uniform","run_time":10,"thread_cores":[],"thread_pin_mode":"all-numa"}
+[2025-02-05 13:15:55.011] [info] max_bandwidth config: {"access_size":64,"exec_mode":"random","m0_explicit_hugepages_size":0,"m0_node_count_first_partition":18446744073709551615,"m0_numa_nodes":[1],"m0_percentage_pages_first_partition":18446744073709551615,"m0_region_size":96636764160,"m0_transparent_huge_pages":false,"m1_explicit_hugepages_size":0,"m1_node_count_first_partition":18446744073709551615,"m1_numa_nodes":[],"m1_percentage_pages_first_partition":18446744073709551615,"m1_region_size":0,"m1_transparent_huge_pages":false,"min_io_chunk_size":67108864,"numa_task_nodes":[0],"number_operations":110000000,"number_partitions":1,"number_threads":72,"operation":"read","random_distribution":"uniform","run_time":10,"thread_cores":[],"thread_pin_mode":"all-numa"}
+[2025-02-05 13:15:55.011] [info] sequential_reads:	avg_bandwidth (GB/s): 93.90817596098809	min_bandwidth (GB/s): 5.101580641417086	max_bandwidth (GB/s): 129.4263106316548
+[2025-02-05 13:15:55.011] [info] min_bandwidth config: {"access_size":64,"exec_mode":"sequential","m0_explicit_hugepages_size":0,"m0_node_count_first_partition":18446744073709551615,"m0_numa_nodes":[1],"m0_percentage_pages_first_partition":18446744073709551615,"m0_region_size":96636764160,"m0_transparent_huge_pages":false,"m1_explicit_hugepages_size":0,"m1_node_count_first_partition":18446744073709551615,"m1_numa_nodes":[],"m1_percentage_pages_first_partition":18446744073709551615,"m1_region_size":0,"m1_transparent_huge_pages":false,"min_io_chunk_size":67108864,"numa_task_nodes":[0],"number_partitions":1,"number_threads":1,"operation":"read","run_time":10,"thread_cores":[],"thread_pin_mode":"all-numa"}
+[2025-02-05 13:15:55.011] [info] max_bandwidth config: {"access_size":64,"exec_mode":"sequential","m0_explicit_hugepages_size":0,"m0_node_count_first_partition":18446744073709551615,"m0_numa_nodes":[1],"m0_percentage_pages_first_partition":18446744073709551615,"m0_region_size":96636764160,"m0_transparent_huge_pages":false,"m1_explicit_hugepages_size":0,"m1_node_count_first_partition":18446744073709551615,"m1_numa_nodes":[],"m1_percentage_pages_first_partition":18446744073709551615,"m1_region_size":0,"m1_transparent_huge_pages":false,"min_io_chunk_size":67108864,"numa_task_nodes":[0],"number_partitions":1,"number_threads":40,"operation":"read","run_time":10,"thread_cores":[],"thread_pin_mode":"all-numa"}
+[2025-02-05 13:15:55.012] [info] Finished all benchmarks successfully.
+All results are written to /enroot_mount/cxlbench/scripts/../results/bw_gh200_gpumem/ga01/2025-02-05T12-57-32-109353931.
+If you want to copy the data to your dev machine, the following command might help:
+./scripts/scp.sh ga01 /enroot_mount/cxlbench/scripts/../results/bw_gh200_gpumem/ga01/2025-02-05T12-57-32-109353931 ./results/bw_gh200_gpumem/ga01
