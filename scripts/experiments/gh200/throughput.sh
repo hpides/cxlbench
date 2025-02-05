@@ -26,4 +26,4 @@
 # #SBATCH --tmp=2G
 # #SBATCH --constraint="n,x,CPU_GEN:CSL,CPU_SKU:6240L"
 
-bash echo test >> /enroot_mount/GH200-test.txt
+bash touch /enroot_mount/cxlbench/gh200-results/test.txt
