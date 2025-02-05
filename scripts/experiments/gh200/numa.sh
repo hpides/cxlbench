@@ -24,5 +24,4 @@
 # #SBATCH --tmp=2G
 # #SBATCH --constraint="n,x,CPU_GEN:CSL,CPU_SKU:6240L"
 
-#touch /enroot_mount/cxlbench/gh200-results/test.txt
 numactl -H > /enroot_mount/cxlbench/gh200-results/numa.txt
