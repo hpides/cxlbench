@@ -11,8 +11,6 @@
 #SBATCH --nodes=1
 #SBATCH --container-mounts=/hpi/fs00/home/marcel.weisgut/enroot_mount:/enroot_mount
 #SBATCH --container-image=/hpi/fs00/share/fg-rabl/delab-images/arm_ubuntu22_04.sqsh
-#SBATCH --output=/enroot_mount/cxlbench/GH200-Throughput-output.log
-#SBATCH --error=/enroot_mount/cxlbench/GH200-Throughput-error.log
 # Request a minimum and maximum of one node.
 #SBATCH --ntasks=1
 # Set the maximum of tasks per node to 1. Related to --cpus-per-task but does not require knowledge of the actual
