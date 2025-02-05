@@ -187,6 +187,28 @@ void fill_page_locations_round_robin(PageLocations& page_locations, size_t memor
   }
 }
 
+void fill_page_locations_weighted_interleaved(PageLocations& page_locations, size_t memory_region_size,
+                                     const NumaNodeIDs& target_nodes, const InterleavingWeights& weights) {
+  spdlog::debug("Start filling page locations (partitioned).");
+  MemaAssert(target_nodes.size() >= 2, "When using partitioned page placements, at least two NUMA nodes are required.");
+  MemaAssert(memory_region_size % utils::PAGE_SIZE == 0, "Memory region size needs to be a multiple of the page size.");
+
+  const auto page_count = memory_region_size / utils::PAGE_SIZE;
+  auto cur_node_position = 0u;
+  auto cur_node_page_count = 0u;
+  const auto node_count = target_nodes.size();
+
+  page_locations.resize(page_count);
+  for (auto page_idx = 0u; page_idx < page_count; ++page_idx) {
+    if (cur_node_page_count == weights[cur_node_position]) {
+      cur_node_position = (cur_node_position + 1) % node_count;
+      cur_node_page_count = 0;
+    }
+    page_locations[page_idx] = target_nodes[cur_node_position];
+    ++cur_node_page_count;
+  }
+}
+
 void fill_page_locations_partitioned(PageLocations& page_locations, size_t memory_region_size,
                                      const NumaNodeIDs& target_nodes, const uint64_t percentage_first_node,
                                      const uint64_t node_count_first_node) {
@@ -344,6 +366,58 @@ bool verify_interleaved_page_placement(char* const start_addr, size_t memory_reg
   }
 
   return incorrect_placement_count <= PAGE_ERROR_LIMIT * region_page_count;
+}
+
+bool verify_page_placement(char* const start_addr, size_t memory_region_size, const PageLocations& expected_page_locations) {
+  spdlog::debug("Check page placement errors.");
+  if (memory_region_size == 0) {
+    spdlog::info("Skipped interleaved page placement verification since region size is 0.");
+    return true;
+  }
+
+  // Generate array
+  const auto page_count = memory_region_size / utils::PAGE_SIZE;
+  spdlog::debug("Page count of memory region: {}.", page_count);
+  if (page_count != expected_page_locations.size()) {
+    spdlog::critical("Memory region's page count and number of expected page locations does not match.");
+    utils::crash_exit();
+  }
+  // move_pages requires a vector of void*, one void* per page.
+  auto pages = std::vector<void*>{};
+  pages.resize(page_count);
+
+  for (auto page_idx = uint64_t{0}; page_idx < page_count; ++page_idx) {
+    pages[page_idx] = reinterpret_cast<void*>(start_addr + page_idx * utils::PAGE_SIZE);
+  }
+
+  // move_pages
+  auto page_status = std::vector<int>(page_count, std::numeric_limits<int>::max());
+
+  const auto ret = move_pages(0, page_count, pages.data(), NULL, page_status.data(), MPOL_MF_MOVE);
+  const auto move_pages_errno = errno;
+
+  if (ret != 0) {
+    spdlog::critical("move_pages() failed: {}", strerror(move_pages_errno));
+    utils::crash_exit();
+  }
+
+  // Verify
+  auto incorrect_placement_count = 0u;
+  for (auto page_idx = 0u; auto& expected_location : expected_page_locations) {
+    if (page_status[page_idx] != expected_location) {
+      ++incorrect_placement_count;
+      spdlog::info("Page {} located on NUMA node {} but expected on {}.", page_idx, page_status[page_idx],
+                   expected_location);
+    }
+  }
+
+  if (incorrect_placement_count > 0) {
+    spdlog::warn("Page placement verification: {}/{} pages ({}%) are incorrectly placed.", incorrect_placement_count,
+                 page_count,
+                 static_cast<uint32_t>(((1.0 * incorrect_placement_count) / page_count) * 100));
+  }
+
+  return incorrect_placement_count <= PAGE_ERROR_LIMIT * page_count;
 }
 
 bool verify_partitioned_page_placement(char* const start_addr, size_t memory_region_size,

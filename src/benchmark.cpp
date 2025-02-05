@@ -171,6 +171,9 @@ MemoryRegions Benchmark::prepare_data(const BenchmarkConfig& config) {
       case PagePlacementMode::Partitioned:
         region_start_addresses[region_idx] = prepare_partitioned_data(region_definition, config);
         break;
+      case PagePlacementMode::WeightedInterleaved:
+        region_start_addresses[region_idx] = prepare_weighted_interleaved_data(region_definition, config);
+        break;
       default:
         spdlog::critical("Data preparation mode not handled.");
         utils::crash_exit();
@@ -209,6 +212,37 @@ char* Benchmark::prepare_interleaved_data(const MemoryRegionDefinition& region, 
       spdlog::critical("Verification for interleaved pages failed again. Stopping here.");
       utils::crash_exit();
     }
+  }
+
+  spdlog::info("Finished preparing interleaved data.");
+  return data;
+}
+
+char* Benchmark::prepare_weighted_interleaved_data(const MemoryRegionDefinition& region, const BenchmarkConfig& config) {
+  spdlog::info("Preparing interleaved data.");
+  auto* data = utils::map(region.size, region.transparent_huge_pages, region.explicit_hugepages_size);
+  utils::populate_memory(data, region.size);
+  spdlog::debug("Finished populating/pre-faulting the memory region.");
+
+  if (config.exec_mode == Mode::DependentReads) {
+    utils::generate_shuffled_access_positions(data, region, config);
+    spdlog::debug("Finished generating shuffled access positions.");
+    if (!utils::verify_shuffled_access_positions(data, region, config)) {
+      spdlog::critical("Verifying shuffled access positions failed.");
+      utils::crash_exit();
+    }
+  } else if (config.contains_read_op()) {
+    // If we read data in this benchmark, we need to generate it first.
+    utils::generate_read_data(data, region.size);
+    spdlog::debug("Finished generating read data.");
+  }
+
+  auto page_locations = PageLocations{};
+  fill_page_locations_weighted_interleaved(page_locations, region.size, region.node_ids, region.node_weights);
+  place_pages(data, region.size, page_locations);
+  if (!verify_page_placement(data, region.size, page_locations)) {
+    spdlog::critical("Verification for interleaved pages failed again. Stopping here.");
+    utils::crash_exit();
   }
 
   spdlog::info("Finished preparing interleaved data.");

@@ -140,7 +140,11 @@ PagePlacementMode MemoryRegionDefinition::placement_mode() const {
   if (percentage_pages_first_partition) {
     return PagePlacementMode::Partitioned;
   }
-  return PagePlacementMode::Interleaved;
+  if (node_weights.empty()) {
+    return PagePlacementMode::Interleaved;
+  }
+  return PagePlacementMode::WeightedInterleaved;
+
 }
 
 BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
@@ -156,6 +160,8 @@ BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
                                        &bm_config.memory_regions[1].size);
     found_count += get_sequence_if_present(node, "numa_memory_nodes", bm_config.memory_regions[0].node_ids);
     found_count += get_sequence_if_present(node, "secondary_numa_memory_nodes", bm_config.memory_regions[1].node_ids);
+    found_count += get_sequence_if_present(node, "numa_memory_node_weights", bm_config.memory_regions[0].node_weights);
+    found_count += get_sequence_if_present(node, "secondary_numa_memory_node_weights", bm_config.memory_regions[1].node_weights);
     found_count += get_if_present(node, "transparent_huge_pages", &bm_config.memory_regions[0].transparent_huge_pages);
     found_count +=
         get_if_present(node, "secondary_transparent_huge_pages", &bm_config.memory_regions[1].transparent_huge_pages);
@@ -262,6 +268,11 @@ void BenchmarkConfig::validate() const {
     CHECK_ARGUMENT(is_partitionable,
                    "Total memory range must be evenly divisible into number of partitions. "
                    "Most likely you can fix this by using 2^x partitions.");
+
+    if (!region.node_weights.empty()) {
+      CHECK_ARGUMENT(region.node_ids.size() == region.node_weights.size(),
+                     "With weighted interleaving, the number of weights and nodes need to match.");
+    }
   }
 
   const bool has_secondary_memory_region_for_operations = !contains_secondary_memory_op() || memory_regions[1].size > 0;
@@ -433,6 +444,7 @@ nlohmann::json BenchmarkConfig::as_json() const {
     config[prefix + "explicit_hugepages_size"] = region.explicit_hugepages_size;
     config[prefix + "region_size"] = region.size;
     config[prefix + "numa_nodes"] = region.node_ids;
+    config[prefix + "numa_node_weights"] = region.node_weights;
     config[prefix + "percentage_pages_first_partition"] =
         region.percentage_pages_first_partition ? *region.percentage_pages_first_partition : -1;
     config[prefix + "node_count_first_partition"] =

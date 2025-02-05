@@ -800,6 +800,40 @@ TEST_F(BenchmarkTest, PrepareDataMemoryLocationInterleaved) {
   }
 }
 
+TEST_F(BenchmarkTest, PrepareDataWeightedInterleaved2Nodes) {
+  if (valid_node_ids.size() < 2) {
+    GTEST_SKIP() << "Skipping test: system has " << valid_node_ids.size() << " but test requires at least 2.";
+  }
+
+  constexpr auto region_size = 512 * KiB;
+  const auto expected_nodes = NumaNodeIDs{valid_node_ids[0], valid_node_ids[1]};
+  const auto expected_weights = InterleavingWeights{3,6};
+  auto config = base_config_;
+  config.memory_regions[0].size = region_size;
+  config.memory_regions[0].node_ids = expected_nodes;
+  config.memory_regions[0].node_weights = expected_weights;
+  EXPECT_EQ(config.memory_regions[0].placement_mode(), PagePlacementMode::WeightedInterleaved);
+  config.memory_regions[1].size = 0;
+  SingleBenchmark bm{bm_name_, config, {}, {}};
+  // Generate data creates the memory mapping and populates the memory based on the given numa_memory_nodes.
+  bm.generate_data();
+
+  const auto& regions = bm.get_memory_regions()[0];
+  ASSERT_EQ(regions.size(), 2u);
+  const auto& definition = config.memory_regions[0];
+  const auto region_page_count = definition.size / utils::PAGE_SIZE;
+  // Verify page status
+  auto page_locations = PageLocations{};
+  fill_page_locations_weighted_interleaved(page_locations, region_size, expected_nodes, expected_weights);
+  ASSERT_TRUE(verify_page_placement(regions[0], region_size, page_locations));
+  ASSERT_FALSE(verify_partitioned_page_placement(regions[0], region_size, expected_nodes,
+                                                *definition.percentage_pages_first_partition,
+                                                *definition.node_count_first_partition));
+  ASSERT_FALSE(verify_interleaved_page_placement(regions[0], region_size, expected_nodes));
+
+  ASSERT_EQ(regions[1], nullptr);
+}
+
 TEST_F(BenchmarkTest, PrepareDataMemoryLocationPartitioned2Nodes) {
   if (valid_node_ids.size() < 2) {
     GTEST_SKIP() << "Skipping test: system has " << valid_node_ids.size() << " but test requires at least 2.";
