@@ -6,7 +6,7 @@ random_reads:
 
   args:
     exec_mode: random
-    memory_region_size: 90G
+    memory_region_size: [10G, 20G, 30G, 40G, 50G, 60G, 70G, 80G, 90G]
     numa_memory_nodes: [ 0 ]
     numa_task_nodes: [ 0 ]
     number_partitions: 1
