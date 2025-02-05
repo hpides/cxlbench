@@ -144,7 +144,6 @@ PagePlacementMode MemoryRegionDefinition::placement_mode() const {
     return PagePlacementMode::Interleaved;
   }
   return PagePlacementMode::WeightedInterleaved;
-
 }
 
 BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
@@ -161,7 +160,8 @@ BenchmarkConfig BenchmarkConfig::decode(YAML::Node& node) {
     found_count += get_sequence_if_present(node, "numa_memory_nodes", bm_config.memory_regions[0].node_ids);
     found_count += get_sequence_if_present(node, "secondary_numa_memory_nodes", bm_config.memory_regions[1].node_ids);
     found_count += get_sequence_if_present(node, "numa_memory_node_weights", bm_config.memory_regions[0].node_weights);
-    found_count += get_sequence_if_present(node, "secondary_numa_memory_node_weights", bm_config.memory_regions[1].node_weights);
+    found_count +=
+        get_sequence_if_present(node, "secondary_numa_memory_node_weights", bm_config.memory_regions[1].node_weights);
     found_count += get_if_present(node, "transparent_huge_pages", &bm_config.memory_regions[0].transparent_huge_pages);
     found_count +=
         get_if_present(node, "secondary_transparent_huge_pages", &bm_config.memory_regions[1].transparent_huge_pages);
@@ -272,6 +272,11 @@ void BenchmarkConfig::validate() const {
     if (!region.node_weights.empty()) {
       CHECK_ARGUMENT(region.node_ids.size() == region.node_weights.size(),
                      "With weighted interleaving, the number of weights and nodes need to match.");
+      auto weight_sum = 0u;
+      for (const auto& weight : region.node_weights) {
+        weight_sum += weight;
+      }
+      CHECK_ARGUMENT(weight_sum > 0, "All weights are set to 0. At least one weight needs to be >=1");
     }
   }
 

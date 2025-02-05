@@ -188,7 +188,7 @@ void fill_page_locations_round_robin(PageLocations& page_locations, size_t memor
 }
 
 void fill_page_locations_weighted_interleaved(PageLocations& page_locations, size_t memory_region_size,
-                                     const NumaNodeIDs& target_nodes, const InterleavingWeights& weights) {
+                                              const NumaNodeIDs& target_nodes, const InterleavingWeights& weights) {
   spdlog::debug("Start filling page locations (partitioned).");
   MemaAssert(target_nodes.size() >= 2, "When using partitioned page placements, at least two NUMA nodes are required.");
   MemaAssert(memory_region_size % utils::PAGE_SIZE == 0, "Memory region size needs to be a multiple of the page size.");
@@ -368,7 +368,8 @@ bool verify_interleaved_page_placement(char* const start_addr, size_t memory_reg
   return incorrect_placement_count <= PAGE_ERROR_LIMIT * region_page_count;
 }
 
-bool verify_page_placement(char* const start_addr, size_t memory_region_size, const PageLocations& expected_page_locations) {
+bool verify_page_placement(char* const start_addr, size_t memory_region_size,
+                           const PageLocations& expected_page_locations) {
   spdlog::debug("Check page placement errors.");
   if (memory_region_size == 0) {
     spdlog::info("Skipped interleaved page placement verification since region size is 0.");
@@ -404,17 +405,18 @@ bool verify_page_placement(char* const start_addr, size_t memory_region_size, co
   // Verify
   auto incorrect_placement_count = 0u;
   for (auto page_idx = 0u; auto& expected_location : expected_page_locations) {
+    //    printf("expected %i actual %i\n", expected_location, page_status[page_idx]);
     if (page_status[page_idx] != expected_location) {
       ++incorrect_placement_count;
       spdlog::info("Page {} located on NUMA node {} but expected on {}.", page_idx, page_status[page_idx],
                    expected_location);
     }
+    page_idx++;
   }
 
   if (incorrect_placement_count > 0) {
     spdlog::warn("Page placement verification: {}/{} pages ({}%) are incorrectly placed.", incorrect_placement_count,
-                 page_count,
-                 static_cast<uint32_t>(((1.0 * incorrect_placement_count) / page_count) * 100));
+                 page_count, static_cast<uint32_t>(((1.0 * incorrect_placement_count) / page_count) * 100));
   }
 
   return incorrect_placement_count <= PAGE_ERROR_LIMIT * page_count;

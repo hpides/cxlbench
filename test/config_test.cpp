@@ -591,6 +591,20 @@ TEST_F(ConfigTest, BadLatencySample) {
   check_log_for_critical("Latency sampling can only");
 }
 
+TEST_F(ConfigTest, MismatchInterleavingWeightsNodeIDs) {
+  bm_config.memory_regions[0].node_ids = NumaNodeIDs{0, 1};
+  bm_config.memory_regions[0].node_weights = InterleavingWeights{1};
+  EXPECT_THROW(bm_config.validate(), MemaException);
+  check_log_for_critical("With weighted interleaving, the number of weights and nodes need to match");
+}
+
+TEST_F(ConfigTest, OnlyZeroInterleavingWeights) {
+  bm_config.memory_regions[0].node_ids = NumaNodeIDs{0, 1};
+  bm_config.memory_regions[0].node_weights = InterleavingWeights{0, 0};
+  EXPECT_THROW(bm_config.validate(), MemaException);
+  check_log_for_critical("All weights are set to 0");
+}
+
 TEST_F(ConfigTest, AsJsonReadSequential) {
   auto bm_config = BenchmarkConfig{};
   bm_config.operation = Operation::Read;

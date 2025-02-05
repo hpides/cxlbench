@@ -218,7 +218,8 @@ char* Benchmark::prepare_interleaved_data(const MemoryRegionDefinition& region, 
   return data;
 }
 
-char* Benchmark::prepare_weighted_interleaved_data(const MemoryRegionDefinition& region, const BenchmarkConfig& config) {
+char* Benchmark::prepare_weighted_interleaved_data(const MemoryRegionDefinition& region,
+                                                   const BenchmarkConfig& config) {
   spdlog::info("Preparing interleaved data.");
   auto* data = utils::map(region.size, region.transparent_huge_pages, region.explicit_hugepages_size);
   utils::populate_memory(data, region.size);
@@ -241,7 +242,7 @@ char* Benchmark::prepare_weighted_interleaved_data(const MemoryRegionDefinition&
   fill_page_locations_weighted_interleaved(page_locations, region.size, region.node_ids, region.node_weights);
   place_pages(data, region.size, page_locations);
   if (!verify_page_placement(data, region.size, page_locations)) {
-    spdlog::critical("Verification for interleaved pages failed again. Stopping here.");
+    spdlog::critical("Verification of weighted interleaved pages failed. Stopping here.");
     utils::crash_exit();
   }
 
@@ -394,10 +395,8 @@ void Benchmark::run_custom_ops_in_thread(ThreadConfig* thread_config, const Benc
   *(thread_config->total_operation_size) = total_num_ops;
 }
 
-
 #if defined(__powerpc64__)
-#define __mtspr(spr, value) \
-  __asm__ volatile("mtspr %0,%1" : : "n"(spr), "r"(value))
+#define __mtspr(spr, value) __asm__ volatile("mtspr %0,%1" : : "n"(spr), "r"(value))
 
 // Data stream control register
 #define PPC_DSCR 3
@@ -407,9 +406,7 @@ void Benchmark::run_custom_ops_in_thread(ThreadConfig* thread_config, const Benc
 #define PPC_TUNE_DSCR 7ULL
 
 // Set this once in your function
-inline void tuneHardwarePrefetcher() {
-  __mtspr(PPC_DSCR, PPC_TUNE_DSCR);
-}
+inline void tuneHardwarePrefetcher() { __mtspr(PPC_DSCR, PPC_TUNE_DSCR); }
 #endif
 
 template <size_t ACCESS_COUNT_64B>
