@@ -34,6 +34,7 @@ echo "Workload: $2"
 #   echo "Workload-specific flags: $WORKLOAD_FLAGS"
 # fi
 
+rm -r -f "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 echo "Build directory: \""$BUILD_DIR"\""
 # Navigating to the build dir since `reset_workload.sh` needs to be executed from a build directory.
