@@ -1,0 +1,15 @@
+sequential_writes:
+  matrix:
+    number_threads: [ 1, 4, 8, 16, 24, 32, 40, 48, 56, 64, 72]
+#    access_size: [ 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536 ]
+    access_size: [ 64 ]
+    flush_instruction: [ none ]
+
+  args:
+    exec_mode: sequential
+    memory_region_size: 90G
+    numa_memory_nodes: [ 1 ]
+    numa_task_nodes: [ 0 ]
+    number_partitions: 1
+    operation: write
+    run_time: 10
