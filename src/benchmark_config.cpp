@@ -393,8 +393,14 @@ std::string BenchmarkConfig::to_string(const std::string sep) const {
     if (region.percentage_pages_first_partition) {
       stream << "partitioned with " << *region.percentage_pages_first_partition << "% on first partition. ";
       stream << "The first " << *region.node_count_first_partition << "nodes belong to the first partition.";
-    } else {
+    } else if (region.node_weights.empty()) {
       stream << "interleaved";
+    } else {
+      stream << "weighted interleaved [ ";
+      for (auto& weight : region.node_weights) {
+        stream << weight << " ";
+      }
+      stream << "] ";
     }
     ++region_idx;
   }

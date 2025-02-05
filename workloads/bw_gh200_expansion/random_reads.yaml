@@ -6,7 +6,7 @@ random_reads:
     numa_memory_nodes: [ 0, 1 ]
     number_threads: 72
     access_size: 64
-    memory_region_size: 180G
+    memory_region_size: 10G
     exec_mode: random
     numa_task_nodes: [ 0 ]
     number_partitions: 1

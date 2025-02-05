@@ -408,8 +408,8 @@ bool verify_page_placement(char* const start_addr, size_t memory_region_size,
     //    printf("expected %i actual %i\n", expected_location, page_status[page_idx]);
     if (page_status[page_idx] != expected_location) {
       ++incorrect_placement_count;
-      spdlog::info("Page {} located on NUMA node {} but expected on {}.", page_idx, page_status[page_idx],
-                   expected_location);
+//      spdlog::info("Page {} located on NUMA node {} but expected on {}.", page_idx, page_status[page_idx],
+//                   expected_location);
     }
     page_idx++;
   }

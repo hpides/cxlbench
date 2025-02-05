@@ -220,7 +220,7 @@ char* Benchmark::prepare_interleaved_data(const MemoryRegionDefinition& region, 
 
 char* Benchmark::prepare_weighted_interleaved_data(const MemoryRegionDefinition& region,
                                                    const BenchmarkConfig& config) {
-  spdlog::info("Preparing interleaved data.");
+  spdlog::info("Preparing weighted interleaved data.");
   auto* data = utils::map(region.size, region.transparent_huge_pages, region.explicit_hugepages_size);
   utils::populate_memory(data, region.size);
   spdlog::debug("Finished populating/pre-faulting the memory region.");
@@ -307,8 +307,17 @@ void Benchmark::verify_page_locations(const MemoryRegions& memory_regions,
     auto& region = memory_regions[region_idx];
     auto& definition = region_definitions[region_idx];
     if (definition.placement_mode() == PagePlacementMode::Interleaved) {
+      spdlog::info("Verify interleaved placement.");
       verified = verify_interleaved_page_placement(region, definition.size, definition.node_ids);
+    }
+    else if (definition.placement_mode() == PagePlacementMode::WeightedInterleaved) {
+      spdlog::info("Verify weighted interleaved placement.");
+      auto page_locations = PageLocations{};
+      fill_page_locations_weighted_interleaved(page_locations, definition.size, definition.node_ids, definition.node_weights);
+      place_pages(region, definition.size, page_locations);
+      verified = verify_page_placement(region, definition.size, page_locations);
     } else {
+      spdlog::info("Verify partitioned placement.");
       MemaAssert(definition.percentage_pages_first_partition,
                  "Percentage for page placement must be set for partitioned verificatiopn");
       verified = verify_partitioned_page_placement(region, definition.size, definition.node_ids,
