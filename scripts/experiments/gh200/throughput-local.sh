@@ -24,4 +24,4 @@
 # #SBATCH --tmp=2G
 # #SBATCH --constraint="n,x,CPU_GEN:CSL,CPU_SKU:6240L"
 
-bash /enroot_mount/mema-bench/scripts/run_log.sh bw_gh200_local
+bash /enroot_mount/cxlbench/scripts/run_log.sh bw_gh200_local
