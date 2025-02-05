@@ -3,10 +3,10 @@ random_reads:
     number_threads: [ 1, 4, 8, 16, 24, 32, 40, 48, 56, 64, 72]
 #    access_size: [ 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536 ]
     access_size: [ 64 ]
+    memory_region_size: [10G, 20G, 30G, 40G, 50G, 60G, 70G, 80G, 90G]
 
   args:
     exec_mode: random
-    memory_region_size: [10G, 20G, 30G, 40G, 50G, 60G, 70G, 80G, 90G]
     numa_memory_nodes: [ 1 ]
     numa_task_nodes: [ 0 ]
     number_partitions: 1
