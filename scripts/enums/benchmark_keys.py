@@ -24,6 +24,10 @@ class BMKeys(StrEnum):
     LAT_STDDEV = "latency.std_dev"
     MATRIX_ARGS = "matrix_args"
     MEMORY_REGION_SIZE = "memory_region_size"
+    MEMORY_REGION_SIZE_M0 = "m0_region_size"
+    MEMORY_REGION_SIZE_M1 = "m1_region_size"
+    MEMORY_REGION_SIZE_GIB_M0 = "m0_region_size_GiB"
+    MEMORY_REGION_SIZE_GIB_M1 = "m1_region_size_GiB"
     NUMA_TASK_NODES = "numa_task_nodes"
     NUMA_MEMORY_NODES = "numa_memory_nodes"  # legacy
     NUMA_MEMORY_NODES_M0 = "m0_numa_nodes"

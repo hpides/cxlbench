@@ -65,11 +65,12 @@ class PlotGenerator:
     This class calls the methods of the plotter classes, according go the given JSON.
     """
 
-    def __init__(self, results, output_dir, no_plots, latency_heatmap, memory_nodes):
+    def __init__(self, results, output_dir, no_plots, latency_heatmap, compare_region_sizes, memory_nodes):
         self.results = results
         self.output_dir = output_dir
         self.no_plots = no_plots
         self.latency_heatmap = latency_heatmap
+        self.compare_region_sizes = compare_region_sizes
         self.memory_nodes = memory_nodes
 
     def add_avg_access_latency(self, df):
@@ -167,7 +168,7 @@ class PlotGenerator:
         filename = filename_template.replace("_<custom>", "")
         df.to_csv("{}/{}{}.csv".format(self.output_dir, DATA_FILE_PREFIX, filename))
         if BMKeys.BANDWIDTH_GB in df.columns:
-            # Plot heatmap (x: thread count, y: access size)
+            # Plot heatmap (x: thread count, y: access size or memory region size)
             key_memory_nodes = BMKeys.NUMA_MEMORY_NODES_M0
             if BMKeys.NUMA_MEMORY_NODES in df.columns:
                 # legacy measurements
@@ -192,10 +193,12 @@ class PlotGenerator:
                 show_threads = [1, 4, 8, 16, 24, 32, 40, 48, 56, 64, 72]
                 df_sub = df_sub[df_sub[BMKeys.THREAD_COUNT].isin(show_threads)]
 
+                yaxis_key = BMKeys.MEMORY_REGION_SIZE_GIB_M0 if self.compare_region_sizes else BMKeys.ACCESS_SIZE
+                yvalue_limit = None if self.compare_region_sizes else 65536
                 if self.latency_heatmap:
-                    heatmap = LatencyHeatmap(df_sub, plot_title, self.output_dir, filename)
+                    heatmap = LatencyHeatmap(df_sub, plot_title, self.output_dir, filename, yaxis_key, yvalue_limit)
                 else:
-                    heatmap = BandwidthHeatmap(df_sub, plot_title, self.output_dir, filename)
+                    heatmap = BandwidthHeatmap(df_sub, plot_title, self.output_dir, filename, yaxis_key, yvalue_limit)
 
                 heatmap.create()
 

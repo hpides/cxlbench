@@ -15,21 +15,23 @@ class Heatmap:
         filename: str,
         value_label: str,
         value_key: BMKeys,
+        yaxis_key: BMKeys,
         color_theme: str = "magma",
         min_color="red",
         max_color="green",
         value_format="d",
         compact=True,
-        access_size_limit=8192,
+        yvalue_limit=None, # e.g., access size or memory region size
         thread_limit=60,
         mark_linewidth=3,
         # value_format=".2f",
     ):
         self.df = df
+        self.yaxis_key = yaxis_key
         if thread_limit is not None:
             self.df = self.df[self.df[BMKeys.THREAD_COUNT] <= thread_limit]
-        if access_size_limit is not None:
-            self.df = self.df[self.df[BMKeys.ACCESS_SIZE] <= access_size_limit]
+        if yvalue_limit is not None:
+            self.df = self.df[self.df[self.yaxis_key] <= yvalue_limit]
         self.title = title
         self.value_label = value_label
         self.output_path = "{}/{}{}.pdf".format(output_dir, PLOT_FILE_PREFIX, filename)
@@ -43,7 +45,7 @@ class Heatmap:
             self.mark_linewidth = 1
 
         self.df_heatmap = pd.pivot_table(
-            self.df, index=BMKeys.ACCESS_SIZE, columns=BMKeys.THREAD_COUNT, values=value_key
+            self.df, index=self.yaxis_key, columns=BMKeys.THREAD_COUNT, values=value_key
         )
         self.heatmap = None
 
@@ -60,7 +62,7 @@ class Heatmap:
 
     def add_heatmap(self):
         thread_configs_count = len(self.df[BMKeys.THREAD_COUNT].unique())
-        access_size_count = len(self.df[BMKeys.ACCESS_SIZE].unique())
+        access_size_count = len(self.df[self.yaxis_key].unique())
 
         x_padding = 2
         y_padding = 2
@@ -104,7 +106,8 @@ class Heatmap:
         )
 
         self.heatmap.set_xlabel("# Threads")
-        self.heatmap.set_ylabel("Access size [Bytes]")
+        ylabels = {BMKeys.ACCESS_SIZE : "Access size [Bytes]", BMKeys.MEMORY_REGION_SIZE_GIB_M0 : "Buffer size [GiB]"}
+        self.heatmap.set_ylabel(ylabels[self.yaxis_key])
         self.heatmap.invert_yaxis()
         self.heatmap.set_title(self.title)
 
@@ -129,7 +132,7 @@ class Heatmap:
         # Get the row label and column label of the maximum value.
         max_value_row_label, max_value_col_label = self.df_heatmap.stack().idxmax()
         # Get the row index and column index of the maximum value.
-        max_value_row_idx = sorted(self.df[BMKeys.ACCESS_SIZE].unique()).index(max_value_row_label)
+        max_value_row_idx = sorted(self.df[self.yaxis_key].unique()).index(max_value_row_label)
         max_value_col_idx = sorted(self.df[BMKeys.THREAD_COUNT].unique()).index(max_value_col_label)
 
         # Add zone around maximum value.
@@ -147,7 +150,7 @@ class Heatmap:
         # Get the row label and column label of the minimum value.
         min_value_row, min_value_col = self.df_heatmap.stack().idxmin()
         # Get the row index and column index of the minimum value.
-        min_value_row_idx = sorted(self.df[BMKeys.ACCESS_SIZE].unique()).index(min_value_row)
+        min_value_row_idx = sorted(self.df[self.yaxis_key].unique()).index(min_value_row)
         min_value_col_idx = sorted(self.df[BMKeys.THREAD_COUNT].unique()).index(min_value_col)
 
         # Add zone around minimum value.
