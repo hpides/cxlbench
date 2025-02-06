@@ -86,7 +86,7 @@ class PlotGenerator:
     # mainly used for legacy versions of json files. With newer versions, we want to be able to differentiate between
     # different setups, e.g., even if multiple json fils only contain DRAM measurements, the DRAM memory regions might
     # be located on different machines, devices, and NUMA nodes.
-    def process_matrix_jsons(self):
+    def process_matrix_jsons(self, df_only = False):
         supported_bm_groups = [
             BMGroups.SEQUENTIAL_READS,
             BMGroups.RANDOM_READS,
@@ -96,6 +96,8 @@ class PlotGenerator:
         ]
         df = parse_matrix_jsons(self.results, supported_bm_groups)
         df.to_csv("{}/flattened_df.csv".format(self.output_dir))
+        if (df_only):
+            return df
         if self.latency_heatmap:
             df = self.add_avg_access_latency(df)
 

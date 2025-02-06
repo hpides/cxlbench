@@ -17,6 +17,8 @@ class BMKeys(StrEnum):
     EXPLODED_NUMA_MEMORY_NODES = "benchmarks.config.numa_memory_nodes"  # legacy
     EXPLODED_NUMA_MEMORY_NODES_M0 = "benchmarks.config.m0_numa_nodes"
     EXPLODED_NUMA_MEMORY_NODES_M1 = "benchmarks.config.m1_numa_nodes"
+    EXPLODED_NUMA_MEMORY_NODE_WEIGHTS_M0 = "benchmarks.config.m0_numa_node_weights"
+    EXPLODED_NUMA_MEMORY_NODE_WEIGHTS_M1 = "benchmarks.config.m1_numa_node_weights"
     EXPLODED_NUMA_TASK_NODES = "benchmarks.config.numa_task_nodes"
     EXPLODED_THREAD_CORES = "benchmarks.config.thread_cores"
     LAT_AVG = "latency.avg"
@@ -32,6 +34,8 @@ class BMKeys(StrEnum):
     NUMA_MEMORY_NODES = "numa_memory_nodes"  # legacy
     NUMA_MEMORY_NODES_M0 = "m0_numa_nodes"
     NUMA_MEMORY_NODES_M1 = "m1_numa_nodes"
+    NUMA_MEMORY_NODE_WEIGHTS_M0 = "m0_numa_node_weights"
+    NUMA_MEMORY_NODE_WEIGHTS_M1 = "m1_numa_node_weights"
     OPERATION = "operation"
     OPERATION_COUNT = "number_operations"
     OPS_PER_SECOND = "ops_per_second"
