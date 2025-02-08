@@ -34,6 +34,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--latency_heatmap", action="store_true", help="Generate a heatmap with the average thread's access latency"
     )
+    parser.add_argument(
+        "--compare_region_size", action="store_true", help="Generate a throughput heatmap comparing the impact of different region sizes"
+    )
     parser.add_argument("--memory_nodes", nargs="+", help="names of the memory nodes")
     args = parser.parse_args()
 
@@ -62,6 +65,7 @@ if __name__ == "__main__":
     results = args.results
     no_plots = args.noplots
     latency_heatmap = args.latency_heatmap
+    compare_region_size = args.compare_region_size
     if args.memory_nodes is not None:
         memory_nodes = args.memory_nodes
     else:
@@ -70,5 +74,5 @@ if __name__ == "__main__":
     os.makedirs(output_dir, exist_ok=True)
 
     # create plots
-    plotter = PlotGenerator(results, output_dir, no_plots, latency_heatmap, memory_nodes)
+    plotter = PlotGenerator(results, output_dir, no_plots, latency_heatmap, compare_region_size, memory_nodes)
     plotter.process_matrix_jsons()

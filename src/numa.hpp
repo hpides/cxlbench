@@ -30,6 +30,9 @@ void set_default_memory_policy();
 void fill_page_locations_round_robin(PageLocations& page_locations, size_t memory_region_size,
                                      const NumaNodeIDs& target_nodes);
 
+void fill_page_locations_weighted_interleaved(PageLocations& page_locations, size_t memory_region_size,
+                                              const NumaNodeIDs& target_nodes, const InterleavingWeights& weights);
+
 void fill_page_locations_partitioned(PageLocations& page_locations, size_t memory_region_size,
                                      const NumaNodeIDs& target_nodes, const uint64_t percentage_first_node,
                                      const uint64_t node_count_first_node);
@@ -46,6 +49,9 @@ bool verify_interleaved_page_placement(char* const start_addr, size_t memory_reg
 bool verify_partitioned_page_placement(char* const start_addr, uint64_t memory_region_size,
                                        const NumaNodeIDs& target_nodes, const uint64_t percentage_first_node,
                                        const uint64_t node_count_first_node);
+
+bool verify_page_placement(char* const start_addr, size_t memory_region_size,
+                           const PageLocations& target_page_locations);
 
 void log_numa_nodes(spdlog::level::level_enum log_level, const std::string& message, const NumaNodeIDs& nodes);
 

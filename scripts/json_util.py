@@ -172,10 +172,12 @@ def parse_matrix_jsons(results, supported_bm_groups: list[BMGroups]):
     deny_explosion_list = [
         BMKeys.MATRIX_ARGS,
         BMKeys.THREADS_LEVELED,
+        BMKeys.EXPLODED_NUMA_TASK_NODES,
+        BMKeys.EXPLODED_NUMA_MEMORY_NODES, # legacy
         BMKeys.EXPLODED_NUMA_MEMORY_NODES_M0,
         BMKeys.EXPLODED_NUMA_MEMORY_NODES_M1,
-        BMKeys.EXPLODED_NUMA_TASK_NODES,
-        BMKeys.EXPLODED_NUMA_MEMORY_NODES,
+        BMKeys.EXPLODED_NUMA_MEMORY_NODE_WEIGHTS_M0,
+        BMKeys.EXPLODED_NUMA_MEMORY_NODE_WEIGHTS_M1,
         BMKeys.EXPLODED_THREAD_CORES,
     ]
     df = flatten_nested_json_df(df, deny_explosion_list)
@@ -195,6 +197,10 @@ def parse_matrix_jsons(results, supported_bm_groups: list[BMGroups]):
     df[BMKeys.FLUSH_INSTRUCTION] = df[BMKeys.FLUSH_INSTRUCTION].fillna(FLUSH_INSTR_NONE)
     if BMKeys.BANDWIDTH_GiB in df.columns:
         df[BMKeys.BANDWIDTH_GB] = df[BMKeys.BANDWIDTH_GiB] * (1024**3 / 1e9)
+    if BMKeys.MEMORY_REGION_SIZE_M0 in df.columns:
+        df[BMKeys.MEMORY_REGION_SIZE_GIB_M0] = (df[BMKeys.MEMORY_REGION_SIZE_M0] / 1024**3).astype(int)
+    if BMKeys.MEMORY_REGION_SIZE_M1 in df.columns:
+        df[BMKeys.MEMORY_REGION_SIZE_GIB_M1] = (df[BMKeys.MEMORY_REGION_SIZE_M1] / 1024**3).astype(int)
 
     df = stringify_nodes(df)
     return df
@@ -211,4 +217,6 @@ def stringify_nodes(df):
             lambda x: ",".join(str(i) for i in x)
         )
     df[BMKeys.NUMA_TASK_NODES] = df[BMKeys.NUMA_TASK_NODES].transform(lambda x: ",".join(str(i) for i in x))
+    df[BMKeys.NUMA_MEMORY_NODE_WEIGHTS_M0] = df[BMKeys.NUMA_MEMORY_NODE_WEIGHTS_M0].transform(lambda x: ":".join(str(i) for i in x))
+    df[BMKeys.NUMA_MEMORY_NODE_WEIGHTS_M1] = df[BMKeys.NUMA_MEMORY_NODE_WEIGHTS_M1].transform(lambda x: ":".join(str(i) for i in x))
     return df

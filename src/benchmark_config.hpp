@@ -23,6 +23,7 @@ using i64 = int64_t;
 
 using NumaNodeID = uint16_t;
 using NumaNodeIDs = std::vector<NumaNodeID>;
+using InterleavingWeights = std::vector<uint32_t>;
 using MemoryRegions = std::vector<char*>;
 using CoreID = uint64_t;
 using CoreIDs = std::vector<CoreID>;
@@ -37,7 +38,7 @@ enum class Operation : uint8_t { Read, Write };
 
 enum class MemoryType : uint8_t { Primary, Secondary };
 
-enum class PagePlacementMode : uint8_t { Interleaved, Partitioned };
+enum class PagePlacementMode : uint8_t { Interleaved, WeightedInterleaved, Partitioned };
 
 // AllNumaCores pins a thread to the set of cores of a given NUMA node.
 // SingleNumaCoreIncrement pins each thread to a single core, which is in the set of cores of a given NUMA node. The
@@ -46,8 +47,9 @@ enum class PagePlacementMode : uint8_t { Interleaved, Partitioned };
 // match the thread count for the workload.
 enum class ThreadPinMode : uint8_t { AllNumaCores, SingleNumaCoreIncrement, SingleCoreFixed };
 
-static constexpr size_t MiB = 1024u * 1024;
-static constexpr size_t GiB = 1024u * MiB;
+static constexpr size_t KiB = 1024u;
+static constexpr size_t MiB = KiB * 1024;
+static constexpr size_t GiB = MiB * 1024;
 static constexpr size_t SECONDS_IN_NANOSECONDS = 1e9;
 
 constexpr auto MEM_REGION_COUNT = uint64_t{2};
@@ -102,6 +104,9 @@ struct MemoryRegionDefinition {
    * second node.
    */
   NumaNodeIDs node_ids = {};
+
+  /** Specifies node weights for page interleaving. */
+  InterleavingWeights node_weights = {};
 
   /** Specifies the number of NUMA nodes for the first partition of the NUMA node list. Ignored if not set. */
   std::optional<uint64_t> node_count_first_partition = std::nullopt;

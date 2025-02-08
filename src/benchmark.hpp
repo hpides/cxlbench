@@ -187,6 +187,8 @@ class Benchmark {
   // Prepares the memory region with pages interleaved accross the given NUMA nodes.
   static char* prepare_interleaved_data(const MemoryRegionDefinition& region, const BenchmarkConfig& config);
 
+  static char* prepare_weighted_interleaved_data(const MemoryRegionDefinition& region, const BenchmarkConfig& config);
+
   // Prepares the memory region with two partitions each being located on a different NUMA nodes.
   static char* prepare_partitioned_data(const MemoryRegionDefinition& region, const BenchmarkConfig& config);
 

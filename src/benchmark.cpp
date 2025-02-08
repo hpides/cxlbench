@@ -171,6 +171,9 @@ MemoryRegions Benchmark::prepare_data(const BenchmarkConfig& config) {
       case PagePlacementMode::Partitioned:
         region_start_addresses[region_idx] = prepare_partitioned_data(region_definition, config);
         break;
+      case PagePlacementMode::WeightedInterleaved:
+        region_start_addresses[region_idx] = prepare_weighted_interleaved_data(region_definition, config);
+        break;
       default:
         spdlog::critical("Data preparation mode not handled.");
         utils::crash_exit();
@@ -209,6 +212,38 @@ char* Benchmark::prepare_interleaved_data(const MemoryRegionDefinition& region, 
       spdlog::critical("Verification for interleaved pages failed again. Stopping here.");
       utils::crash_exit();
     }
+  }
+
+  spdlog::info("Finished preparing interleaved data.");
+  return data;
+}
+
+char* Benchmark::prepare_weighted_interleaved_data(const MemoryRegionDefinition& region,
+                                                   const BenchmarkConfig& config) {
+  spdlog::info("Preparing weighted interleaved data.");
+  auto* data = utils::map(region.size, region.transparent_huge_pages, region.explicit_hugepages_size);
+  utils::populate_memory(data, region.size);
+  spdlog::debug("Finished populating/pre-faulting the memory region.");
+
+  if (config.exec_mode == Mode::DependentReads) {
+    utils::generate_shuffled_access_positions(data, region, config);
+    spdlog::debug("Finished generating shuffled access positions.");
+    if (!utils::verify_shuffled_access_positions(data, region, config)) {
+      spdlog::critical("Verifying shuffled access positions failed.");
+      utils::crash_exit();
+    }
+  } else if (config.contains_read_op()) {
+    // If we read data in this benchmark, we need to generate it first.
+    utils::generate_read_data(data, region.size);
+    spdlog::debug("Finished generating read data.");
+  }
+
+  auto page_locations = PageLocations{};
+  fill_page_locations_weighted_interleaved(page_locations, region.size, region.node_ids, region.node_weights);
+  place_pages(data, region.size, page_locations);
+  if (!verify_page_placement(data, region.size, page_locations)) {
+    spdlog::critical("Verification of weighted interleaved pages failed. Stopping here.");
+    utils::crash_exit();
   }
 
   spdlog::info("Finished preparing interleaved data.");
@@ -272,8 +307,17 @@ void Benchmark::verify_page_locations(const MemoryRegions& memory_regions,
     auto& region = memory_regions[region_idx];
     auto& definition = region_definitions[region_idx];
     if (definition.placement_mode() == PagePlacementMode::Interleaved) {
+      spdlog::info("Verify interleaved placement.");
       verified = verify_interleaved_page_placement(region, definition.size, definition.node_ids);
+    }
+    else if (definition.placement_mode() == PagePlacementMode::WeightedInterleaved) {
+      spdlog::info("Verify weighted interleaved placement.");
+      auto page_locations = PageLocations{};
+      fill_page_locations_weighted_interleaved(page_locations, definition.size, definition.node_ids, definition.node_weights);
+      place_pages(region, definition.size, page_locations);
+      verified = verify_page_placement(region, definition.size, page_locations);
     } else {
+      spdlog::info("Verify partitioned placement.");
       MemaAssert(definition.percentage_pages_first_partition,
                  "Percentage for page placement must be set for partitioned verificatiopn");
       verified = verify_partitioned_page_placement(region, definition.size, definition.node_ids,
@@ -360,10 +404,8 @@ void Benchmark::run_custom_ops_in_thread(ThreadConfig* thread_config, const Benc
   *(thread_config->total_operation_size) = total_num_ops;
 }
 
-
 #if defined(__powerpc64__)
-#define __mtspr(spr, value) \
-  __asm__ volatile("mtspr %0,%1" : : "n"(spr), "r"(value))
+#define __mtspr(spr, value) __asm__ volatile("mtspr %0,%1" : : "n"(spr), "r"(value))
 
 // Data stream control register
 #define PPC_DSCR 3
@@ -373,9 +415,7 @@ void Benchmark::run_custom_ops_in_thread(ThreadConfig* thread_config, const Benc
 #define PPC_TUNE_DSCR 7ULL
 
 // Set this once in your function
-inline void tuneHardwarePrefetcher() {
-  __mtspr(PPC_DSCR, PPC_TUNE_DSCR);
-}
+inline void tuneHardwarePrefetcher() { __mtspr(PPC_DSCR, PPC_TUNE_DSCR); }
 #endif
 
 template <size_t ACCESS_COUNT_64B>

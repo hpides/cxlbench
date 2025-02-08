@@ -4,6 +4,7 @@ test_seq:
     memory_region_size: 64M
     exec_mode: sequential
     numa_memory_nodes: [0, 1]
+    numa_memory_node_weights: [5, 24]
     numa_task_nodes: [ 0 ]
     number_threads: 2
     operation: read
