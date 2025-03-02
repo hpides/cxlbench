@@ -7,7 +7,6 @@ from builtins import len, str, int, list, any, print, float
 
 import json_util as ju
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 import memaplot as mplt
 import os
 import pandas as pd
@@ -176,6 +175,7 @@ def main():
         + ", Leaf: "
         + df[KEY_LOCATION_M1].apply(lambda x: node_mapping[x])
     )
+    df = df[df['bm_name'] == 'tree_index_lookup']
     # Get unique workloads
     unique_workloads = df["workload"].unique()
 
@@ -204,7 +204,7 @@ def main():
     sns.move_legend(
         g,
         "upper center",
-        bbox_to_anchor=(0.405, 1.05),
+        bbox_to_anchor=(0.405, 1.1),
         ncol=2,
         title=None,
         frameon=False,
@@ -220,7 +220,6 @@ def main():
     g.set_yticklabels(yticklabels)
 
     g.axes[0].set_title("Lookup")
-    g.axes[1].set_title("Update")
     # Save the figure
     filename = "{}/{}{}-lineplots.pdf".format(output_dir, PLOT_FILE_PREFIX, "fptree")
     # print("filename:", filename)
