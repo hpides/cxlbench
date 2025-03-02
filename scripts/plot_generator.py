@@ -100,6 +100,9 @@ class PlotGenerator:
             return df
         if self.latency_heatmap:
             df = self.add_avg_access_latency(df)
+        if self.compare_region_sizes:
+            df = df[~df[BMKeys.MEMORY_REGION_SIZE_GIB_M0].isin([20, 40, 60, 80])]
+        df = df[~df[BMKeys.ACCESS_SIZE].isin([128, 512, 2048, 8192, 32768])]
 
         drop_columns = [
             "index",

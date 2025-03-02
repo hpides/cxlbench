@@ -84,7 +84,8 @@ if __name__ == "__main__":
     df = plotter.process_matrix_jsons(True)
     df = df[df[BMKeys.NUMA_MEMORY_NODE_WEIGHTS_M0] != "1:0"]
     df[BMKeys.EXEC_MODE] = df[BMKeys.EXEC_MODE].replace({"sequential":"seq", "random":"rnd"})
-    df["access_types"] = "CPU & GPU | " + (df[BMKeys.EXEC_MODE] + " " + df[BMKeys.OPERATION]).apply(string.capwords)
+    df[BMKeys.OPERATION] = df[BMKeys.OPERATION].replace({"read":"r", "write":"w"})
+    df["access_types"] = "Hybrid-" + (df[BMKeys.EXEC_MODE] + " " + df[BMKeys.OPERATION]).apply(string.capwords)
 
     sns.set_style("darkgrid")
 
@@ -98,18 +99,19 @@ if __name__ == "__main__":
     for idx, hue in enumerate(hues):
         markers[hue] = marker_options[idx]
 
-    hue_order = ["CPU & GPU | Seq Read", "CPU & GPU | Rnd Read", "CPU & GPU | Seq Write", "CPU & GPU | Rnd Write"]
+    hue_order = ["Hybrid-Seq R", "Hybrid-Rnd R", "Hybrid-Seq W", "Hybrid-Rnd W"]
 
-    plt.figure(figsize=(4, 3))
-    ax = sns.lineplot(data=df, x=xkey, y=ykey, hue=hue_key, style=hue_key, markers=markers, dashes=False, hue_order=hue_order, zorder=2)
+    plt.figure(figsize=(5.5, 2.5))
+    ax = sns.lineplot(data=df, x=xkey, y=ykey, hue=hue_key, style=hue_key, markers=markers, dashes=False, hue_order=hue_order, zorder=2, markersize=4)
     ax.tick_params(axis='x', rotation=90)
-    # ax.xaxis.set_tick_params(pad=-3)
-    # ax.yaxis.set_tick_params(pad=-3)
     ax.yaxis.set_major_locator(ticker.MultipleLocator(20))
     ax.set_ylim(0, None)
+    yticks = ax.get_yticks()
+    yticklabels = [label if i % 2 != 0 else "" for i, label in enumerate(ax.get_yticklabels())]
+    ax.set_yticks(yticks)
+    ax.set_yticklabels(yticklabels)
 
-    # Labels and title
-    plt.xlabel("Interleaving Ratio")
+    plt.xlabel("Interleaving Ratio [pages in CPU memory:pages in GPU memory]")
     plt.ylabel("Throughput [GB/s]")
     colors = sns.color_palette()
     # Seq read
@@ -130,23 +132,21 @@ if __name__ == "__main__":
 
     seaborn_handles, seaborn_labels = ax.get_legend_handles_labels()
     all_handles = seaborn_handles + hline_handles
-    all_labels = seaborn_labels + ["CPU | Seq Read", "CPU | Rnd Read", "CPU | Seq Write", "CPU | Rnd Write"]
+    all_labels = seaborn_labels + ["Local-Seq R", "Local-Rnd R", "Local-Seq W", "Local-Rnd W"]
 
     ax.legend(handles=all_handles, labels = all_labels, loc="upper right", frameon=False)
     sns.move_legend(
         ax,
         "upper center",
-        bbox_to_anchor=(0.5, 1.48),
-        ncol=2,
-        title="Memory Location | Access Type",
+        bbox_to_anchor=(0.5, 1.26),
+        ncol=4,
+        title="",
+        # title="Memory Location-Access Type",
         frameon=False,
-        columnspacing=0.5,
-        handlelength=1.2,
-        handletextpad=0.5,
+        columnspacing=0.3,
+        handlelength=1,
+        handletextpad=0.3,
     )
-
     plt.grid(True)
-
-    # Write pdf
     filename = "{}/{}{}-lineplots.pdf".format(output_dir, PLOT_FILE_PREFIX, "bw-expansion")
     plt.savefig(filename, bbox_inches="tight", pad_inches=0)

@@ -217,6 +217,8 @@ def stringify_nodes(df):
             lambda x: ",".join(str(i) for i in x)
         )
     df[BMKeys.NUMA_TASK_NODES] = df[BMKeys.NUMA_TASK_NODES].transform(lambda x: ",".join(str(i) for i in x))
-    df[BMKeys.NUMA_MEMORY_NODE_WEIGHTS_M0] = df[BMKeys.NUMA_MEMORY_NODE_WEIGHTS_M0].transform(lambda x: ":".join(str(i) for i in x))
-    df[BMKeys.NUMA_MEMORY_NODE_WEIGHTS_M1] = df[BMKeys.NUMA_MEMORY_NODE_WEIGHTS_M1].transform(lambda x: ":".join(str(i) for i in x))
+    if BMKeys.NUMA_MEMORY_NODE_WEIGHTS_M0 in df.columns:
+        df[BMKeys.NUMA_MEMORY_NODE_WEIGHTS_M0] = df[BMKeys.NUMA_MEMORY_NODE_WEIGHTS_M0].transform(lambda x: ":".join(str(i) for i in x))
+    if BMKeys.NUMA_MEMORY_NODE_WEIGHTS_M1 in df.columns:
+        df[BMKeys.NUMA_MEMORY_NODE_WEIGHTS_M1] = df[BMKeys.NUMA_MEMORY_NODE_WEIGHTS_M1].transform(lambda x: ":".join(str(i) for i in x))
     return df

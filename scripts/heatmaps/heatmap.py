@@ -77,6 +77,8 @@ class Heatmap:
         if self.compact:
             x_scale = 0.25
             y_scale = 0.25
+            if len(self.df[self.yaxis_key].unique()) < 8:
+                y_scale = 0.3
             x_padding = 3 * x_scale
             y_padding = 0
             minimum = 0
@@ -106,7 +108,7 @@ class Heatmap:
         )
 
         self.heatmap.set_xlabel("# Threads")
-        ylabels = {BMKeys.ACCESS_SIZE : "Access size [Bytes]", BMKeys.MEMORY_REGION_SIZE_GIB_M0 : "Buffer size [GiB]"}
+        ylabels = {BMKeys.ACCESS_SIZE : "Access size\n[Bytes]", BMKeys.MEMORY_REGION_SIZE_GIB_M0 : "Region size\n[GiB]"}
         self.heatmap.set_ylabel(ylabels[self.yaxis_key])
         self.heatmap.invert_yaxis()
         self.heatmap.set_title(self.title)
