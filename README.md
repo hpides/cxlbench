@@ -1,8 +1,6 @@
-![cmake + test](https://github.com/mweisgut/mema-bench/actions/workflows/cmake.yml/badge.svg) ![clang format](https://github.com/mweisgut/mema-bench/actions/workflows/clang-format.yml/badge.svg)
-
 ## CXL Memory Performance for In-Memory Data Processing
 
-This repository will soon contain the code used for our VLDB 2025 paper.
+This repository contains the code used for our VLDB 2025 paper.
 
 ## Cite our work
 

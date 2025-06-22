@@ -13,7 +13,7 @@
 
 namespace mema {
 
-enum class Mode : u8 { Sequential, Sequential_Desc, Random, Custom, DependentReads };
+enum class Mode : u8 { Sequential, Sequential_Desc, Random, Custom, SequentialLatency, RandomLatency };
 
 enum class RandomDistribution : u8 { Uniform, Zipf };
 
@@ -176,6 +176,7 @@ struct BenchmarkConfig {
   bool contains_read_op() const;
   bool contains_write_op() const;
   bool contains_secondary_memory_op() const;
+  bool is_latency_mode() const;
 
   std::string to_string(const std::string sep = ", ") const;
   nlohmann::json as_json() const;

@@ -67,6 +67,7 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, MemoryRegions& memo
                               std::vector<std::thread>* thread_pool, std::vector<ThreadConfig>* thread_configs) {
   const size_t total_range_op_count = config.memory_regions[0].size / config.access_size;
   const bool is_custom_execution = config.exec_mode == Mode::Custom;
+  const bool is_latency_mode = config.is_latency_mode();
   const size_t num_operations =
       (config.exec_mode == Mode::Random || is_custom_execution) ? config.number_operations : total_range_op_count;
   const size_t op_count_per_thread = num_operations / config.number_threads;
@@ -77,8 +78,8 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, MemoryRegions& memo
   result->total_operation_sizes.resize(config.number_threads, 0);
 
   u64 latency_measurement_count = 0;
-  if (is_custom_execution) {
-    result->custom_operation_latencies.resize(config.number_threads);
+  if (is_custom_execution || is_latency_mode) {
+    result->operation_latencies.resize(config.number_threads);
 
     if (config.latency_sample_frequency > 0) {
       latency_measurement_count = (op_count_per_thread / config.latency_sample_frequency) * 2;
@@ -123,13 +124,13 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, MemoryRegions& memo
   for (u16 thread_idx = 0; thread_idx < thread_count; ++thread_idx) {
     // Reserve space for custom operation latency measurements to avoid resizing during benchmark execution.
     if (is_custom_execution) {
-      result->custom_operation_latencies[thread_idx].reserve(latency_measurement_count);
+      result->operation_latencies[thread_idx].reserve(latency_measurement_count);
     }
 
     ExecutionDuration* total_op_duration = &result->total_operation_durations[thread_idx];
     u64* total_op_size = &result->total_operation_sizes[thread_idx];
-    std::vector<u64>* custom_op_latencies =
-        is_custom_execution ? &result->custom_operation_latencies[thread_idx] : nullptr;
+    std::vector<u64>* op_latencies =
+        (is_custom_execution|| is_latency_mode) ? &result->operation_latencies[thread_idx] : nullptr;
 
     auto thread_affinity_cores = config.thread_pin_mode == ThreadPinMode::AllNumaCores
                                      ? threads_pinning_cores
@@ -137,7 +138,7 @@ void Benchmark::single_set_up(const BenchmarkConfig& config, MemoryRegions& memo
 
     thread_configs->emplace_back(primary_start_addr, secondary_start_addr, primary_region_size, secondary_region_size,
                                  thread_count, thread_idx, ops_per_batch, batch_count, config, thread_affinity_cores,
-                                 execution, total_op_duration, total_op_size, custom_op_latencies);
+                                 execution, total_op_duration, total_op_size, op_latencies);
   }
 }
 
@@ -176,7 +177,7 @@ char* Benchmark::prepare_interleaved_data(const MemoryRegionDefinition& region, 
   utils::populate_memory(data, region.size);
   spdlog::debug("Finished populating/pre-faulting the memory region.");
 
-  if (config.exec_mode == Mode::DependentReads) {
+  if (config.is_latency_mode()) {
     utils::generate_shuffled_access_positions(data, region, config);
     spdlog::debug("Finished generating shuffled access positions.");
     if (!utils::verify_shuffled_access_positions(data, region, config)) {
@@ -227,7 +228,7 @@ char* Benchmark::prepare_partitioned_data(const MemoryRegionDefinition& region, 
   utils::populate_memory(data, region.size);
   spdlog::debug("Finished populating/pre-faulting the memory region.");
 
-  if (config.exec_mode == Mode::DependentReads) {
+  if (config.is_latency_mode()) {
     utils::generate_shuffled_access_positions(data, region, config);
     spdlog::debug("Finished generating shuffled access positions.");
     if (!utils::verify_shuffled_access_positions(data, region, config)) {
@@ -322,7 +323,7 @@ void Benchmark::run_custom_ops_in_thread(ThreadConfig* thread_config, const Benc
     if (config.latency_sample_frequency == 0) {
       // We don't want the sampling code overhead if we don't want to sample the latency.
       for (size_t iteration = 0; iteration < ops_count_per_batch; ++iteration) {
-        start_op.run(start_addr, start_addr);
+        start_op.run(start_addr, '0');
       }
     } else {
       // Latency sampling requested, measure the latency every x iterations.
@@ -331,11 +332,11 @@ void Benchmark::run_custom_ops_in_thread(ThreadConfig* thread_config, const Benc
       for (size_t iteration = 1; iteration <= ops_count_per_batch; ++iteration) {
         if (iteration % freq == 0) {
           auto op_start = std::chrono::steady_clock::now();
-          start_op.run(start_addr, start_addr);
+          start_op.run(start_addr, '0');
           auto op_end = std::chrono::steady_clock::now();
-          thread_config->custom_op_latencies->emplace_back((op_end - op_start).count());
+          thread_config->op_latencies->emplace_back((op_end - op_start).count());
         } else {
-          start_op.run(start_addr, start_addr);
+          start_op.run(start_addr, '0');
         }
       }
     }
@@ -348,30 +349,174 @@ void Benchmark::run_custom_ops_in_thread(ThreadConfig* thread_config, const Benc
   *(thread_config->total_operation_size) = total_num_ops;
 }
 
+// TODO(MW) add other access patterns: sequential read, random write, sequential write
 template <size_t ACCESS_COUNT_64B>
-void Benchmark::run_dependent_reads_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config) {
-  spdlog::debug("Thread {}: Running dependent reads.", thread_config->thread_idx);
-
+void Benchmark::run_latency_measurements_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config) {
   auto buffer = reinterpret_cast<std::byte*>(thread_config->primary_start_addr);
-  const auto access_count = thread_config->primary_region_size / config.access_size;
+  // TODO(MW) dynamic solution for access count. We currently divide by 64 so that sequential reads, where the access
+  // offset is increased by 8 B, has the same number of accesses as the random accesses, where one 64B cache line
+  // stores the next access position.
+//  const auto access_count = thread_config->primary_region_size / config.access_size;
+  constexpr auto access_count = u32{100000000};
+  thread_config->op_latencies->reserve(access_count/config.latency_sample_frequency);
 
-  auto next_pos = u64{0};
-  auto begin_ts = std::chrono::steady_clock::now();
+  auto run_measurements = [&](){
+    if (config.exec_mode == Mode::RandomLatency && config.operation == Operation::Read) {
+      spdlog::info("Thread {}: Running dependent reads", thread_config->thread_idx);
+      return run_dependent_reads<ACCESS_COUNT_64B>(buffer, access_count, config, thread_config->op_latencies);
+    }
+    if (config.exec_mode == Mode::RandomLatency && config.operation == Operation::Write) {
+      spdlog::info("Thread {}: Running dependent writes", thread_config->thread_idx);
+      return run_dependent_writes<ACCESS_COUNT_64B>(buffer, access_count, config, thread_config->op_latencies);
+    }
+    if (config.exec_mode == Mode::SequentialLatency && config.operation == Operation::Read) {
+      spdlog::info("Thread {}: Running independent reads", thread_config->thread_idx);
+      return run_independent_reads<ACCESS_COUNT_64B>(buffer, access_count, config, thread_config->op_latencies);
+    }
+    if (config.exec_mode == Mode::SequentialLatency && config.operation == Operation::Write) {
+      spdlog::info("Thread {}: Running independent writes", thread_config->thread_idx);
+      return run_independent_writes<ACCESS_COUNT_64B>(buffer, access_count, config, thread_config->op_latencies);
+    }
+    return ExecutionDuration{};
+  };
+  
+  auto exec_duration = run_measurements();
 
-  for (auto op_idx = u64{0}; op_idx < access_count; ++op_idx) {
-    auto res =
-        rw_ops::read_64B_accesses<ACCESS_COUNT_64B>(reinterpret_cast<char*>(&buffer[next_pos * config.access_size]));
-    next_pos = *(reinterpret_cast<u64*>(&res));
-  }
-  auto end_ts = std::chrono::steady_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_ts - begin_ts);
+  auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(exec_duration.end - exec_duration.begin);
   spdlog::debug("Thread {}: Finished execution in {} ms", thread_config->thread_idx, duration.count());
   auto average_latency = duration.count() / access_count;
   spdlog::info("Thread {}: Average access latency: {} ns", thread_config->thread_idx, average_latency);
 
   const auto batch_size = config.min_io_batch_size;
   *(thread_config->total_operation_size) = access_count * config.access_size;
-  *(thread_config->total_operation_duration) = ExecutionDuration{begin_ts, end_ts};
+  *(thread_config->total_operation_duration) = exec_duration;
+}
+
+template <size_t ACCESS_COUNT_64B>
+ExecutionDuration Benchmark::run_dependent_reads(std::byte* buffer, u32 access_count, const BenchmarkConfig& config, std::vector<u64>* latencies) {
+  MemaAssert(config.access_size == 64, "Dependent reads support only 64 B.");
+  auto sample_counter = config.latency_sample_frequency;
+  auto next_pos = u64{0};
+  auto begin_ts = std::chrono::steady_clock::now();
+  for (auto op_idx = u64{0}; op_idx < access_count; ++op_idx) {
+    // Latency measurement per operation
+    auto addr = buffer + (next_pos * config.access_size);
+    if (sample_counter == 0) {
+      _mm_mfence();
+      // clear instruction pipeline
+      rw_ops::x100_nop();
+      auto op_start = std::chrono::steady_clock::now();
+      next_pos = rw_ops::read_8_get(reinterpret_cast<char*>(addr));
+      _mm_mfence();
+      auto op_end = std::chrono::steady_clock::now();
+      latencies->emplace_back((op_end - op_start).count());
+      sample_counter = config.latency_sample_frequency;
+    } else {
+      // No latency measurement per operation
+      next_pos = rw_ops::read_8_get(reinterpret_cast<char*>(addr));
+    }
+    sample_counter--;
+  }
+  auto end_ts = std::chrono::steady_clock::now();
+  latencies->shrink_to_fit();
+  return {begin_ts, end_ts};
+}
+
+template <size_t ACCESS_COUNT_64B>
+ExecutionDuration Benchmark::run_dependent_writes(std::byte* buffer, u32 access_count, const BenchmarkConfig& config, std::vector<u64>* latencies) {
+  printf("random/dependent write");
+  MemaAssert(config.access_size == 64, "Dependent writes support only 64 B.");
+  auto sample_counter = config.latency_sample_frequency;
+  auto next_pos = u64{0};
+  auto begin_ts = std::chrono::steady_clock::now();
+  for (auto op_idx = u64{0}; op_idx < access_count; ++op_idx) {
+    // Latency measurement per operation
+    auto addr = buffer + (next_pos * config.access_size);
+    if (sample_counter == 0) {
+      _mm_mfence();
+      rw_ops::x100_nop();
+      next_pos = rw_ops::read_8_get(reinterpret_cast<char*>(addr));
+      _mm_mfence();
+      auto op_start = std::chrono::steady_clock::now();
+      rw_ops::write_none_8(reinterpret_cast<char*>(addr));
+      rw_ops::cache_clwb((char*)addr, 64);
+      _mm_mfence();
+      auto op_end = std::chrono::steady_clock::now();
+      latencies->emplace_back((op_end - op_start).count());
+      sample_counter = config.latency_sample_frequency;
+    } else {
+      // No latency measurement per operation
+      next_pos = rw_ops::read_8_get(reinterpret_cast<char*>(addr));
+      rw_ops::write_none_8(reinterpret_cast<char*>(addr));
+      rw_ops::cache_clwb((char*)addr, 64);
+    }
+    sample_counter--;
+  }
+  auto end_ts = std::chrono::steady_clock::now();
+  return {begin_ts, end_ts};
+}
+
+template <size_t ACCESS_COUNT_64B>
+ExecutionDuration Benchmark::run_independent_reads(std::byte* buffer, u32 access_count, const BenchmarkConfig& config, std::vector<u64>* latencies) {
+  MemaAssert(config.access_size == 8, "Independent reads support only 8 B.");
+  auto sample_counter = config.latency_sample_frequency;
+  auto next_pos = u64{0};
+  auto begin_ts = std::chrono::steady_clock::now();
+  for (auto op_idx = u64{0}; op_idx < access_count; ++op_idx) {
+    // Latency measurement per operation
+    auto addr = buffer + next_pos;
+    if (sample_counter == 0) {
+      _mm_mfence();
+      rw_ops::x100_nop();
+      auto op_start = std::chrono::steady_clock::now();
+      rw_ops::read_8_get(reinterpret_cast<char*>(addr));
+      _mm_mfence();
+      auto op_end = std::chrono::steady_clock::now();
+      next_pos += config.access_size;
+      latencies->emplace_back((op_end - op_start).count());
+      sample_counter = config.latency_sample_frequency;
+    } else {
+      // No latency measurement per operation
+      rw_ops::read_8_get(reinterpret_cast<char*>(addr));
+      next_pos += config.access_size;
+    }
+    sample_counter--;
+  }
+  auto end_ts = std::chrono::steady_clock::now();
+  return {begin_ts, end_ts};
+}
+
+template <size_t ACCESS_COUNT_64B>
+ExecutionDuration Benchmark::run_independent_writes(std::byte* buffer, u32 access_count, const BenchmarkConfig& config, std::vector<u64>* latencies) {
+  spdlog::critical("Write independent writes currently not supported");
+  utils::crash_exit();
+//  auto sample_counter = config.latency_sample_frequency;
+//  auto next_pos = u64{0};
+  auto begin_ts = std::chrono::steady_clock::now();
+//  for (auto op_idx = u64{0}; op_idx < access_count; ++op_idx) {
+//    // Latency measurement per operation
+//    auto addr = buffer + next_pos;
+//    if (sample_counter == 0) {
+//      _mm_mfence();
+//      rw_ops::x100_nop();
+//      auto op_start = std::chrono::steady_clock::now();
+//      rw_ops::write_64B_accesses<ACCESS_COUNT_64B>(reinterpret_cast<char*>(addr));
+//      rw_ops::cache_clwb((char*)addr, 64);
+//      _mm_mfence();
+//      auto op_end = std::chrono::steady_clock::now();
+//      next_pos += config.access_size;
+//      latencies->emplace_back((op_end - op_start).count());
+//      sample_counter = config.latency_sample_frequency;
+//    } else {
+//      // No latency measurement per operation
+//      rw_ops::write_64B_accesses<ACCESS_COUNT_64B>(reinterpret_cast<char*>(addr));
+//      rw_ops::cache_clwb((char*)addr, 64);
+//      next_pos += config.access_size;
+//    }
+//    sample_counter--;
+//  }
+  auto end_ts = std::chrono::steady_clock::now();
+  return {begin_ts, end_ts};
 }
 
 void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config) {
@@ -393,32 +538,34 @@ void Benchmark::run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig
     return run_custom_ops_in_thread(thread_config, config);
   }
 
-  if (config.exec_mode == Mode::DependentReads) {
+  if (config.is_latency_mode()) {
     switch (config.access_size) {
+      case 8:
+        return run_latency_measurements_in_thread<1>(thread_config, config);
       case 64:
-        return run_dependent_reads_in_thread<1>(thread_config, config);
+        return run_latency_measurements_in_thread<1>(thread_config, config);
       case 128:
-        return run_dependent_reads_in_thread<2>(thread_config, config);
+        return run_latency_measurements_in_thread<2>(thread_config, config);
       case 256:
-        return run_dependent_reads_in_thread<4>(thread_config, config);
+        return run_latency_measurements_in_thread<4>(thread_config, config);
       case 512:
-        return run_dependent_reads_in_thread<8>(thread_config, config);
+        return run_latency_measurements_in_thread<8>(thread_config, config);
       case 1024:
-        return run_dependent_reads_in_thread<16>(thread_config, config);
+        return run_latency_measurements_in_thread<16>(thread_config, config);
       case 2048:
-        return run_dependent_reads_in_thread<32>(thread_config, config);
+        return run_latency_measurements_in_thread<32>(thread_config, config);
       case 4096:
-        return run_dependent_reads_in_thread<64>(thread_config, config);
+        return run_latency_measurements_in_thread<64>(thread_config, config);
       case 8192:
-        return run_dependent_reads_in_thread<128>(thread_config, config);
+        return run_latency_measurements_in_thread<128>(thread_config, config);
       case 16384:
-        return run_dependent_reads_in_thread<256>(thread_config, config);
+        return run_latency_measurements_in_thread<256>(thread_config, config);
       case 32768:
-        return run_dependent_reads_in_thread<512>(thread_config, config);
+        return run_latency_measurements_in_thread<512>(thread_config, config);
       case 65536:
-        return run_dependent_reads_in_thread<1024>(thread_config, config);
+        return run_latency_measurements_in_thread<1024>(thread_config, config);
       default:
-        throw MemaException("Dependent Reads only supports specific access sizes between 64 and 65536");
+        throw MemaException("Latency measurements only supports specific access sizes.");
     }
   }
 
@@ -624,13 +771,17 @@ BenchmarkResult::~BenchmarkResult() {
     hdr_close(latency_hdr);
   }
 
-  custom_operation_latencies.clear();
-  custom_operation_latencies.shrink_to_fit();
+  operation_latencies.clear();
+  operation_latencies.shrink_to_fit();
 }
 
 nlohmann::json BenchmarkResult::get_result_as_json() const {
   if (config.exec_mode == Mode::Custom) {
     return get_custom_results_as_json();
+  }
+
+  if (config.is_latency_mode()){
+    return get_latency_mode_results_as_json();
   }
 
   if (total_operation_durations.size() != config.number_threads) {
@@ -771,7 +922,7 @@ nlohmann::json BenchmarkResult::get_custom_results_as_json() const {
   custom_op_results["threads"] = per_thread_results;
 
   if (config.latency_sample_frequency > 0) {
-    for (const std::vector<u64>& thread_latencies : custom_operation_latencies) {
+    for (const std::vector<u64>& thread_latencies : operation_latencies) {
       for (const u64 latency : thread_latencies) {
         hdr_record_value(latency_hdr, static_cast<i64>(latency));
       }
@@ -781,6 +932,56 @@ nlohmann::json BenchmarkResult::get_custom_results_as_json() const {
 
   nlohmann::json result;
   result["results"] = custom_op_results;
+  return result;
+}
+
+nlohmann::json BenchmarkResult::get_latency_mode_results_as_json() const {
+  nlohmann::json latency_results;
+  nlohmann::json per_thread_results = nlohmann::json::array();
+
+  u64 total_num_ops = 0;
+  std::vector<double> per_thread_ops_per_s(config.number_threads);
+
+  std::chrono::steady_clock::time_point earliest_begin = total_operation_durations[0].begin;
+  std::chrono::steady_clock::time_point latest_end = total_operation_durations[0].end;
+
+  for (u64 thread_idx = 0; thread_idx < config.number_threads; ++thread_idx) {
+    const ExecutionDuration& thread_timestamps = total_operation_durations[thread_idx];
+    const std::chrono::steady_clock::duration thread_duration = thread_timestamps.duration();
+    const auto thread_duration_s = std::chrono::duration<double>(std::chrono::nanoseconds{thread_duration}).count();
+
+    const u64 num_ops = total_operation_sizes[thread_idx];
+    total_num_ops += num_ops;
+    const double thread_ops_per_s = static_cast<double>(num_ops) / thread_duration_s;
+    per_thread_ops_per_s[thread_idx] = thread_ops_per_s;
+
+    earliest_begin = std::min(earliest_begin, thread_timestamps.begin);
+    latest_end = std::max(latest_end, thread_timestamps.end);
+
+    nlohmann::json thread_results;
+    thread_results["num_operations"] = num_ops;
+    thread_results["execution_time"] = thread_duration_s;
+    thread_results["ops_per_second"] = thread_ops_per_s;
+    per_thread_results.emplace_back(std::move(thread_results));
+  }
+
+  const auto execution_time = latest_end - earliest_begin;
+  auto execution_time_s = std::chrono::duration<double>(std::chrono::nanoseconds{execution_time});
+
+  const double total_ops_per_s = static_cast<double>(total_num_ops) / execution_time_s.count();
+  const double avg_ops_per_s = total_ops_per_s / config.number_threads;
+  const double ops_per_s_std_dev = calculate_standard_deviation(per_thread_ops_per_s, avg_ops_per_s);
+
+  latency_results["execution_time"] = execution_time_s.count();
+  latency_results["num_operations"] = total_num_ops;
+  latency_results["ops_per_second"] = total_ops_per_s;
+  latency_results["thread_ops_per_second_avg"] = avg_ops_per_s;
+  latency_results["thread_ops_per_second_std_dev"] = ops_per_s_std_dev;
+  latency_results["threads"] = per_thread_results;
+  latency_results["latencies"] = operation_latencies;
+
+  nlohmann::json result;
+  result["results"] = latency_results;
   return result;
 }
 

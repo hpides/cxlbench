@@ -7,7 +7,7 @@ random_reads:
     exec_mode: random
     memory_region_size: 7G
     numa_memory_nodes: [ 2,3,4,5 ]
-    numa_task_nodes: [ 0 ]
+    numa_task_nodes: [ 1 ]
     number_partitions: 1
     operation: read
     number_operations: 110000000

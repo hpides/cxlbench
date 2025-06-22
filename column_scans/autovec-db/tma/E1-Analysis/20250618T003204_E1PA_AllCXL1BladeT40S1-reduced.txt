@@ -1,0 +1,72 @@
+    Top-down Microarchitecture Analysis (TMA)
+        Retiring: 1.9% of Pipeline Slots
+            Light Operations: 1.8% of Pipeline Slots
+            Heavy Operations: 0.1% of Pipeline Slots
+                Few Uops Instructions: 0.0% of Pipeline Slots
+                Microcode Sequencer: 0.1% of Pipeline Slots
+                    Assists: 0.0% of Pipeline Slots
+                    CISC: 0.1% of Pipeline Slots
+        Front-End Bound: 1.3% of Pipeline Slots
+            Front-End Latency: 1.0% of Pipeline Slots
+                ICache Misses: 0.0% of Clockticks
+                ITLB Misses: 0.2% of Clockticks
+                Branch Resteers: 0.2% of Clockticks
+                    Mispredicts Resteers: 0.6% of Clockticks
+                    Clears Resteers: 0.0% of Clockticks
+                    Unknown Branches: 0.0% of Clockticks
+                MS Switches: 0.1% of Clockticks
+                Length Changing Prefixes: 0.0% of Clockticks
+                DSB Switches: 0.0% of Clockticks
+            Front-End Bandwidth: 0.3% of Pipeline Slots
+        Bad Speculation: 0.0% of Pipeline Slots
+            Branch Mispredict: 0.1% of Pipeline Slots
+                Other Mispredicts: 0.0% of Pipeline Slots
+            Machine Clears: 0.0% of Pipeline Slots
+                Other Nukes: 0.0% of Pipeline Slots
+        Back-End Bound: 96.8% of Pipeline Slots
+            Memory Bound: 94.1% of Pipeline Slots
+                L1 Bound: 1.6% of Clockticks
+                    DTLB Overhead: 2.0% of Clockticks
+                        Load STLB Hit: 0.0% of Clockticks
+                        Load STLB Miss: 5.4% of Clockticks
+                    Loads Blocked by Store Forwarding: 0.0% of Clockticks
+                    L1 Hit Latency: 0.3% of Clockticks
+                    Lock Latency: 0.0% of Clockticks
+                    Split Loads: 7.8% of Clockticks
+                    FB Full: 11.1% of Clockticks
+                L2 Bound: 0.0% of Clockticks
+                L3 Bound: 3.8% of Clockticks
+                    Contested Accesses: 0.0% of Clockticks
+                    Data Sharing: 0.0% of Clockticks
+                    L3 Latency: 0.6% of Clockticks
+                    SQ Full: 1.8% of Clockticks
+                DRAM Bound: 86.6% of Clockticks
+                    Memory Bandwidth: 78.5% of Clockticks
+                        MBA Stalls: 0.0% of Clockticks
+                    Memory Latency: 16.3% of Clockticks
+                        Local Memory: 35.8% of Clockticks
+                        Remote Memory: 0.1% of Clockticks
+                        Remote Cache: 0.0% of Clockticks
+                Store Bound: 4.1% of Clockticks
+                    Store Latency: 8.0% of Clockticks
+                    False Sharing: 0.0% of Clockticks
+                    Split Stores: 0.0%
+                    Streaming Stores: 0.0% of Clockticks
+                    DTLB Store Overhead: 2.6% of Clockticks
+                        Store STLB Hit: 1.3% of Clockticks
+                        Store STLB Miss: 1.3% of Clockticks
+            Core Bound: 2.7% of Pipeline Slots
+                Divider: 0.0% of Clockticks
+                Serializing Operations: 0.4% of Clockticks
+                    C02 Wait: 0.0% of Clockticks
+                AMX Busy: 0.0% of Clockticks
+                Port Utilization: 1.7% of Clockticks
+                    Cycles of 0 Ports Utilized: 0.2% of Clockticks
+                    Cycles of 1 Port Utilized: 1.5% of Clockticks
+                    Cycles of 2 Ports Utilized: 0.8% of Clockticks
+                    Cycles of 3+ Ports Utilized: 0.9% of Clockticks
+                    Vector Capacity Usage (FPU): 12.5%
+Memory Bound: 94.1% of Pipeline Slots
+    Cache Bound: 5.3% of Clockticks
+    DRAM Bound: 86.6% of Clockticks
+    NUMA: % of Remote Accesses: 0.1%

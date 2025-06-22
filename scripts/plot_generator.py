@@ -114,6 +114,8 @@ class PlotGenerator:
             sys.exit("Exiting without generating plots. CSV were stored.")
 
         bm_groups = df[BMKeys.BM_GROUP].unique()
+        if not BMKeys.PARTITION_COUNT in df.columns:
+            df[BMKeys.PARTITION_COUNT] = 1
         partition_counts = df[BMKeys.PARTITION_COUNT].unique()
         flush_types = df[BMKeys.FLUSH_INSTRUCTION].unique()
         tags = df[BMKeys.TAG].unique()

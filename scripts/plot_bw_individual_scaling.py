@@ -112,7 +112,6 @@ if __name__ == "__main__":
     # create json file list
     dfs = []
     for path in matrix_jsons:
-        # Get the tag from the file name.
         tag = ""
         if FILE_TAG_SUBSTRING in path:
             path_parts = path.split(FILE_TAG_SUBSTRING)
@@ -157,7 +156,6 @@ if __name__ == "__main__":
 
     df = df[(df[BMKeys.BM_NAME].isin(BM_SUPPORTED_CONFIGS))]
     df = ju.flatten_nested_json_df(df, deny_list_explosion)
-    # Transform GiB/s to GB/s
     df[BMKeys.BANDWIDTH_GB] = df[BMKeys.BANDWIDTH_GiB] * (1024**3 / 1e9)
     df[BMKeys.TAG] = df[BMKeys.EXEC_MODE] + " " + df[BMKeys.OPERATION]
     df.to_csv("{}/{}.csv".format(output_dir, "results"))
@@ -205,7 +203,6 @@ if __name__ == "__main__":
     dashes = {TAG_RND_READS: [1, 0], TAG_SEQ_READS: [1, 0], TAG_RND_WRITES: [1, 0], TAG_SEQ_WRITES: [1, 0]}
     hue_order = [TAG_SEQ_READS, TAG_RND_READS, TAG_SEQ_WRITES, TAG_RND_WRITES]
 
-    # Create the subplots without shared y-axis, with reduced height
     fig, axes = plt.subplots(1, len(shown_sizes), figsize=(6, 1.85))
 
     for ax, access_size in zip(axes, shown_sizes):
@@ -222,7 +219,7 @@ if __name__ == "__main__":
             markers=markers,
             hue_order=hue_order,
             hue=BMKeys.TAG,
-            ax=ax,  # Pass the current axis to seaborn
+            ax=ax,
         )
         ax.set_xticks(thread_counts)
         ax.set_xticklabels(thread_counts)
@@ -232,16 +229,13 @@ if __name__ == "__main__":
         if y_tick_distance is not None:
             ax.yaxis.set_major_locator(ticker.MultipleLocator(y_tick_distance))
 
-        # Clear individual axis labels
         ax.set_ylabel("")
         ax.set_xlabel("")
         ax.get_legend().remove()  # Remove legend from all subplots
 
-    # Add shared x-axis and y-axis labels
     fig.text(0.5, 0.04, "Thread Count", ha="center", va="center")
     fig.text(0.0, 0.55, "Throughput in GB/s", ha="center", va="center", rotation="vertical")
 
-    # Move the legend outside of the subplots
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(
         handles,
@@ -255,7 +249,7 @@ if __name__ == "__main__":
         handletextpad=0.5,
     )
 
-    plt.tight_layout(w_pad=2)  # Adjust padding between subplots
+    plt.tight_layout(w_pad=2)
 
     fig.savefig(
         "{}/{}{}.pdf".format(output_dir, PLOT_FILE_PREFIX, "scale_throughput"), bbox_inches="tight", pad_inches=0

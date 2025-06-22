@@ -8,9 +8,10 @@
 #./scripts/run_log.sh inter_socket_lat &&
 #./scripts/run_log.sh cxl_lat_emr_SNC1 &&
 #./scripts/run_log.sh bw_expansion_parallel_emr_SNC1 &&
-./scripts/run_log.sh bw_expansion_parallel_emr_SNC1_4k &&
-./scripts/run_log.sh device_cost_emr_SNC1 &&
+# ./scripts/run_log.sh bw_expansion_parallel_emr_SNC1_4k &&
+# ./scripts/run_log.sh device_cost_emr_SNC1 &&
 #./scripts/run_log.sh fp_tree_emr_SNC1 &&
+./scripts/run_log.sh cxl_bw_emr_1-4cxl &&
 #cd exp-mag-SYS-741GE-TNRT-rel-gcc-12/ &&
 #mkdir -p results-fs &&
 #numactl -N 0 -m 0 ./false-sharing &&

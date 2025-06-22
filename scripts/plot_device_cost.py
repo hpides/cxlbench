@@ -15,13 +15,13 @@ import sys
 from enums.benchmark_keys import BMKeys
 from enums.file_names import FILE_TAG_SUBSTRING, PLOT_FILE_PREFIX
 
+from matplotlib.lines import Line2D
 
 MAX_THREAD_COUNT = 120
 PERCENTAGE_SECOND_PARTITION = "percentage_pages_second_partition"
 
 # benchmark configuration names
 BM_SUPPORTED_CONFIGS = ["split_memory_random_writes", "split_memory_random_reads"]
-
 
 def dir_path(path):
     """
@@ -160,10 +160,13 @@ if __name__ == "__main__":
     df = df.reset_index(drop=True)
 
     # ------------------------------------------------------------------------------------------------------------------
+
+    df = df[df[BMKeys.ACCESS_SIZE].isin([64, 4096])]
+
     # create plots
-    TAG_RND_READS = "Random Reads"
+    TAG_RND_READS = "Rand' Reads"
     TAG_SEQ_READS = "Seq Reads"
-    TAG_RND_WRITES = "Random Writes"
+    TAG_RND_WRITES = "Rand' Writes"
     TAG_SEQ_WRITES = "Seq Writes"
 
     tag_replacements = {
@@ -187,16 +190,21 @@ if __name__ == "__main__":
     markers = ["o", "X", "D", "s", "P", "*"]
     dashes = {count: "" for count in df[BMKeys.THREAD_COUNT].unique()}  # No dashes for different thread counts
 
-    # Unique values
     thread_counts = df[BMKeys.THREAD_COUNT].unique()
     access_sizes = df[BMKeys.ACCESS_SIZE].unique()
     tags = [TAG_RND_READS, TAG_RND_WRITES]
     colors = [hpi_palette[0], hpi_palette[2]]
 
-    # Create a grid of subplots
+    plt.rcParams.update({
+        'text.usetex': True,
+        'font.family': 'serif',
+        'text.latex.preamble': r'\usepackage{libertine}'
+    })
+
     fig, axes = plt.subplots(
-        len(access_sizes), len(tags), figsize=(3.1 * len(tags), 1.8 * len(access_sizes)), sharex=True, sharey=False
+        len(access_sizes), len(tags), figsize=(2.6 * len(tags), 1.4 * len(access_sizes)), sharex=False, sharey=False
     )
+    fig.subplots_adjust(hspace=0.8, wspace=0.3)
 
     for i, access_size in enumerate(access_sizes):
         for j, tag in enumerate(tags):
@@ -224,64 +232,58 @@ if __name__ == "__main__":
                 palette=[colors[j]],
                 dashes=dashes,
                 ax=ax,
+                markersize=4
             )
-            ax.set_title("{}, Access Size: {}".format(tag, access_size))
+            ax.set_title("{}, {} B Access Size".format(tag, access_size))
             ax.legend().remove()
 
             ax.set_xticks(page_share_on_device)
-            ax.set_xticklabels(page_share_on_device)
-            ax.yaxis.grid()
-            if y_tick_distance is not None:
+            ax.set_xticklabels(page_share_on_device, rotation=90)
+            if True or y_tick_distance is not None:
                 print_label_interval = 2
                 if tag == TAG_RND_READS and access_size == 4096:
-                    y_tick_distance = y_tick_distance * 2
+                    y_tick_distance = 40
+                if tag == TAG_RND_WRITES and access_size == 4096:
+                    y_tick_distance = 20
+                if tag == TAG_RND_READS and access_size == 64:
+                    y_tick_distance = 20
+                if tag == TAG_RND_WRITES and access_size == 64:
+                    y_tick_distance = 20
                 ax.yaxis.set_major_locator(ticker.MultipleLocator(y_tick_distance))
-                ticks = ax.get_yticks()
-                tick_labels = [
-                    "" if (tick_idx - 1) % print_label_interval != 0 else f"{int(tick)}"
-                    for tick_idx, tick in enumerate(ticks)
-                ]
-                ax.set_yticklabels(tick_labels)
+                ax.yaxis.set_minor_locator(ticker.MultipleLocator(y_tick_distance/2))
 
-                # Make every print_label_interval tick bigger
-                for tick_idx, tick in enumerate(ax.yaxis.get_major_ticks()):
-                    if (tick_idx - 1) % print_label_interval == 0:
-                        tick.tick1line.set_markersize(7)  # Set a larger tick size
-                        tick.tick2line.set_markersize(7)  # Set a larger tick size
-                        tick.tick1line.set_markeredgewidth(1.2)  # Set a thicker tick width
-                        tick.tick2line.set_markeredgewidth(1.2)  # Set a thicker tick width
-                    else:
-                        tick.tick1line.set_markersize(5)  # Set a smaller tick size
-                        tick.tick2line.set_markersize(5)  # Set a smaller tick size
-                        tick.tick1line.set_markeredgewidth(1)  # Set a thinner tick width
-                        tick.tick2line.set_markeredgewidth(1)  # Set a thinner tick width
+            ax.grid(axis='y', which='minor', linestyle='-', alpha=0.2)
+            ax.grid(axis='y', which='major', linestyle='-', alpha=0.6)
 
-    # Set common labels
-    fig.text(0.55, 0.055, "Pages on device memory in %", ha="center")
-    fig.text(0.04, 0.45, "Throughput in GB/s", va="center", rotation="vertical")
+    # set common labels
+    fig.text(0.5, -0.08, "Pages in device memory [\%]", ha="center")
+    fig.text(0.02, 0.5, "Throughput [GB/s]", va="center", rotation="vertical")
 
-    # Remove individual subplot labels
+    # remove individual subplot labels
     for ax in axes.flat:
         ax.set_xlabel("")
         ax.set_ylabel("")
 
-    # Center the shared legend at the top middle with two columns
+    # center the shared legend at the top middle with two columns
     handles, labels = ax.get_legend_handles_labels()
     for handle in handles:
         handle.set_color("black")
 
+    title_handle = Line2D([], [], color='none', label='Thread Count')
+
+    handles = [title_handle] + handles
+    labels = ['Thread Count'] + labels
+
     fig.legend(
         handles,
         labels,
-        title="Thread Count",
         loc="upper center",
-        bbox_to_anchor=(0.55, 1.05),
-        ncol=5,
-        frameon=False,
+        bbox_to_anchor=(0.5, 1.1),
+        ncol=6,
+        frameon=True,
         columnspacing=0.5,
         handlelength=1.2,
         handletextpad=0.5,
     )
 
-    plt.tight_layout(rect=[0.05, 0.05, 1, 0.95])
     fig.savefig("{}/{}{}.pdf".format(output_dir, PLOT_FILE_PREFIX, "device_penalty"), bbox_inches="tight", pad_inches=0)

@@ -19,16 +19,6 @@
 
 namespace mema::rw_ops {
 
-/** flush the cache line using clwb. */
-#ifdef HAS_CLWB
-inline void cache_clwb(char* addr, const size_t len) {
-  const auto* end_addr = addr + len;
-  for (auto* current_cl = addr; current_cl < end_addr; current_cl += CACHE_LINE_SIZE) {
-    _mm_clwb(current_cl);
-  }
-}
-#endif
-
 /**
  * #####################################################
  * READ OPERATIONS
@@ -53,36 +43,65 @@ inline CharVecBase read_64B_accesses(char* address) {
   return result;
 }
 
-inline CharVecBase read_64(char* addr) { return read_64B_accesses<1>(addr); }
+inline u64 read_8_get(char* addr) {
+  volatile u64* volatile_addr = reinterpret_cast<u64*>(addr);
+  return volatile_addr[0];
+}
 
-inline CharVecBase read_128(char* addr) { return read_64B_accesses<2>(addr); }
+inline char read_4(char* addr) {
+  volatile u32* volatile_addr = reinterpret_cast<u32*>(addr);
+  auto result = volatile_addr[0];
+  return static_cast<char>(result);
+}
 
-inline CharVecBase read_256(char* addr) { return read_64B_accesses<4>(addr); }
+inline char read_8(char* addr) {
+  volatile u64* volatile_addr = reinterpret_cast<u64*>(addr);
+  auto result = volatile_addr[0];
+  return static_cast<char>(result);
+}
 
-inline CharVecBase read_512(char* addr) { return read_64B_accesses<8>(addr); }
+inline char read_16(char* addr) {
+  volatile CharVec16* volatile_addr = reinterpret_cast<CharVec16*>(addr);
+  auto result = volatile_addr[0];
+  return static_cast<char>(result[0]);
+}
 
-inline CharVecBase read_1k(char* addr) { return read_64B_accesses<16>(addr); }
+inline char read_32(char* addr) {
+  volatile CharVec32* volatile_addr = reinterpret_cast<CharVec32*>(addr);
+  auto result = volatile_addr[0];
+  return static_cast<char>(result[0]);
+}
 
-inline CharVecBase read_2k(char* addr) { return read_64B_accesses<32>(addr); }
+inline char read_64(char* addr) { return static_cast<char>(read_64B_accesses<1>(addr)[0]); }
 
-inline CharVecBase read_4k(char* addr) { return read_64B_accesses<64>(addr); }
+inline char read_128(char* addr) { return static_cast<char>(read_64B_accesses<2>(addr)[0]); }
 
-inline CharVecBase read_8k(char* addr) { return read_64B_accesses<128>(addr); }
+inline char read_256(char* addr) { return static_cast<char>(read_64B_accesses<4>(addr)[0]); }
 
-inline CharVecBase read_16k(char* addr) { return read_64B_accesses<256>(addr); }
+inline char read_512(char* addr) { return static_cast<char>(read_64B_accesses<8>(addr)[0]); }
 
-inline CharVecBase read_32k(char* addr) { return read_64B_accesses<512>(addr); }
+inline char read_1k(char* addr) { return static_cast<char>(read_64B_accesses<16>(addr)[0]); }
 
-inline CharVecBase read_64k(char* addr) { return read_64B_accesses<1024>(addr); }
+inline char read_2k(char* addr) { return static_cast<char>(read_64B_accesses<32>(addr)[0]); }
 
-inline CharVecBase read(char* addr, const size_t access_size) {
+inline char read_4k(char* addr) { return static_cast<char>(read_64B_accesses<64>(addr)[0]); }
+
+inline char read_8k(char* addr) { return static_cast<char>(read_64B_accesses<128>(addr)[0]); }
+
+inline char read_16k(char* addr) { return static_cast<char>(read_64B_accesses<256>(addr)[0]); }
+
+inline char read_32k(char* addr) { return static_cast<char>(read_64B_accesses<512>(addr)[0]); }
+
+inline char read_64k(char* addr) { return static_cast<char>(read_64B_accesses<1024>(addr)[0]); }
+
+inline char read(char* addr, const size_t access_size) {
   auto result = CharVecBase{0};
   const char* access_end_addr = addr + access_size;
   for (char* mem_addr = addr; mem_addr < access_end_addr; mem_addr += (1024 * 64)) {
     result = read_64B_accesses<1024>(mem_addr);
   }
   // Returning the last read, not supporting dependent reads
-  return result;
+  return static_cast<char>(result[0]);
 }
 
 template <int ACCESS_COUNT_64B>
@@ -94,6 +113,34 @@ inline void read_64B_accesses(const std::vector<char*>& addresses) {
     for (size_t access_idx = 0; access_idx < vector_access_count; ++access_idx) {
       auto result = volatile_addr[access_idx];
     }
+  }
+}
+
+inline void read_4(const std::vector<char*>& addresses) {
+  for (char* addr : addresses) {
+    volatile u32* volatile_addr = reinterpret_cast<u32*>(addr);
+    auto result = volatile_addr[0];
+  }
+}
+
+inline void read_8(const std::vector<char*>& addresses) {
+  for (char* addr : addresses) {
+    volatile u64* volatile_addr = reinterpret_cast<u64*>(addr);
+    auto result = volatile_addr[0];
+  }
+}
+
+inline void read_16(const std::vector<char*>& addresses) {
+  for (char* addr : addresses) {
+    volatile CharVec16* volatile_addr = reinterpret_cast<CharVec16*>(addr);
+    auto result = volatile_addr[0];
+  }
+}
+
+inline void read_32(const std::vector<char*>& addresses) {
+  for (char* addr : addresses) {
+    volatile CharVec32* volatile_addr = reinterpret_cast<CharVec32*>(addr);
+    auto result = volatile_addr[0];
   }
 }
 
@@ -189,6 +236,38 @@ inline void write_data_range(char* start_addr, const char* end_addr) {
 
 inline void write_data(char* start_address, const char* end_address) {
   return write_data_range(start_address, end_address);
+}
+
+inline void write_4(char* addr, cache_func cache_fn, barrier_func barrier) {
+  const u32* write_data = reinterpret_cast<const u32*>(WRITE_DATA);
+  u32* target_address = reinterpret_cast<u32*>(addr);
+  target_address[0] = write_data[0];
+  cache_fn(addr, 4);
+  barrier();
+}
+
+inline void write_8(char* addr, cache_func cache_fn, barrier_func barrier) {
+  const u64* write_data = reinterpret_cast<const u64*>(WRITE_DATA);
+  u64* target_address = reinterpret_cast<u64*>(addr);
+  target_address[0] = write_data[0];
+  cache_fn(addr, 8);
+  barrier();
+}
+
+inline void write_16(char* addr, cache_func cache_fn, barrier_func barrier) {
+  const CharVec16* write_data = reinterpret_cast<const CharVec16*>(WRITE_DATA);
+  CharVec16* target_address = reinterpret_cast<CharVec16*>(addr);
+  target_address[0] = write_data[0];
+  cache_fn(addr, 16);
+  barrier();
+}
+
+inline void write_32(char* addr, cache_func cache_fn, barrier_func barrier) {
+  const CharVec32* write_data = reinterpret_cast<const CharVec32*>(WRITE_DATA);
+  CharVec32* target_address = reinterpret_cast<CharVec32*>(addr);
+  target_address[0] = write_data[0];
+  cache_fn(addr, 32);
+  barrier();
 }
 
 inline void write_64(char* addr, cache_func cache_fn, barrier_func barrier) {
@@ -352,6 +431,15 @@ inline void write_clwb(const std::vector<char*>& addresses, const size_t access_
  * #####################################################
  */
 
+
+inline void write_none_4(char* addr) { write_4(addr, no_cache_fn, no_barrier); }
+
+inline void write_none_8(char* addr) { write_8(addr, no_cache_fn, no_barrier); }
+
+inline void write_none_16(char* addr) { write_8(addr, no_cache_fn, no_barrier); }
+
+inline void write_none_32(char* addr) { write_8(addr, no_cache_fn, no_barrier); }
+
 inline void write_none_64(char* addr) { write_64(addr, no_cache_fn, no_barrier); }
 
 inline void write_none_128(char* addr) { write_128(addr, no_cache_fn, no_barrier); }
@@ -375,6 +463,22 @@ inline void write_none_32k(char* addr) { write_32k(addr, no_cache_fn, no_barrier
 inline void write_none_64k(char* addr) { write_64k(addr, no_cache_fn, no_barrier); }
 
 inline void write_none(char* addr, const size_t access_size) { write(addr, access_size, no_cache_fn, no_barrier); }
+
+inline void write_none_4(const std::vector<char*>& addresses) {
+  write(addresses, no_cache_fn, no_barrier, write_4);
+}
+
+inline void write_none_8(const std::vector<char*>& addresses) {
+  write(addresses, no_cache_fn, no_barrier, write_8);
+}
+
+inline void write_none_16(const std::vector<char*>& addresses) {
+  write(addresses, no_cache_fn, no_barrier, write_16);
+}
+
+inline void write_none_32(const std::vector<char*>& addresses) {
+  write(addresses, no_cache_fn, no_barrier, write_32);
+}
 
 inline void write_none_64(const std::vector<char*>& addresses) { write(addresses, no_cache_fn, no_barrier, write_64); }
 

@@ -1,0 +1,139 @@
+Hierarchy Level,Metric Name,Metric Value
+0,Elapsed Time,79.831919
+1,IPC,0.077675
+1,SP GFLOPS,0.000000
+1,DP GFLOPS,0.000001
+1,x87 GFLOPS,0.000000
+1,Average CPU Frequency,3617772353.922721
+0,Logical Core Utilization,30.7% (29.497 out of 96)
+1,Physical Core Utilization,40.2% (19.319 out of 48)
+0,Microarchitecture Usage,1.9
+1,Bottlenecks View (preview),
+2,Mispredictions,1.2
+2,Big Code,0.3
+2,Instruction Fetch Bandwidth,0.0
+2,Cache Memory Bandwidth,73.9
+2,Cache Memory Latency,18.5
+2,Memory Data TLBs,1.1
+2,Memory Synchronization,0.0
+2,Compute Bound Estimation,0.6
+2,Irregular Overhead,0.5
+2,Other Bottlenecks,2.1
+2,Branching Overhead,0.3
+2,Useful Work,1.6
+1,Top-down Microarchitecture Analysis (TMA),
+2,Retiring,1.9
+3,Light Operations,1.8
+3,Heavy Operations,0.1
+4,Few Uops Instructions,0.0
+4,Microcode Sequencer,0.1
+5,Assists,0.0
+5,CISC,0.1
+2,Front-End Bound,1.3
+3,Front-End Latency,1.0
+4,ICache Misses,0.0
+4,ITLB Misses,0.2
+4,Branch Resteers,0.2
+5,Mispredicts Resteers,0.6
+5,Clears Resteers,0.0
+5,Unknown Branches,0.0
+4,MS Switches,0.1
+4,Length Changing Prefixes,0.0
+4,DSB Switches,0.0
+3,Front-End Bandwidth,0.3
+2,Bad Speculation,0.0
+3,Branch Mispredict,0.1
+4,Other Mispredicts,0.0
+3,Machine Clears,0.0
+4,Other Nukes,0.0
+2,Back-End Bound,96.8
+3,Memory Bound,94.1
+4,L1 Bound,1.6
+5,DTLB Overhead,2.0
+6,Load STLB Hit,0.0
+6,Load STLB Miss,5.4
+5,Loads Blocked by Store Forwarding,0.0
+5,L1 Hit Latency,0.3
+5,Lock Latency,0.0
+5,Split Loads,7.8
+5,FB Full,11.1
+4,L2 Bound,0.0
+4,L3 Bound,3.8
+5,Contested Accesses,0.0
+5,Data Sharing,0.0
+5,L3 Latency,0.6
+5,SQ Full,1.8
+4,DRAM Bound,86.6
+5,Memory Bandwidth,78.5
+6,MBA Stalls,0.0
+5,Memory Latency,16.3
+6,Local Memory,35.8
+6,Remote Memory,0.1
+6,Remote Cache,0.0
+4,Store Bound,4.1
+5,Store Latency,8.0
+5,False Sharing,0.0
+5,Split Stores,0.0
+5,Streaming Stores,0.0
+5,DTLB Store Overhead,2.6
+6,Store STLB Hit,1.3
+6,Store STLB Miss,1.3
+3,Core Bound,2.7
+4,Divider,0.0
+4,Serializing Operations,0.4
+5,C02 Wait,0.0
+4,AMX Busy,0.0
+4,Port Utilization,1.7
+5,Cycles of 0 Ports Utilized,0.2
+5,Cycles of 1 Port Utilized,1.5
+5,Cycles of 2 Ports Utilized,0.8
+5,Cycles of 3+ Ports Utilized,0.9
+5,Vector Capacity Usage (FPU),12.5
+0,Memory Bound,94.1
+1,Cache Bound,5.3
+1,DRAM Bound,86.6
+1,NUMA: % of Remote Accesses,0.1
+0,Vectorization,0.0
+1,Instruction Mix,
+2,HP FLOPs,0.0
+3,Packed,0.0
+4,128-bit,0.0
+4,256-bit,0.0
+4,512-bit,0.0
+3,Scalar,0.0
+2,SP FLOPs,0.0
+3,Packed,0.0
+4,128-bit,0.0
+4,256-bit,0.0
+4,512-bit,0.0
+3,Scalar,100.0
+2,DP FLOPs,0.0
+3,Packed,0.0
+4,128-bit,0.0
+4,256-bit,0.0
+4,512-bit,0.0
+3,Scalar,100.0
+2,x87 FLOPs,0.0
+2,Non-FP,100.0
+1,FP Arith/Mem Rd Instr. Ratio,0.000001
+1,FP Arith/Mem Wr Instr. Ratio,0.000002
+0,Collection and Platform Info,
+1,Application Command Line,./build/int_scan "--benchmark_filter=E1PA_AllCXL1BladeT40S1.*" "--benchmark_repetitions=1" 
+1,Operating System,6.13.0-061300-generic DISTRIB_ID=Ubuntu DISTRIB_RELEASE=24.04 DISTRIB_CODENAME=noble DISTRIB_DESCRIPTION="Ubuntu 24.04.2 LTS"
+1,Computer Name,mag-SYS-741GE-TNRT
+1,Result Size,3951690
+1,Collection start time,05:32:06 18/06/2025 UTC
+1,Collection stop time,05:33:26 18/06/2025 UTC
+1,Collector Type,Driverless Perf per-process counting
+1,CPU,
+2,Name,Intel(R) Xeon(R) Processor code named Emeraldrapids
+2,Frequency,2899999953
+2,Logical CPU Count,96
+2,LLC size,62914560
+2,Cache Allocation Technology,
+3,Level 2 capability,available
+3,Level 3 capability,available
+0,Recommendations:
+1,Hotspots,Start with Hotspots analysis to understand the efficiency of your algorithm.,Use Hotspots analysis to identify the most time consuming functions. Drill down to see the time spent on every line of code.
+1,Memory Access,The Memory Bound metric is high  (94.1%). A significant fraction of execution pipeline slots could be stalled due to demand memory load and stores. ,Use Memory Access analysis to measure metrics that can identify memory access issues.
+1,Threading,There is poor utilization of logical CPU cores (30.7%) in your application. , Use Threading to explore more opportunities to increase parallelism in your application.

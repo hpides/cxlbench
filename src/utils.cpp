@@ -96,22 +96,22 @@ void generate_shuffled_access_positions(char* addr, const MemoryRegionDefinition
   auto buffer = reinterpret_cast<std::byte*>(addr);
 
   const auto batch_size = config.min_io_batch_size;
-  const auto batch_entry_count = batch_size / config.access_size;
+  const auto access_count_per_batch = batch_size / config.access_size;
   const auto batch_count = region.size / batch_size;
 
   std::random_device rd;
   std::mt19937 gen(rd());
 
   for (auto batch_id = u64{0}; batch_id < batch_count; ++batch_id) {
-    auto indices = std::vector<u64>(batch_entry_count);
-    for (auto i = u64{0}; i < batch_entry_count; ++i) {
-      indices[i] = batch_id * batch_entry_count + i;
+    auto indices = std::vector<u64>(access_count_per_batch);
+    for (auto i = u64{0}; i < access_count_per_batch; ++i) {
+      indices[i] = batch_id * access_count_per_batch + i;
     }
     std::shuffle(indices.begin(), indices.end(), gen);
 
-    for (auto i = u64{0}; i < batch_entry_count; ++i) {
-      auto* index = reinterpret_cast<u64*>(&buffer[indices[i] * config.access_size]);
-      *index = indices[(i + 1) % batch_entry_count];
+    for (auto i = u64{0}; i < access_count_per_batch; ++i) {
+      auto* position_addr = reinterpret_cast<u64*>(buffer + (indices[i] * config.access_size));
+      *position_addr = indices[(i + 1) % access_count_per_batch];
     }
   }
 }

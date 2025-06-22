@@ -50,6 +50,14 @@ class AccessBatch {
  private:
   void run_read() {
     switch (access_size_) {
+      case 4:
+        return rw_ops::read_4(addresses_);
+      case 8:
+        return rw_ops::read_8(addresses_);
+      case 16:
+        return rw_ops::read_16(addresses_);
+      case 32:
+        return rw_ops::read_32(addresses_);
       case 64:
         return rw_ops::read_64(addresses_);
       case 128:
@@ -73,7 +81,8 @@ class AccessBatch {
       case 65536:
         return rw_ops::read_64k(addresses_);
       default:
-        return rw_ops::read(addresses_, access_size_);
+        spdlog::critical("Access size not supported.");
+        utils::crash_exit();
     }
   }
 
@@ -105,7 +114,8 @@ class AccessBatch {
           case 65536:
             return rw_ops::write_clwb_64k(addresses_);
           default:
-            return rw_ops::write_clwb(addresses_, access_size_);
+            spdlog::critical("Access size not supported.");
+            utils::crash_exit();
         }
 #else
         spdlog::critical("Compiled without CLWB support.");
@@ -138,7 +148,8 @@ class AccessBatch {
           case 65536:
             return rw_ops::simd_write_nt_64k(addresses_);
           default:
-            return rw_ops::simd_write_nt(addresses_, access_size_);
+            spdlog::critical("Access size not supported.");
+            utils::crash_exit();
         }
 #else
         spdlog::critical("Compiled without NT store support.");
@@ -147,6 +158,14 @@ class AccessBatch {
       }
       case CacheInstruction::None: {
         switch (access_size_) {
+          case 4:
+            return rw_ops::write_none_4(addresses_);
+          case 8:
+            return rw_ops::write_none_8(addresses_);
+          case 16:
+            return rw_ops::write_none_16(addresses_);
+          case 32:
+            return rw_ops::write_none_32(addresses_);
           case 64:
             return rw_ops::write_none_64(addresses_);
           case 128:
@@ -170,7 +189,8 @@ class AccessBatch {
           case 65536:
             return rw_ops::write_none_64k(addresses_);
           default:
-            return rw_ops::write_none(addresses_, access_size_);
+            spdlog::critical("Access size not supported.");
+            utils::crash_exit();
         }
       }
     }
@@ -193,23 +213,23 @@ class ChainedOperation {
         cache_instruction_(op.cache_fn),
         offset_(op.offset) {}
 
-  inline void run(char* current_addr, char* dependent_addr) {
+  inline void run(char* current_addr, char dependent_value) {
     if (type_ == Operation::Read) {
-      current_addr = get_random_address(dependent_addr);
-      dependent_addr = run_read(current_addr);
+      current_addr = get_random_address(dependent_value);
+      dependent_value = run_read(current_addr);
     } else {
       current_addr += offset_;
       run_write(current_addr);
     }
 
     if (next_) {
-      return next_->run(current_addr, dependent_addr);
+      return next_->run(current_addr, dependent_value);
     }
   }
 
-  inline char* get_random_address(char* addr) {
-    const u64 base = (u64)addr;
-    const u64 random_offset = base + lehmer64();
+  inline char* get_random_address(char dependent_value) {
+    const u64 value = (u64)dependent_value;
+    const u64 random_offset = value + lehmer64();
     const u64 offset_in_range = random_offset % range_size_;
     const u64 aligned_offset = offset_in_range & align_;
     return range_start_ + aligned_offset;
@@ -218,9 +238,21 @@ class ChainedOperation {
   void set_next(ChainedOperation* next) { next_ = next; }
 
  private:
-  inline char* run_read(char* addr) {
-    mema::rw_ops::CharVecBase read_value{};
+  inline char run_read(char* addr) {
+    char read_value{};
     switch (access_size_) {
+      case 4:
+        read_value = rw_ops::read_4(addr);
+        break;
+      case 8:
+        read_value = rw_ops::read_8(addr);
+        break;
+      case 16:
+        read_value = rw_ops::read_16(addr);
+        break;
+      case 32:
+        read_value = rw_ops::read_32(addr);
+        break;
       case 64:
         read_value = rw_ops::read_64(addr);
         break;
@@ -255,10 +287,11 @@ class ChainedOperation {
         read_value = rw_ops::read_64k(addr);
         break;
       default:
-        read_value = rw_ops::read(addr, access_size_);
+        spdlog::critical("Access size not supported.");
+        utils::crash_exit();
     }
 
-    return reinterpret_cast<char*>(read_value[0]);
+    return read_value;
   }
 
   inline void run_write(char* addr) {
@@ -289,7 +322,8 @@ class ChainedOperation {
           case 65536:
             return rw_ops::write_clwb_64k(addr);
           default:
-            return rw_ops::write_clwb(addr, access_size_);
+            spdlog::critical("Access size not supported.");
+            utils::crash_exit();
         }
 #else
         spdlog::critical("Compiled without CLWB support.");
@@ -322,7 +356,8 @@ class ChainedOperation {
           case 65536:
             return rw_ops::simd_write_nt_64k(addr);
           default:
-            return rw_ops::simd_write_nt(addr, access_size_);
+            spdlog::critical("Access size not supported.");
+            utils::crash_exit();
         }
 #else
         spdlog::critical("Compiled without NT store support.");
@@ -331,6 +366,14 @@ class ChainedOperation {
       }
       case CacheInstruction::None: {
         switch (access_size_) {
+          case 4:
+            return rw_ops::write_none_4(addr);
+          case 8:
+            return rw_ops::write_none_8(addr);
+          case 16:
+            return rw_ops::write_none_16(addr);
+          case 32:
+            return rw_ops::write_none_32(addr);
           case 64:
             return rw_ops::write_none_64(addr);
           case 128:
@@ -354,7 +397,8 @@ class ChainedOperation {
           case 65536:
             return rw_ops::write_none_64k(addr);
           default:
-            return rw_ops::write_none(addr, access_size_);
+            spdlog::critical("Access size not supported.");
+            utils::crash_exit();
         }
       }
     }

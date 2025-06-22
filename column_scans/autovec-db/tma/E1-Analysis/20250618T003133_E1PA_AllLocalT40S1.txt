@@ -1,0 +1,145 @@
+Elapsed Time: 20.926s
+    IPC: 0.405
+    SP GFLOPS: 0.000
+    DP GFLOPS: 0.000
+    x87 GFLOPS: 0.000
+    Average CPU Frequency: 3.627 GHz
+Logical Core Utilization: 23.3% (22.389 out of 96)
+    Physical Core Utilization: 29.5% (14.148 out of 48)
+Microarchitecture Usage: 10.0% of Pipeline Slots
+    Bottlenecks View (preview)
+        Mispredictions: 1.0% of Pipeline Slots
+        Big Code: 0.4% of Pipeline Slots
+        Instruction Fetch Bandwidth: 1.7% of Pipeline Slots
+        Cache Memory Bandwidth: 38.7% of Pipeline Slots
+        Cache Memory Latency: 34.1% of Pipeline Slots
+        Memory Data TLBs: 2.1% of Pipeline Slots
+        Memory Synchronization: 0.0% of Pipeline Slots
+        Compute Bound Estimation: 2.9% of Pipeline Slots
+        Irregular Overhead: 2.3% of Pipeline Slots
+        Other Bottlenecks: 6.9% of Pipeline Slots
+        Branching Overhead: 1.5% of Pipeline Slots
+        Useful Work: 8.4% of Pipeline Slots
+    Top-down Microarchitecture Analysis (TMA)
+        Retiring: 10.0% of Pipeline Slots
+            Light Operations: 9.5% of Pipeline Slots
+            Heavy Operations: 0.6% of Pipeline Slots
+                Few Uops Instructions: 0.1% of Pipeline Slots
+                Microcode Sequencer: 0.4% of Pipeline Slots
+                    Assists: 0.1% of Pipeline Slots
+                    CISC: 0.3% of Pipeline Slots
+        Front-End Bound: 3.5% of Pipeline Slots
+            Front-End Latency: 1.7% of Pipeline Slots
+                ICache Misses: 0.0% of Clockticks
+                ITLB Misses: 0.3% of Clockticks
+                Branch Resteers: 0.4% of Clockticks
+                    Mispredicts Resteers: 0.4% of Clockticks
+                    Clears Resteers: 0.0% of Clockticks
+                    Unknown Branches: 0.0% of Clockticks
+                MS Switches: 0.6% of Clockticks
+                Length Changing Prefixes: 0.0% of Clockticks
+                DSB Switches: 0.0% of Clockticks
+            Front-End Bandwidth: 1.8% of Pipeline Slots
+        Bad Speculation: 0.5% of Pipeline Slots
+            Branch Mispredict: 0.5% of Pipeline Slots
+                Other Mispredicts: 0.2% of Pipeline Slots
+            Machine Clears: 0.0% of Pipeline Slots
+                Other Nukes: 0.0% of Pipeline Slots
+        Back-End Bound: 86.0% of Pipeline Slots
+            Memory Bound: 75.2% of Pipeline Slots
+                L1 Bound: 1.1% of Clockticks
+                    DTLB Overhead: 4.0% of Clockticks
+                        Load STLB Hit: 0.0% of Clockticks
+                        Load STLB Miss: 21.2% of Clockticks
+                    Loads Blocked by Store Forwarding: 0.0% of Clockticks
+                    L1 Hit Latency: 1.7% of Clockticks
+                    Lock Latency: 0.0% of Clockticks
+                    Split Loads: 5.3% of Clockticks
+                    FB Full: 7.0% of Clockticks
+                L2 Bound: 0.2% of Clockticks
+                L3 Bound: 4.1% of Clockticks
+                    Contested Accesses: 0.0% of Clockticks
+                    Data Sharing: 0.0% of Clockticks
+                    L3 Latency: 2.1% of Clockticks
+                    SQ Full: 1.2% of Clockticks
+                DRAM Bound: 72.9% of Clockticks
+                    Memory Bandwidth: 49.8% of Clockticks
+                        MBA Stalls: 0.0% of Clockticks
+                    Memory Latency: 41.2% of Clockticks
+                        Local Memory: 100.0% of Clockticks
+                        Remote Memory: 1.9% of Clockticks
+                        Remote Cache: 0.0% of Clockticks
+                Store Bound: 2.9% of Clockticks
+                    Store Latency: 6.6% of Clockticks
+                    False Sharing: 0.0% of Clockticks
+                    Split Stores: 0.1%
+                    Streaming Stores: 0.0% of Clockticks
+                    DTLB Store Overhead: 14.7% of Clockticks
+                        Store STLB Hit: 6.8% of Clockticks
+                        Store STLB Miss: 7.9% of Clockticks
+            Core Bound: 10.8% of Pipeline Slots
+                Divider: 0.1% of Clockticks
+                Serializing Operations: 1.0% of Clockticks
+                    C02 Wait: 0.0% of Clockticks
+                AMX Busy: 0.0% of Clockticks
+                Port Utilization: 7.3% of Clockticks
+                    Cycles of 0 Ports Utilized: 0.1% of Clockticks
+                    Cycles of 1 Port Utilized: 7.2% of Clockticks
+                    Cycles of 2 Ports Utilized: 4.2% of Clockticks
+                    Cycles of 3+ Ports Utilized: 5.0% of Clockticks
+                    Vector Capacity Usage (FPU): 12.5%
+Memory Bound: 75.2% of Pipeline Slots
+    Cache Bound: 5.4% of Clockticks
+    DRAM Bound: 72.9% of Clockticks
+    NUMA: % of Remote Accesses: 0.3%
+Vectorization: 0.1% of Packed FP Operations
+    Instruction Mix
+        HP FLOPs: 0.0% of uOps
+            Packed: 0.0%
+                128-bit: 0.0%
+                256-bit: 0.0%
+                512-bit: 0.0%
+            Scalar: 0.0%
+        SP FLOPs: 0.0% of uOps
+            Packed: 0.0% from SP FP
+                128-bit: 0.0% from SP FP
+                256-bit: 0.0% from SP FP
+                512-bit: 0.0% from SP FP
+            Scalar: 100.0% from SP FP
+        DP FLOPs: 0.0% of uOps
+            Packed: 0.1% from DP FP
+                128-bit: 0.1% from DP FP
+                256-bit: 0.0% from DP FP
+                512-bit: 0.0% from DP FP
+            Scalar: 99.9% from DP FP
+        x87 FLOPs: 0.0% of uOps
+        Non-FP: 100.0% of uOps
+    FP Arith/Mem Rd Instr. Ratio: 0.000
+    FP Arith/Mem Wr Instr. Ratio: 0.000
+Collection and Platform Info
+    Application Command Line: ./build/int_scan "--benchmark_filter=E1PA_AllLocalT40S1.*" "--benchmark_repetitions=1" 
+    Operating System: 6.13.0-061300-generic DISTRIB_ID=Ubuntu DISTRIB_RELEASE=24.04 DISTRIB_CODENAME=noble DISTRIB_DESCRIPTION="Ubuntu 24.04.2 LTS"
+    Computer Name: mag-SYS-741GE-TNRT
+    Result Size: 4.0 MB 
+    Collection start time: 05:31:35 18/06/2025 UTC
+    Collection stop time: 05:31:56 18/06/2025 UTC
+    Collector Type: Driverless Perf per-process counting
+    CPU
+        Name: Intel(R) Xeon(R) Processor code named Emeraldrapids
+        Frequency: 2.900 GHz
+        Logical CPU Count: 96
+        LLC size: 62.9 MB 
+        Cache Allocation Technology
+            Level 2 capability: available
+            Level 3 capability: available
+
+Recommendations:
+    Hotspots: Start with Hotspots analysis to understand the efficiency of your algorithm.
+     | Use Hotspots analysis to identify the most time consuming functions.
+     | Drill down to see the time spent on every line of code.
+    Memory Access: The Memory Bound metric is high  (75.2%). A significant fraction of execution pipeline slots could be stalled due to demand memory load and stores.
+     | Use Memory Access analysis to measure metrics that can identify memory
+     | access issues.
+    Threading: There is poor utilization of logical CPU cores (23.3%) in your application.
+     |  Use Threading to explore more opportunities to increase parallelism in
+     | your application.

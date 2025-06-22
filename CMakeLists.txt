@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.5)
 project(mema-bench)
 
 include(ExternalProject)
@@ -164,8 +164,8 @@ set(YAML_CPP_BUILD_TOOLS OFF CACHE INTERNAL "")
 
 FetchContent_Declare(
         yaml_cpp
-        GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-        GIT_TAG yaml-cpp-0.6.3
+        GIT_REPOSITORY https://github.com/mweisgut/yaml-cpp
+        GIT_TAG 0.8.0-cmake3.5
 )
 FetchContent_MakeAvailable(yaml_cpp)
 

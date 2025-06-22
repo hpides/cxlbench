@@ -64,13 +64,13 @@ struct ThreadConfig {
   // Pointers to store performance data in.
   u64* total_operation_size;
   ExecutionDuration* total_operation_duration;
-  std::vector<u64>* custom_op_latencies;
+  std::vector<u64>* op_latencies;
 
   ThreadConfig(char* primary_region_start_addr, char* secondary_region_start_addr, const u64 primary_region_size,
                const u64 secondary_region_size, const u64 thread_count, const u64 thread_idx,
                const u64 ops_count_per_batch, const u64 batch_count, const BenchmarkConfig& config,
                CoreIDs affinity_core_ids, BenchmarkExecution* execution, ExecutionDuration* total_operation_duration,
-               u64* total_operation_size, std::vector<u64>* custom_op_latencies)
+               u64* total_operation_size, std::vector<u64>* op_latencies)
       : primary_start_addr{primary_region_start_addr},
         secondary_start_addr{secondary_region_start_addr},
         primary_region_size{primary_region_size},
@@ -84,7 +84,7 @@ struct ThreadConfig {
         execution{execution},
         total_operation_duration{total_operation_duration},
         total_operation_size{total_operation_size},
-        custom_op_latencies{custom_op_latencies} {}
+        op_latencies{op_latencies} {}
 };
 
 struct BenchmarkResult {
@@ -93,13 +93,14 @@ struct BenchmarkResult {
 
   nlohmann::json get_result_as_json() const;
   nlohmann::json get_custom_results_as_json() const;
+  nlohmann::json get_latency_mode_results_as_json() const;
 
   // Result vectors for raw operation workloads
   std::vector<u64> total_operation_sizes;
   std::vector<ExecutionDuration> total_operation_durations;
 
   // Result vectors for custom operation workloads
-  std::vector<std::vector<u64>> custom_operation_latencies;
+  std::vector<std::vector<u64>> operation_latencies;
 
   hdr_histogram* latency_hdr = nullptr;
   const BenchmarkConfig config;
@@ -193,13 +194,26 @@ class Benchmark {
                                     const MemoryRegionDefinitions& region_definitions);
 
   static void run_custom_ops_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config);
-  template <size_t ACCESS_COUNT_64B>
-  static void run_dependent_reads_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config);
   static void run_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config);
 
   static u64 run_fixed_sized_benchmark(std::vector<AccessBatch>* vector, std::atomic<u64>* batch_position);
   static u64 run_duration_based_benchmark(std::vector<AccessBatch>* access_batches, std::atomic<u64>* batch_position,
                                           std::chrono::steady_clock::time_point execution_end);
+
+  template <size_t ACCESS_COUNT_64B>
+  static void run_latency_measurements_in_thread(ThreadConfig* thread_config, const BenchmarkConfig& config);
+
+  template <size_t ACCESS_COUNT_64B>
+  static ExecutionDuration run_dependent_reads(std::byte* buffer, u32 access_count, const BenchmarkConfig& config, std::vector<u64>* latencies);
+
+  template <size_t ACCESS_COUNT_64B>
+  static ExecutionDuration run_dependent_writes(std::byte* buffer, u32 access_count, const BenchmarkConfig& config, std::vector<u64>* latencies);
+
+  template <size_t ACCESS_COUNT_64B>
+  static ExecutionDuration run_independent_reads(std::byte* buffer, u32 access_count, const BenchmarkConfig& config, std::vector<u64>* latencies);
+
+  template <size_t ACCESS_COUNT_64B>
+  static ExecutionDuration run_independent_writes(std::byte* buffer, u32 access_count, const BenchmarkConfig& config, std::vector<u64>* latencies);
 
   const std::string benchmark_name_;
 

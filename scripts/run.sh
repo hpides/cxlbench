@@ -3,6 +3,7 @@
 # Exit the script immediately if an error occurs.
 set -e
 BUILD_TYPE=Release
+# BUILD_TYPE=RelWithDebInfo
 
 SCRIPTNAME="$(basename "$0")"
 if [ -z "$1" ] || [ -z "$2" ] ; then

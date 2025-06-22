@@ -1,3 +1,6 @@
 [submodule "third_party/cpplint"]
 	path = third_party/cpplint
 	url = https://github.com/cpplint/cpplint.git
+[submodule "third_party/btree-benchmarks"]
+	path = third_party/btree-benchmarks
+	url = git@github.com:mweisgut/btree-benchmarks.git

@@ -1,7 +1,8 @@
 split_memory_random_reads:
   matrix:
     number_threads: [ 1, 4, 8, 12, 16 ]
-    access_size: [ 64, 128, 256, 512, 1024, 2048, 4096 ]
+    # access_size: [ 64, 128, 256, 512, 1024, 2048, 4096 ]
+    access_size: [ 64, 4096 ]
     percentage_pages_first_partition: [ 100, 95, 90, 85, 80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10, 5, 0 ]
 
   args:
@@ -10,7 +11,6 @@ split_memory_random_reads:
     numa_memory_nodes: [ 0, 2 ]
     node_count_first_partition: 1
     numa_task_nodes: [ 0 ]
-    number_partitions: 1
     operation: read
     number_operations: 50000000
     run_time: 10

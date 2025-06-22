@@ -218,7 +218,7 @@ void BenchmarkConfig::validate() const {
   bool is_custom_or_random = exec_mode == Mode::Random || exec_mode == Mode::Custom;
 
   // Check if access size is supported
-  std::set<size_t> unrolled_access_sizes({64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536});
+  std::set<size_t> unrolled_access_sizes({4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536});
   std::ostringstream error;
   error << "Access Size must be one of {";
   for (auto it = unrolled_access_sizes.begin(); it != unrolled_access_sizes.end(); ++it) {
@@ -265,11 +265,15 @@ void BenchmarkConfig::validate() const {
   CHECK_ARGUMENT(is_total_memory_batchable,
                  "The primary memory range needs to be multiple of batch size " + std::to_string(min_io_batch_size));
 
-  if (exec_mode != Mode::DependentReads) {
+  if (!is_latency_mode()) {
     // Assumption: we batch operations, so we need enough data to fill at least one batch
     const bool is_total_memory_large_enough = (memory_regions[0].size / number_threads) >= min_io_batch_size;
     CHECK_ARGUMENT(is_total_memory_large_enough, "Each thread needs at least " + std::to_string(min_io_batch_size) +
                                                      " Bytes of memory in primary region.");
+  }
+
+  if (is_latency_mode()) {
+    CHECK_ARGUMENT(latency_sample_frequency > 0, "Latency sample frequency needs to be >0 for latency measurements.");
   }
 
   // Assumption: number_operations should only be set for random/custom access. It is ignored in sequential IO.
@@ -284,7 +288,7 @@ void BenchmarkConfig::validate() const {
   // Assumption: We need enough operations to give each thread at least one batch
   const u64 min_required_number_ops = (min_io_batch_size / access_size) * number_threads;
   const bool has_enough_number_operations = !is_custom_or_random || number_operations >= min_required_number_ops;
-  CHECK_ARGUMENT(has_enough_number_operations,
+  CHECK_ARGUMENT(true || has_enough_number_operations,
                  "Need enough number_operations to have at least one batch per thread. Consider at least 100 "
                  "operations in total to actually perform a significant amount of work. Need minimum of " +
                      std::to_string(min_required_number_ops) + " ops for this workload.");
@@ -302,8 +306,8 @@ void BenchmarkConfig::validate() const {
   const bool has_no_custom_ops = exec_mode == Mode::Custom || custom_operations.empty();
   CHECK_ARGUMENT(has_no_custom_ops, "Cannot specify custom_operations for non-custom execution.");
 
-  const bool latency_sample_is_custom = exec_mode == Mode::Custom || latency_sample_frequency == 0;
-  CHECK_ARGUMENT(latency_sample_is_custom, "Latency sampling can only be used with custom operations.");
+  const bool latency_sample_is_custom = exec_mode == Mode::Custom || is_latency_mode() || latency_sample_frequency == 0;
+  CHECK_ARGUMENT(latency_sample_is_custom, "Latency sampling can only be used with custom operations or a latency measurement mode.");
 
   const bool numa_thread_nodes_present = numa_thread_nodes.size() > 0;
   const bool numa_thread_pinning_mode =
@@ -339,6 +343,10 @@ bool BenchmarkConfig::contains_write_op() const {
   auto find_custom_write_op = [](const CustomOp& op) { return op.type == Operation::Write; };
   return operation == Operation::Write ||
          std::any_of(custom_operations.begin(), custom_operations.end(), find_custom_write_op);
+}
+
+bool BenchmarkConfig::is_latency_mode() const {
+  return exec_mode == Mode::SequentialLatency || exec_mode == Mode::RandomLatency;
 }
 
 std::string BenchmarkConfig::to_string(const std::string sep) const {
@@ -453,6 +461,11 @@ nlohmann::json BenchmarkConfig::as_json() const {
   if (exec_mode == Mode::Custom) {
     config["number_operations"] = number_operations;
     config["custom_operations"] = CustomOp::all_to_string(custom_operations);
+    config["latency_sample_frequency"] = latency_sample_frequency;
+  }
+
+  if (is_latency_mode()) {
+    config["latency_sample_frequency"] = latency_sample_frequency;
   }
 
   if (run_time > 0) {
@@ -648,7 +661,9 @@ const std::unordered_map<std::string, Mode> ConfigEnums::str_to_mode{{"sequentia
                                                                      {"sequential_desc", Mode::Sequential_Desc},
                                                                      {"random", Mode::Random},
                                                                      {"custom", Mode::Custom},
-                                                                     {"dependent_reads", Mode::DependentReads}};
+                                                                     {"sequential_latency", Mode::SequentialLatency},
+                                                                     {"random_latency", Mode::RandomLatency}
+                                                                   };
 
 const std::unordered_map<std::string, Operation> ConfigEnums::str_to_operation{
     {"read", Operation::Read}, {"write", Operation::Write}, {"r", Operation::Read}, {"w", Operation::Write}};
