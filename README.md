@@ -10,7 +10,7 @@ If you use the microbenchmarks or reference our findings, please cite us.
 @article{Weisgut2025CxlPerformance,
   title={CXL Memory Performance for In-Memory Data Processing},
   author={Weisgut, Marcel and Ritter, Daniel and Tözün, Pınar and Benson, Lawrence and Rabl, Tilmann},
-  booktitle={Proceedings of the VLDB Endowment},
+  journal={Proceedings of the VLDB Endowment},
   year={2025},
   volume={18},
   number={9}
