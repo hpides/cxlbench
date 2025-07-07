@@ -13,7 +13,7 @@ If you use the microbenchmarks or reference our findings, please cite us.
   journal={Proceedings of the VLDB Endowment},
   year={2025},
   volume={18},
-  number={9}
+  number={9},
   pages={3119-3133},
 }
 ```
