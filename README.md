@@ -14,5 +14,6 @@ If you use the microbenchmarks or reference our findings, please cite us.
   year={2025},
   volume={18},
   number={9}
+  pages={3119-3133},
 }
 ```
