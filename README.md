@@ -1,4 +1,4 @@
-# CXL-Bench
+# CXL-Bench (aka MemA-Bench)
 
 | Paper | Branch | PDF |
 |------ | ------ | --- |
